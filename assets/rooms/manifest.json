@@ -1,0 +1,55 @@
+{
+  "standard": [
+    "assets/rooms/standard/01.webp",
+    "assets/rooms/standard/02.webp",
+    "assets/rooms/standard/03.webp",
+    "assets/rooms/standard/04.webp",
+    "assets/rooms/standard/05.webp",
+    "assets/rooms/standard/06.webp",
+    "assets/rooms/standard/07.webp",
+    "assets/rooms/standard/08.webp",
+    "assets/rooms/standard/09.webp",
+    "assets/rooms/standard/10.webp",
+    "assets/rooms/standard/11.webp",
+    "assets/rooms/standard/12.webp",
+    "assets/rooms/standard/13.webp",
+    "assets/rooms/standard/14.webp",
+    "assets/rooms/standard/15.webp"
+  ],
+  "bangalo": [
+    "assets/rooms/bangalo/01.webp",
+    "assets/rooms/bangalo/02.webp",
+    "assets/rooms/bangalo/03.webp",
+    "assets/rooms/bangalo/04.webp",
+    "assets/rooms/bangalo/05.webp",
+    "assets/rooms/bangalo/06.webp",
+    "assets/rooms/bangalo/07.webp",
+    "assets/rooms/bangalo/08.webp",
+    "assets/rooms/bangalo/09.webp",
+    "assets/rooms/bangalo/10.webp",
+    "assets/rooms/bangalo/11.webp",
+    "assets/rooms/bangalo/12.webp",
+    "assets/rooms/bangalo/13.webp",
+    "assets/rooms/bangalo/14.webp"
+  ],
+  "gold": [
+    "assets/rooms/gold/01.webp",
+    "assets/rooms/gold/02.webp",
+    "assets/rooms/gold/03.webp",
+    "assets/rooms/gold/04.webp",
+    "assets/rooms/gold/05.webp",
+    "assets/rooms/gold/06.webp",
+    "assets/rooms/gold/07.webp",
+    "assets/rooms/gold/08.webp"
+  ],
+  "gold-master": [
+    "assets/rooms/gold-master/01.webp",
+    "assets/rooms/gold-master/02.webp",
+    "assets/rooms/gold-master/03.webp",
+    "assets/rooms/gold-master/04.webp",
+    "assets/rooms/gold-master/05.webp",
+    "assets/rooms/gold-master/06.webp",
+    "assets/rooms/gold-master/07.webp",
+    "assets/rooms/gold-master/08.webp"
+  ]
+}

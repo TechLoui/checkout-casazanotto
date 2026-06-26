@@ -1,0 +1,7 @@
+# Netlify — apenas o site estático (frontend).
+# O backend roda no Railway (pasta /server). O front fala com ele via
+# window.CZ_CHECKOUT_API definido em checkout.html.
+
+[build]
+  publish = "."
+  command = ""

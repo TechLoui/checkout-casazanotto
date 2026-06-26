@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+server/node_modules/
+
+# Segredos — NUNCA versionar nem publicar
+.env
+*.env
+server/.env
+
+# Netlify
+.netlify/
+
+# Dev / lixo
+.playwright-cli/
+output/
+output-*.txt
+*.log
+
+# Zips brutos das fotos (pesados — não publicar; as fotos já estão em assets/rooms)
+*.zip
+assets/_rooms_raw/
+
+# CodePens de referência (não precisam em produção)
+aura/
+diagonal-carousel/
+landing-page-gsap-carousel-gallery/
+css-crossfade-carousel-w-scrollchrome/
+warm-minimal-product-card-dynamic-day-to-night-mode-css-only/
