@@ -1,30 +1,22 @@
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { checkAvailability, createBooking, ArtaxError } from "./artaxnet.js";
-import { authorizeAndCapture, refund } from "./rede.js";
+import { authorizeAndCapture, refund, createPix, getTransaction, isPixPaid } from "./rede.js";
 import { ValidationError } from "./validation.js";
 
 const nightsBetween = (arrival, departure) =>
   Math.max(1, Math.round((new Date(departure) - new Date(arrival)) / 86_400_000));
 
-/**
- * Encontra a opção (quarto + rateplan) na resposta de disponibilidade e devolve
- * o PREÇO AUTORITATIVO vindo do Artax. Nunca confiamos no preço enviado pelo
- * cliente — ele poderia ser adulterado no navegador.
- */
+/** Encontra a opção (quarto + rateplan) e devolve o PREÇO AUTORITATIVO do Artax. */
 const resolveAuthoritativeOption = (availability, roomId, rateplanId) => {
   const rooms = availability?.rooms;
   if (!rooms || Array.isArray(rooms)) return null; // [] => sem disponibilidade
-
   const room = rooms[roomId] || rooms[String(roomId)];
   if (!room) return null;
-
   const option = room[rateplanId] || room[String(rateplanId)];
   if (!option) return null;
-
   const price = Number(option.price);
   if (!Number.isFinite(price) || price <= 0) return null;
-
   return {
     roomName: option.room_name,
     rateplanId: Number(option.rateplan_id) || Number(rateplanId),
@@ -34,12 +26,8 @@ const resolveAuthoritativeOption = (availability, roomId, rateplanId) => {
   };
 };
 
-/**
- * Processa um checkout completo.
- * @returns {Promise<{booking_id:number, payment:object, room:object}>}
- */
-export const processCheckout = async (input) => {
-  // 1) Reconfere disponibilidade e obtém o preço real no momento da compra.
+/** Reconfere disponibilidade no momento da compra e calcula o total a cobrar. */
+const resolveStay = async (input) => {
   const availability = await checkAvailability({
     arrival_date: input.arrival_date,
     departure_date: input.departure_date,
@@ -47,39 +35,26 @@ export const processCheckout = async (input) => {
     kids: input.kids,
     ages: input.ages
   });
-
   const option = resolveAuthoritativeOption(availability, input.roomId, input.rateplanId);
   if (!option) {
-    throw new ValidationError(
-      "A opção escolhida não está mais disponível para estas datas. Refaça a busca."
-    );
+    throw new ValidationError("A opção escolhida não está mais disponível para estas datas. Refaça a busca.");
   }
-
-  // Total a cobrar conforme a interpretação configurada do preço do Artax.
   const nights = nightsBetween(input.arrival_date, input.departure_date);
   const totalPrice =
-    config.artax.priceMode === "per_night"
-      ? Number((option.price * nights).toFixed(2))
-      : option.price;
-  const amountCents = Math.round(totalPrice * 100);
-  const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
+    config.artax.priceMode === "per_night" ? Number((option.price * nights).toFixed(2)) : option.price;
+  return { option, totalPrice, amountCents: Math.round(totalPrice * 100) };
+};
 
-  // 2) Cobra o pagamento. Se não aprovar, RedeError sobe e nada é reservado.
-  const payment = await authorizeAndCapture({
-    amountCents,
-    reference,
-    installments: input.installments,
-    card: input.card
-  });
-
-  // 3) Pagamento aprovado → cria a reserva no Artax.
+/**
+ * Cria a reserva no Artax após o pagamento confirmado. Se a criação falhar,
+ * estorna o pagamento (compensação) — vale para cartão e PIX.
+ */
+const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents }) => {
   const bookingPayload = {
     arrival_date: input.arrival_date,
     departure_date: input.departure_date,
     rateplan_id: option.rateplanId,
-    comment: [input.comment, `Pagamento Rede TID ${payment.tid} ref ${reference}`]
-      .filter(Boolean)
-      .join(" | "),
+    comment: [input.comment, `Pagamento Rede TID ${tid} ref ${reference}`].filter(Boolean).join(" | "),
     guest: input.guest,
     room_units: {
       [input.roomId]: {
@@ -103,43 +78,107 @@ export const processCheckout = async (input) => {
 
   try {
     const booking = await createBooking(bookingPayload);
-    return {
-      booking_id: booking.booking_id,
-      payment: {
-        tid: payment.tid,
-        nsu: payment.nsu,
-        authorizationCode: payment.authorizationCode,
-        reference: payment.reference,
-        installments: payment.installments,
-        amount: totalPrice
-      },
-      room: { id: input.roomId, name: option.roomName, rateplan_id: option.rateplanId }
-    };
+    return { booking_id: booking.booking_id, room: { id: input.roomId, name: option.roomName, rateplan_id: option.rateplanId } };
   } catch (error) {
-    // 4) COMPENSAÇÃO: pagamento capturado mas reserva falhou → estorna.
-    console.error(
-      "[checkout] Reserva falhou após pagamento aprovado. Estornando TID",
-      payment.tid,
-      error instanceof ArtaxError ? error.payload : error.message
-    );
+    console.error("[checkout] Reserva falhou após pagamento. Estornando TID", tid,
+      error instanceof ArtaxError ? error.payload : error.message);
     try {
-      await refund(payment.tid, amountCents);
-      throw new Error(
-        "Não foi possível concluir a reserva, então o pagamento foi estornado. Tente novamente."
-      );
+      await refund(tid, amountCents);
+      throw new Error("Não foi possível concluir a reserva, então o pagamento foi estornado. Tente novamente.");
     } catch (refundError) {
-      // Estado que exige intervenção manual — registrar com destaque.
-      console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.", {
-        tid: payment.tid,
-        reference,
-        amountCents
-      });
-      const fatal = new Error(
-        "Pagamento aprovado mas a reserva e o estorno falharam. " +
-          `Guarde este comprovante (TID ${payment.tid}) e contate a pousada.`
-      );
+      console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.", { tid, reference, amountCents });
+      const fatal = new Error(`Pagamento confirmado mas a reserva e o estorno falharam. Guarde o comprovante (TID ${tid}) e contate a pousada.`);
       fatal.status = 500;
       throw fatal;
     }
   }
+};
+
+/* ===================== CARTÃO (autoriza + captura + reserva) ===================== */
+export const processCheckout = async (input) => {
+  const { option, totalPrice, amountCents } = await resolveStay(input);
+  const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
+
+  const payment = await authorizeAndCapture({
+    amountCents,
+    reference,
+    installments: input.installments,
+    card: input.card
+  });
+
+  const booked = await bookStay({ input, option, totalPrice, reference, tid: payment.tid, amountCents });
+  return {
+    booking_id: booked.booking_id,
+    room: booked.room,
+    payment: {
+      method: "card",
+      tid: payment.tid,
+      nsu: payment.nsu,
+      authorizationCode: payment.authorizationCode,
+      reference,
+      installments: payment.installments,
+      amount: totalPrice
+    }
+  };
+};
+
+/* ===================== PIX (gera QR; reserva só após pago) ===================== */
+// Guarda o contexto da cobrança PIX até o pagamento ser confirmado.
+// (Single instance no Railway; o PIX expira em minutos, então memória basta.)
+const pendingPix = new Map();
+const PIX_TTL_MS = 60 * 60 * 1000;
+
+const cleanupPix = () => {
+  const now = Date.now();
+  for (const [tid, e] of pendingPix) if (now - e.createdAt > PIX_TTL_MS) pendingPix.delete(tid);
+};
+
+export const createPixCharge = async (input) => {
+  cleanupPix();
+  const { option, totalPrice, amountCents } = await resolveStay(input);
+  const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
+
+  const pix = await createPix({ amountCents, reference, expiresIn: 3600 });
+  if (!pix.tid) throw new Error("A Rede não retornou o identificador da cobrança PIX.");
+
+  pendingPix.set(pix.tid, { input, option, totalPrice, amountCents, reference, bookingId: null, room: null, createdAt: Date.now() });
+
+  return {
+    tid: pix.tid,
+    qrCode: pix.qrCode, // copia-e-cola (EMV)
+    qrImage: pix.qrImage, // imagem do QR (se a Rede enviar)
+    amount: totalPrice,
+    expiresIn: 3600
+  };
+};
+
+export const confirmPix = async (tid) => {
+  const entry = pendingPix.get(tid);
+  if (!entry) return { status: "expired" };
+
+  // Já reservado nesta sessão? Devolve o mesmo resultado (idempotente).
+  if (entry.bookingId) {
+    return { status: "paid", booking_id: entry.bookingId, room: entry.room, payment: { method: "pix", tid, amount: entry.totalPrice } };
+  }
+
+  const tx = await getTransaction(tid);
+  if (!isPixPaid(tx)) return { status: "pending" };
+
+  const booked = await bookStay({
+    input: entry.input,
+    option: entry.option,
+    totalPrice: entry.totalPrice,
+    reference: entry.reference,
+    tid,
+    amountCents: entry.amountCents
+  });
+  entry.bookingId = booked.booking_id;
+  entry.room = booked.room;
+
+  return {
+    status: "paid",
+    booking_id: booked.booking_id,
+    room: booked.room,
+    payment: { method: "pix", tid, reference: entry.reference, amount: entry.totalPrice }
+  };
 };

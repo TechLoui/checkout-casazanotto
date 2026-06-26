@@ -505,31 +505,67 @@ const maskExpiry = (el) => {
 };
 const onlyDigits = (el) => { el.value = el.value.replace(/\D/g, ""); };
 
-/* ---------- etapa 3: pagamento ---------- */
-const submitCheckout = async (event) => {
+/* ---------- etapa 3: pagamento (PIX ou cartão) ---------- */
+let payMethod = "pix";
+let pixPoll = null;
+let pixTimeout = null;
+
+const setPayMethod = (method) => {
+  payMethod = method;
+  $$(".pay-tab").forEach((t) => {
+    const active = t.dataset.payMethod === method;
+    t.classList.toggle("is-active", active);
+    t.setAttribute("aria-selected", String(active));
+  });
+  $$("[data-pane]").forEach((p) => p.classList.toggle("is-hidden", p.dataset.pane !== method));
+  // Desabilita os campos do cartão quando não for cartão (evita validação em campo oculto).
+  ["#c-number", "#c-name", "#c-exp", "#c-cvv", "#c-inst"].forEach((sel) => {
+    const el = $(sel);
+    if (el) el.disabled = method !== "card";
+  });
+  const label = $("#pay-btn .label");
+  if (label) label.textContent = method === "pix" ? "Gerar PIX" : "Pagar e reservar";
+};
+
+const baseReservationPayload = () => ({
+  arrival_date: state.search.arrival_date,
+  departure_date: state.search.departure_date,
+  adults: state.search.adults,
+  kids: state.search.kids,
+  ages: state.search.ages,
+  room_id: state.selection.roomId,
+  rateplan_id: state.selection.rateplanId,
+  guest: {
+    first_name: $("#g-first").value.trim(),
+    last_name: $("#g-last").value.trim(),
+    phone: $("#g-phone").value,
+    email: $("#g-email").value.trim(),
+    document: $("#g-doc").value,
+    document_type: $("#g-doctype").value || undefined,
+    type: "guest"
+  }
+});
+
+const guestValid = () => {
+  if (!$("#g-first").value.trim()) { showNotice("Informe o nome do hóspede."); return false; }
+  if ($("#g-phone").value.replace(/\D/g, "").length < 10) { showNotice("Informe um telefone válido com DDD."); return false; }
+  return true;
+};
+
+const submitCheckout = (event) => {
   event.preventDefault();
   clearNotice();
   if (!state.selection || !state.search) return goToStep(1);
+  if (!guestValid()) return;
+  if (payMethod === "pix") submitPix();
+  else submitCard();
+};
 
+const submitCard = async () => {
   const [mm, yy] = $("#c-exp").value.split("/");
   const payload = {
-    arrival_date: state.search.arrival_date,
-    departure_date: state.search.departure_date,
-    adults: state.search.adults,
-    kids: state.search.kids,
-    ages: state.search.ages,
-    room_id: state.selection.roomId,
-    rateplan_id: state.selection.rateplanId,
+    ...baseReservationPayload(),
     installments: Number($("#c-inst").value) || 1,
-    guest: {
-      first_name: $("#g-first").value.trim(),
-      last_name: $("#g-last").value.trim(),
-      phone: $("#g-phone").value,
-      email: $("#g-email").value.trim(),
-      document: $("#g-doc").value,
-      document_type: $("#g-doctype").value || undefined,
-      type: "guest"
-    },
     card: {
       number: $("#c-number").value.replace(/\s/g, ""),
       holderName: $("#c-name").value.trim(),
@@ -538,7 +574,6 @@ const submitCheckout = async (event) => {
       securityCode: $("#c-cvv").value
     }
   };
-
   const btn = $("#pay-btn");
   btn.disabled = true;
   btn.querySelector(".label").innerHTML = '<span class="spinner"></span> Processando...';
@@ -558,15 +593,87 @@ const submitCheckout = async (event) => {
   }
 };
 
+const submitPix = async () => {
+  const btn = $("#pay-btn");
+  btn.disabled = true;
+  btn.querySelector(".label").innerHTML = '<span class="spinner"></span> Gerando PIX...';
+  try {
+    const res = await fetch(`${API_BASE}/pix/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(baseReservationPayload())
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Não foi possível gerar o PIX.");
+    showPix(data);
+  } catch (err) {
+    showNotice(err.message);
+    btn.disabled = false;
+    btn.querySelector(".label").textContent = "Gerar PIX";
+  }
+};
+
+const showPix = (data) => {
+  const result = $("[data-pix-result]");
+  const img = $("[data-pix-img]");
+  const code = $("[data-pix-code]");
+  if (data.qrImage) {
+    img.src = data.qrImage.startsWith("data:") || /^https?:/.test(data.qrImage)
+      ? data.qrImage
+      : `data:image/png;base64,${data.qrImage}`;
+  } else if (data.qrCode) {
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(data.qrCode)}`;
+  }
+  if (code) code.value = data.qrCode || "";
+  result.classList.remove("is-hidden");
+  const btn = $("#pay-btn");
+  btn.querySelector(".label").innerHTML = '<span class="spinner"></span> Aguardando pagamento…';
+  startPixPolling(data.tid);
+};
+
+const stopPixPolling = () => {
+  if (pixPoll) clearInterval(pixPoll);
+  if (pixTimeout) clearTimeout(pixTimeout);
+  pixPoll = pixTimeout = null;
+};
+
+const startPixPolling = (tid) => {
+  stopPixPolling();
+  const check = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/pix/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tid })
+      });
+      const data = await res.json();
+      if (data.status === "paid") { stopPixPolling(); renderSuccess(data); }
+      else if (data.status === "expired") { stopPixPolling(); pixExpired(); }
+    } catch (_) { /* mantém tentando */ }
+  };
+  pixPoll = setInterval(check, 4000);
+  pixTimeout = setTimeout(() => { stopPixPolling(); pixExpired(); }, 12 * 60 * 1000);
+};
+
+const pixExpired = () => {
+  const st = $("[data-pix-status]");
+  if (st) st.innerHTML = '<i data-lucide="alert-circle"></i> PIX expirado. Gere um novo código.';
+  const btn = $("#pay-btn");
+  btn.disabled = false;
+  btn.querySelector(".label").textContent = "Gerar novo PIX";
+  refreshIcons();
+};
+
 const renderSuccess = (data) => {
+  stopPixPolling();
   $("#booking-id").textContent = `Reserva nº ${data.booking_id}`;
   const p = data.payment || {};
+  const methodLabel = p.method === "pix" ? "PIX" : `Cartão${p.installments ? ` · ${p.installments}x` : ""}`;
   $("#success-details").innerHTML = `
     <div class="summary-row"><span>Quarto</span><span>${data.room?.name || "—"}</span></div>
     <div class="summary-row"><span>Check-in</span><span>${fmtDate(state.search.arrival_date)}</span></div>
     <div class="summary-row"><span>Check-out</span><span>${fmtDate(state.search.departure_date)}</span></div>
-    <div class="summary-row"><span>Parcelas</span><span>${p.installments || 1}x</span></div>
-    <div class="summary-row"><span>Autorização</span><span>${p.authorizationCode || "—"}</span></div>
+    <div class="summary-row"><span>Pagamento</span><span>${methodLabel}</span></div>
     <div class="summary-total"><span>Pago</span><strong>${brl(p.amount || state.selection.price)}</strong></div>`;
   goToStep(4);
 };
@@ -720,6 +827,22 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#c-cvv").addEventListener("input", (e) => onlyDigits(e.target));
 
   $("#checkout-form").addEventListener("submit", submitCheckout);
+
+  // Abas de pagamento (PIX / Cartão)
+  $$(".pay-tab").forEach((t) => t.addEventListener("click", () => setPayMethod(t.dataset.payMethod)));
+  setPayMethod("pix");
+
+  // Copiar o código PIX (copia e cola)
+  $("[data-pix-copy]")?.addEventListener("click", async () => {
+    const code = $("[data-pix-code]")?.value;
+    if (!code) return;
+    try { await navigator.clipboard.writeText(code); } catch (_) {}
+    const b = $("[data-pix-copy]");
+    const old = b.innerHTML;
+    b.innerHTML = '<i data-lucide="check" aria-hidden="true"></i> Copiado';
+    refreshIcons();
+    setTimeout(() => { b.innerHTML = old; refreshIcons(); }, 1800);
+  });
 
   $$("[data-noavail-close]").forEach((b) => b.addEventListener("click", closeNoAvailability));
   window.addEventListener("keydown", (e) => {

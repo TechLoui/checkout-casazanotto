@@ -4,10 +4,10 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 
 import { config, assertConfig } from "./config.js";
-import { validateAvailability, validateCheckout, ValidationError } from "./validation.js";
+import { validateAvailability, validateCheckout, validatePix, ValidationError } from "./validation.js";
 import { checkAvailability, listCostCenters, ArtaxError } from "./artaxnet.js";
 import { RedeError } from "./rede.js";
-import { processCheckout } from "./bookingFlow.js";
+import { processCheckout, createPixCharge, confirmPix } from "./bookingFlow.js";
 import { verifyArtaxWebhook, handleArtaxEvent } from "./webhooks.js";
 
 assertConfig();
@@ -91,12 +91,34 @@ app.get("/api/availability", async (req, res, next) => {
   }
 });
 
-// Checkout: cobra na Rede e cria a reserva no Artax (só se aprovado).
+// Checkout por CARTÃO: cobra na Rede e cria a reserva no Artax (só se aprovado).
 app.post("/api/checkout", async (req, res, next) => {
   try {
     const input = validateCheckout(req.body, config.rede.maxInstallments);
     const result = await processCheckout(input);
     res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PIX: gera o QR Code da cobrança (a reserva só é criada após o pagamento).
+app.post("/api/pix/create", async (req, res, next) => {
+  try {
+    const input = validatePix(req.body);
+    const result = await createPixCharge(input);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PIX: confirma o pagamento; se pago, cria a reserva no Artax e devolve o id.
+app.post("/api/pix/status", async (req, res, next) => {
+  try {
+    const tid = String(req.body?.tid || "").trim();
+    if (!tid) throw new ValidationError("Identificador do PIX não informado.");
+    res.json(await confirmPix(tid));
   } catch (error) {
     next(error);
   }

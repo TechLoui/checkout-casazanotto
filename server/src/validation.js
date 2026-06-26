@@ -44,8 +44,8 @@ export const validateAvailability = (q) => {
   return { arrival_date, departure_date, adults, kids, ages };
 };
 
-/** Valida o payload completo do checkout (reserva + hóspede + cartão). */
-export const validateCheckout = (body, maxInstallments) => {
+/** Valida a reserva + hóspede (comum a cartão e PIX, sem dados de pagamento). */
+export const validateStayGuest = (body) => {
   const base = validateAvailability(body);
 
   const roomId = String(body.room_id || "").trim();
@@ -65,6 +65,30 @@ export const validateCheckout = (body, maxInstallments) => {
   if (guest.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guest.email)) {
     throw new ValidationError("E-mail do hóspede inválido.");
   }
+
+  return {
+    ...base,
+    roomId,
+    rateplanId,
+    comment: String(body.comment || "").slice(0, 500),
+    guest: {
+      first_name: firstName,
+      last_name: String(guest.last_name || "").trim() || undefined,
+      document: onlyDigits(guest.document) || undefined,
+      document_type: documentType,
+      phone,
+      email: String(guest.email || "").trim() || undefined,
+      type: guestType
+    }
+  };
+};
+
+/** Valida o payload de pagamento PIX (reserva + hóspede, sem cartão). */
+export const validatePix = (body) => validateStayGuest(body);
+
+/** Valida o payload completo do checkout por cartão (reserva + hóspede + cartão). */
+export const validateCheckout = (body, maxInstallments) => {
+  const stay = validateStayGuest(body);
 
   const installments = Number(body.installments) || 1;
   if (!Number.isInteger(installments) || installments < 1 || installments > maxInstallments) {
@@ -96,20 +120,8 @@ export const validateCheckout = (body, maxInstallments) => {
   }
 
   return {
-    ...base,
-    roomId,
-    rateplanId,
+    ...stay,
     installments,
-    comment: String(body.comment || "").slice(0, 500),
-    guest: {
-      first_name: firstName,
-      last_name: String(guest.last_name || "").trim() || undefined,
-      document: onlyDigits(guest.document) || undefined,
-      document_type: documentType,
-      phone,
-      email: String(guest.email || "").trim() || undefined,
-      type: guestType
-    },
     card: {
       number: cardNumber,
       holderName: String(card.holderName).trim(),

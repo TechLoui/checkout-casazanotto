@@ -124,4 +124,73 @@ export const refund = async (tid, amountCents) => {
   return data;
 };
 
+/**
+ * Cria uma cobrança PIX e retorna o QR Code (copia-e-cola + imagem).
+ *
+ * ⚠️ CONFIRMAR com a documentação PIX da SUA conta Rede:
+ *  - o campo de validade do QR ("expirationQrCode") e
+ *  - os nomes dos campos de retorno do QR ("qrCodeData"/"qrCodeImage").
+ * Deixei a leitura tolerante a variações comuns.
+ */
+export const createPix = async ({ amountCents, reference, expiresIn = 3600 }) => {
+  const requestBody = {
+    kind: "pix",
+    reference,
+    amount: amountCents,
+    softDescriptor: config.rede.softDescriptor,
+    expirationQrCode: expiresIn // segundos de validade do QR
+  };
+
+  const response = await fetch(`${config.rede.baseUrl}/transactions`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(),
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  const data = await parseJsonSafe(response);
+  const ok = response.ok && (data.returnCode === "00" || data.returnCode === "200");
+  if (!ok) {
+    console.warn("[rede] Falha ao gerar PIX:", safeForLog({ status: response.status, returnCode: data.returnCode, returnMessage: data.returnMessage }));
+    throw new RedeError(data.returnMessage || "Não foi possível gerar o PIX.", data.returnCode, data);
+  }
+
+  const qrCode = data.qrCodeData || data.qrCode || data.pix?.qrCodeData || data.qrcode || "";
+  const qrImage = data.qrCodeImage || data.pix?.qrCodeImage || data.qrCodeBase64 || "";
+  return { tid: data.tid, reference: data.reference, returnCode: data.returnCode, qrCode, qrImage, amountCents };
+};
+
+/** Consulta o status de uma transação (usado para confirmar o pagamento PIX). */
+export const getTransaction = async (tid) => {
+  const response = await fetch(`${config.rede.baseUrl}/transactions/${tid}`, {
+    method: "GET",
+    headers: { Authorization: authHeader(), Accept: "application/json" }
+  });
+  const data = await parseJsonSafe(response);
+  if (!response.ok) {
+    throw new RedeError(data.returnMessage || "Falha ao consultar a transação.", data.returnCode, data);
+  }
+  return data;
+};
+
+/**
+ * Interpreta se um PIX foi pago, a partir do retorno de getTransaction.
+ * ⚠️ Ajuste conforme o campo de status que a SUA conta Rede retorna no PIX.
+ */
+export const isPixPaid = (tx) => {
+  if (!tx) return false;
+  const status = String(tx.status || tx.transactionStatus || tx.pixStatus || tx.returnMessage || "").toLowerCase();
+  return (
+    tx.capture === true ||
+    tx.captured === true ||
+    status.includes("conclu") ||
+    status.includes("aprov") ||
+    status.includes("paid") ||
+    status.includes("approved")
+  );
+};
+
 export { RedeError };
