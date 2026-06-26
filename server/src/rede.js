@@ -42,18 +42,17 @@ const safeForLog = (data) => {
 };
 
 /**
- * Autoriza e captura um pagamento de crédito em uma única chamada.
+ * PRÉ-AUTORIZA um pagamento de crédito (capture=false): apenas reserva o limite,
+ * sem cobrar. A cobrança só acontece na captura (depois da reserva criada).
  *
- * @param {object} params
- * @param {number} params.amountCents  Valor em centavos (inteiro).
- * @param {string} params.reference    Identificador do pedido (idempotência/conciliação).
- * @param {number} params.installments Número de parcelas (>= 1).
- * @param {object} params.card         { number, holderName, expirationMonth, expirationYear, securityCode }
- * @returns {Promise<object>} dados da transação aprovada (tid, nsu, authorizationCode...)
+ * Retornos:
+ *  - { ok:true, tid, ... }                      -> aprovado (returnCode 00)
+ *  - { needs3DS:true, threeDSUrl, tid }         -> exige autenticação 3DS (220)
+ *  - lança RedeError                            -> recusado/erro
  */
-export const authorizeAndCapture = async ({ amountCents, reference, installments = 1, card }) => {
+export const authorize = async ({ amountCents, reference, installments = 1, card }) => {
   const requestBody = {
-    capture: true,
+    capture: false, // pré-autorização (recomendado para reservas)
     kind: "credit",
     reference,
     amount: amountCents,
@@ -68,58 +67,65 @@ export const authorizeAndCapture = async ({ amountCents, reference, installments
 
   const response = await fetch(`${config.rede.baseUrl}/transactions`, {
     method: "POST",
-    headers: {
-      Authorization: authHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
+    headers: { Authorization: authHeader(), "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(requestBody)
   });
-
   const data = await parseJsonSafe(response);
 
-  // "00" é o returnCode de sucesso na e.Rede.
+  // 220 = exige autenticação 3DS (a resposta traz a URL de autenticação).
+  if (data.returnCode === "220") {
+    const threeDSUrl = data.threeDSecure?.url || data.authentication?.url || data.url || data.urls?.[0]?.href;
+    return { needs3DS: true, threeDSUrl, tid: data.tid, reference: data.reference };
+  }
+
   const approved = response.ok && data.returnCode === "00";
   if (!approved) {
-    console.warn("[rede] Pagamento não aprovado:", safeForLog({ status: response.status, returnCode: data.returnCode, returnMessage: data.returnMessage }));
-    throw new RedeError(
-      data.returnMessage || "Pagamento não autorizado pela operadora.",
-      data.returnCode,
-      data
-    );
+    console.warn("[rede] Pré-autorização não aprovada:", safeForLog({ status: response.status, returnCode: data.returnCode, returnMessage: data.returnMessage }));
+    throw new RedeError(data.returnMessage || "Pagamento não autorizado pela operadora.", data.returnCode, data);
   }
 
   return {
+    ok: true,
     tid: data.tid,
     nsu: data.nsu,
     authorizationCode: data.authorizationCode,
     reference: data.reference,
     returnCode: data.returnCode,
-    returnMessage: data.returnMessage,
     installments,
     amountCents
   };
 };
 
+/** CAPTURA uma pré-autorização (PUT) — só aqui o cliente é efetivamente cobrado. */
+export const capture = async ({ tid, amountCents }) => {
+  const response = await fetch(`${config.rede.baseUrl}/transactions/${tid}`, {
+    method: "PUT",
+    headers: { Authorization: authHeader(), "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ amount: amountCents })
+  });
+  const data = await parseJsonSafe(response);
+  if (!(response.ok && data.returnCode === "00")) {
+    console.error("[rede] Falha ao capturar", tid, safeForLog({ returnCode: data.returnCode, returnMessage: data.returnMessage }));
+    throw new RedeError(data.returnMessage || "Falha ao capturar o pagamento.", data.returnCode, data);
+  }
+  return data;
+};
+
 /**
- * Estorna (refund) uma transação — usado como compensação se a reserva no
- * Artax falhar DEPOIS do pagamento ter sido capturado.
+ * CANCELA / ESTORNA uma transação. Para uma pré-autorização (não capturada),
+ * libera o limite sem o cliente ser cobrado. returnCode 359 = cancelado.
  */
 export const refund = async (tid, amountCents) => {
   const response = await fetch(`${config.rede.baseUrl}/transactions/${tid}/refunds`, {
     method: "POST",
-    headers: {
-      Authorization: authHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
+    headers: { Authorization: authHeader(), "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ amount: amountCents })
   });
-
   const data = await parseJsonSafe(response);
-  if (!response.ok) {
-    console.error("[rede] Falha ao estornar transação", tid, safeForLog(data));
-    throw new RedeError(data.returnMessage || "Falha ao estornar pagamento.", data.returnCode, data);
+  const ok = response.ok && (data.returnCode === "00" || data.returnCode === "359");
+  if (!ok) {
+    console.error("[rede] Falha ao cancelar/estornar transação", tid, safeForLog(data));
+    throw new RedeError(data.returnMessage || "Falha ao cancelar o pagamento.", data.returnCode, data);
   }
   return data;
 };

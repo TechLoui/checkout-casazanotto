@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { checkAvailability, createBooking, ArtaxError } from "./artaxnet.js";
-import { authorizeAndCapture, refund, createPix, getTransaction, isPixPaid } from "./rede.js";
+import { authorize, capture, refund, createPix, getTransaction, isPixPaid } from "./rede.js";
 import { ValidationError } from "./validation.js";
 
 const nightsBetween = (arrival, departure) =>
@@ -84,7 +84,7 @@ const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents
       error instanceof ArtaxError ? error.payload : error.message);
     try {
       await refund(tid, amountCents);
-      throw new Error("Não foi possível concluir a reserva, então o pagamento foi estornado. Tente novamente.");
+      throw new Error("Não foi possível concluir a reserva. O pagamento foi cancelado (você não foi cobrado). Tente novamente.");
     } catch (refundError) {
       console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.", { tid, reference, amountCents });
       const fatal = new Error(`Pagamento confirmado mas a reserva e o estorno falharam. Guarde o comprovante (TID ${tid}) e contate a pousada.`);
@@ -94,30 +94,42 @@ const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents
   }
 };
 
-/* ===================== CARTÃO (autoriza + captura + reserva) ===================== */
+/* ============ CARTÃO: pré-autoriza → cria reserva → captura ============ */
 export const processCheckout = async (input) => {
   const { option, totalPrice, amountCents } = await resolveStay(input);
   const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
-  const payment = await authorizeAndCapture({
-    amountCents,
-    reference,
-    installments: input.installments,
-    card: input.card
-  });
+  // 1) Pré-autorização (NÃO cobra ainda — só reserva o limite).
+  const auth = await authorize({ amountCents, reference, installments: input.installments, card: input.card });
+  if (auth.needs3DS) {
+    const e = new Error("Este cartão exige autenticação 3DS (ainda não habilitada nesta versão). Use PIX ou outro cartão.");
+    e.status = 402;
+    throw e;
+  }
 
-  const booked = await bookStay({ input, option, totalPrice, reference, tid: payment.tid, amountCents });
+  // 2) Cria a reserva no Artax (se falhar, bookStay cancela a pré-autorização → cliente não é cobrado).
+  const booked = await bookStay({ input, option, totalPrice, reference, tid: auth.tid, amountCents });
+
+  // 3) Reserva garantida → captura (só agora cobra de fato).
+  let captured = true;
+  try {
+    await capture({ tid: auth.tid, amountCents });
+  } catch (capErr) {
+    captured = false;
+    console.error("[checkout] Reserva criada, mas a CAPTURA falhou — capturar manualmente (TID " + auth.tid + ").", capErr.message);
+  }
+
   return {
     booking_id: booked.booking_id,
     room: booked.room,
     payment: {
       method: "card",
-      tid: payment.tid,
-      nsu: payment.nsu,
-      authorizationCode: payment.authorizationCode,
+      tid: auth.tid,
+      authorizationCode: auth.authorizationCode,
       reference,
-      installments: payment.installments,
-      amount: totalPrice
+      installments: input.installments,
+      amount: totalPrice,
+      captured
     }
   };
 };
