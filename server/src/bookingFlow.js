@@ -192,7 +192,7 @@ export const processCheckout = async (input) => {
 // (Single instance no Railway; o PIX expira em minutos, então memória basta.)
 const pendingPix = new Map();
 const PIX_TTL_MS = 60 * 60 * 1000;
-const PIX_EXPIRES_MIN = 30; // validade do QR Code
+const PIX_EXPIRES_MIN = Number(process.env.PIX_EXPIRES_MIN) || 15; // validade do QR Code (min)
 
 const cleanupPix = () => {
   const now = Date.now();

@@ -168,16 +168,9 @@ const prefillFromQuery = () => {
   if (departure) $("#departure").value = departure;
   if (adults && Number(adults) >= 1) $("#adults").value = String(Math.min(Number(adults), 9));
 
-  // defaults se vazio: amanhã / depois de amanhã
-  const today = new Date();
-  const iso = (d) => d.toISOString().slice(0, 10);
-  if (!$("#arrival").value) {
-    const t = new Date(today); t.setDate(t.getDate() + 1); $("#arrival").value = iso(t);
-  }
-  if (!$("#departure").value) {
-    const t = new Date(today); t.setDate(t.getDate() + 2); $("#departure").value = iso(t);
-  }
-  $("#arrival").min = iso(today);
+  // Sem pré-seleção de datas: o calendário começa vazio (a menos que venham
+  // datas por query string). Só define a data mínima (hoje).
+  $("#arrival").min = new Date().toISOString().slice(0, 10);
 };
 
 const buildAgesInputs = () => {
@@ -197,6 +190,28 @@ const buildAgesInputs = () => {
 };
 
 /* ---------- etapa 1: disponibilidade ---------- */
+const buildAvailabilityParams = (search) => {
+  const params = new URLSearchParams({
+    arrival_date: search.arrival_date,
+    departure_date: search.departure_date,
+    adults: String(search.adults),
+    kids: String(search.kids)
+  });
+  (search.ages || []).forEach((age, i) => params.append(`ages[${i}]`, String(age)));
+  return params;
+};
+
+/** Consulta a disponibilidade e renderiza a lista; devolve a qtd de quartos. */
+const runAvailability = async (search) => {
+  const res = await fetch(`${API_BASE}/availability?${buildAvailabilityParams(search).toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Falha ao consultar disponibilidade.");
+  state.search = search;
+  const list = flattenRooms(data.rooms);
+  renderRooms(data.rooms);
+  return list.length;
+};
+
 const fetchAvailability = async (event) => {
   event.preventDefault();
   clearNotice();
@@ -217,27 +232,15 @@ const fetchAvailability = async (event) => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Buscando...';
   try {
-    const params = new URLSearchParams({
-      arrival_date: search.arrival_date,
-      departure_date: search.departure_date,
-      adults: String(search.adults),
-      kids: String(search.kids)
-    });
-    ages.forEach((age, i) => params.append(`ages[${i}]`, String(age)));
-
-    const res = await fetch(`${API_BASE}/availability?${params.toString()}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Falha ao consultar disponibilidade.");
-
-    state.search = search;
+    const count = await runAvailability(search);
     state.selection = null;
     updateSummary();
-    if (!flattenRooms(data.rooms).length) {
+    if (!count) {
       showNoAvailability();
       return;
     }
-    renderRooms(data.rooms);
     goToStep(2);
+    persistState();
   } catch (err) {
     showNotice(err.message);
   } finally {
@@ -476,22 +479,27 @@ const setupRoomCarousel = () => {
   setActive(0);
 };
 
+const buildInstallments = (price) => {
+  const sel = $("#c-inst");
+  if (!sel) return;
+  sel.innerHTML = "";
+  for (let n = 1; n <= INSTALLMENTS_MAX; n += 1) {
+    const each = price / n;
+    const o = document.createElement("option");
+    o.value = String(n);
+    o.textContent = n === 1 ? `À vista — ${brl(price)}` : `${n}x de ${brl(each)} sem juros`;
+    sel.appendChild(o);
+  }
+};
+
 const selectRoom = (opt) => {
   state.selection = opt;
   updateSummary();
   updateReview();
-  // parcelas
-  const sel = $("#c-inst");
-  sel.innerHTML = "";
-  for (let n = 1; n <= INSTALLMENTS_MAX; n += 1) {
-    const each = opt.price / n;
-    const o = document.createElement("option");
-    o.value = String(n);
-    o.textContent = n === 1 ? `À vista — ${brl(opt.price)}` : `${n}x de ${brl(each)} sem juros`;
-    sel.appendChild(o);
-  }
+  buildInstallments(opt.price);
   goToStep(3);
   goToPayStep("method"); // sempre começa pela escolha da forma de pagamento
+  persistState();
 };
 
 /* ---------- máscaras dos campos ---------- */
@@ -540,7 +548,8 @@ const maskDocument = (el) => {
 /* ---------- etapa 3: pagamento (sub-etapas: forma -> dados -> pagar) ---------- */
 let payMethod = "pix";
 let pixPoll = null;
-let pixTimeout = null;
+let pixTick = null;       // contador regressivo (1s)
+let currentPix = null;    // { tid, expiresAt, qrCode, qrImage } da cobrança ativa
 
 const PAYSTEPS = ["method", "guest", "pay"];
 let payStep = "method";
@@ -563,6 +572,7 @@ const goToPayStep = (name) => {
   if (title) title.textContent = payStepTitle(name);
   if (name === "pay") setPayMethod(payMethod); // garante painel/campos corretos ao chegar
   refreshIcons();
+  persistState();
   if (document.body.classList.contains("embed")) {
     parent.postMessage({ cz: "step", value: 3 }, "*");
   } else {
@@ -587,6 +597,7 @@ const setPayMethod = (method) => {
   if (label) label.textContent = method === "pix" ? "Gerar PIX" : "Pagar e reservar";
   const title = $("[data-paystep-title]");
   if (title && payStep === "pay") title.textContent = payStepTitle("pay");
+  persistState();
 };
 
 /* ---------- bandeira do cartão + prévia ao vivo ---------- */
@@ -707,33 +718,76 @@ const submitPix = async () => {
   }
 };
 
-const showPix = (data) => {
+// Renderiza o QR + copia-e-cola a partir de um objeto pix.
+const renderPixView = (pix) => {
   const result = $("[data-pix-result]");
   const img = $("[data-pix-img]");
   const code = $("[data-pix-code]");
-  if (data.qrImage) {
-    img.src = data.qrImage.startsWith("data:") || /^https?:/.test(data.qrImage)
-      ? data.qrImage
-      : `data:image/png;base64,${data.qrImage}`;
-  } else if (data.qrCode) {
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(data.qrCode)}`;
+  if (pix.qrImage) {
+    img.src = pix.qrImage.startsWith("data:") || /^https?:/.test(pix.qrImage)
+      ? pix.qrImage
+      : `data:image/png;base64,${pix.qrImage}`;
+  } else if (pix.qrCode) {
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pix.qrCode)}`;
   }
-  if (code) code.value = data.qrCode || "";
+  if (code) code.value = pix.qrCode || "";
   result.classList.remove("is-hidden");
+  const st = $("[data-pix-status]");
+  if (st) st.innerHTML = '<span class="spinner spinner-dark"></span> Aguardando pagamento…';
   const btn = $("#pay-btn");
-  btn.querySelector(".label").innerHTML = '<span class="spinner"></span> Aguardando pagamento…';
-  startPixPolling(data.tid);
+  if (btn) {
+    btn.disabled = true;
+    btn.querySelector(".label").innerHTML = '<span class="spinner"></span> Aguardando pagamento…';
+  }
+};
+
+const showPix = (data) => {
+  const ttlSec = Number(data.expiresInSec) || 15 * 60;
+  currentPix = {
+    tid: data.tid,
+    expiresAt: Date.now() + ttlSec * 1000,
+    qrCode: data.qrCode || "",
+    qrImage: data.qrImage || ""
+  };
+  renderPixView(currentPix);
+  startPixCountdown(currentPix.expiresAt);
+  startPixPolling(currentPix.tid, currentPix.expiresAt);
+  persistState();
+};
+
+// Restaura uma cobrança PIX ativa depois de recarregar a página.
+const restorePix = (pix) => {
+  if (!pix || !pix.tid || !(pix.expiresAt > Date.now())) return;
+  currentPix = pix;
+  renderPixView(currentPix);
+  startPixCountdown(currentPix.expiresAt);
+  startPixPolling(currentPix.tid, currentPix.expiresAt);
 };
 
 const stopPixPolling = () => {
   if (pixPoll) clearInterval(pixPoll);
-  if (pixTimeout) clearTimeout(pixTimeout);
-  pixPoll = pixTimeout = null;
+  if (pixTick) clearInterval(pixTick);
+  pixPoll = pixTick = null;
 };
 
-const startPixPolling = (tid) => {
-  stopPixPolling();
+const startPixCountdown = (expiresAt) => {
+  if (pixTick) clearInterval(pixTick);
+  const el = $("[data-pix-timer]");
+  const tick = () => {
+    const ms = expiresAt - Date.now();
+    if (ms <= 0) { clearInterval(pixTick); pixTick = null; if (el) el.textContent = "Expirado"; pixExpired(); return; }
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    if (el) el.textContent = `Expira em ${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+  tick();
+  pixTick = setInterval(tick, 1000);
+};
+
+const startPixPolling = (tid, expiresAt) => {
+  if (pixPoll) clearInterval(pixPoll);
   const check = async () => {
+    if (expiresAt && Date.now() >= expiresAt) { stopPixPolling(); pixExpired(); return; }
     try {
       const res = await fetch(`${API_BASE}/pix/status`, {
         method: "POST",
@@ -746,20 +800,30 @@ const startPixPolling = (tid) => {
     } catch (_) { /* mantém tentando */ }
   };
   pixPoll = setInterval(check, 4000);
-  pixTimeout = setTimeout(() => { stopPixPolling(); pixExpired(); }, 12 * 60 * 1000);
+  check();
 };
 
 const pixExpired = () => {
-  const st = $("[data-pix-status]");
-  if (st) st.innerHTML = '<i data-lucide="alert-circle"></i> PIX expirado. Gere um novo código.';
+  stopPixPolling();
+  currentPix = null;
+  const tm = $("[data-pix-timer]");
+  if (tm) tm.textContent = "";
+  const result = $("[data-pix-result]");
+  if (result) result.classList.add("is-hidden");
   const btn = $("#pay-btn");
-  btn.disabled = false;
-  btn.querySelector(".label").textContent = "Gerar novo PIX";
+  if (btn) {
+    btn.disabled = false;
+    btn.querySelector(".label").textContent = "Gerar novo PIX";
+  }
+  showNotice("O PIX expirou. Gere um novo código para continuar.", "info");
+  persistState();
   refreshIcons();
 };
 
 const renderSuccess = (data) => {
   stopPixPolling();
+  currentPix = null;
+  clearState();
   $("#booking-id").textContent = `Reserva nº ${data.booking_id}`;
   const p = data.payment || {};
   const methodLabel = p.method === "pix" ? "PIX" : `Cartão${p.installments ? ` · ${p.installments}x` : ""}`;
@@ -770,6 +834,92 @@ const renderSuccess = (data) => {
     <div class="summary-row"><span>Pagamento</span><span>${methodLabel}</span></div>
     <div class="summary-total"><span>Pago</span><strong>${brl(p.amount || state.selection.price)}</strong></div>`;
   goToStep(4);
+};
+
+/* ---------- persistência (localStorage): retoma de onde parou ---------- */
+const STORAGE_KEY = "cz_checkout_v1";
+const STORAGE_TTL = 2 * 60 * 60 * 1000; // 2h
+
+function persistState() {
+  try {
+    const snap = {
+      v: 1,
+      ts: Date.now(),
+      step: Number(document.body.dataset.step) || 1,
+      payStep,
+      payMethod,
+      search: state.search,
+      selection: state.selection,
+      installments: Number($("#c-inst")?.value) || 1,
+      guest: {
+        first: $("#g-first")?.value || "",
+        last: $("#g-last")?.value || "",
+        phone: $("#g-phone")?.value || "",
+        email: $("#g-email")?.value || "",
+        doctype: $("#g-doctype")?.value || "",
+        doc: $("#g-doc")?.value || ""
+      },
+      pix: currentPix // dados do cartão NUNCA são salvos
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+  } catch (_) { /* localStorage indisponível */ }
+}
+
+const loadState = () => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch { return null; }
+};
+const clearState = () => {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+};
+
+const restoreGuest = (g) => {
+  if (!g) return;
+  const set = (sel, v) => { const el = $(sel); if (el) el.value = v || ""; };
+  set("#g-first", g.first); set("#g-last", g.last); set("#g-phone", g.phone);
+  set("#g-email", g.email); set("#g-doctype", g.doctype); set("#g-doc", g.doc);
+};
+
+const restoreState = async () => {
+  const saved = loadState();
+  if (!saved || saved.v !== 1 || !saved.search) return false;
+  if (Date.now() - saved.ts > STORAGE_TTL) { clearState(); return false; }
+
+  // restaura a busca (inputs) e os hóspedes
+  state.search = saved.search;
+  const set = (sel, v) => { const el = $(sel); if (el) el.value = v; };
+  set("#arrival", saved.search.arrival_date || "");
+  set("#departure", saved.search.departure_date || "");
+  set("#adults", String(saved.search.adults ?? 2));
+  set("#kids", String(saved.search.kids ?? 0));
+  buildAgesInputs();
+  (saved.search.ages || []).forEach((age, i) => {
+    const inp = $$("#ages-inputs [data-age]")[i];
+    if (inp) inp.value = String(age);
+  });
+  restoreGuest(saved.guest);
+  updateSummary();
+
+  // já tinha quarto escolhido -> volta direto pra etapa 3
+  if (saved.selection) {
+    state.selection = saved.selection;
+    updateSummary();
+    updateReview();
+    buildInstallments(saved.selection.price);
+    if (saved.installments) set("#c-inst", String(saved.installments));
+    goToStep(3);
+    setPayMethod(saved.payMethod || "pix");
+    goToPayStep(saved.payStep || "method");
+    if (saved.pix && saved.pix.expiresAt > Date.now()) restorePix(saved.pix);
+    runAvailability(saved.search).catch(() => {}); // popula a lista no fundo (p/ "Voltar")
+    return true;
+  }
+
+  // estava só na lista de quartos
+  if (saved.step === 2) {
+    try { if (await runAvailability(saved.search)) goToStep(2); } catch (_) {}
+    return true;
+  }
+  return false;
 };
 
 /* ---------- steppers (+/-) estilo motor de reservas Artax ---------- */
@@ -926,11 +1076,19 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#g-doc").addEventListener("input", (e) => maskDocument(e.target));
   $("#g-doctype").addEventListener("change", () => maskDocument($("#g-doc")));
 
+  // Persiste hóspede e parcelas conforme o usuário preenche
+  ["#g-first", "#g-last", "#g-phone", "#g-email", "#g-doctype", "#g-doc"].forEach((sel) => {
+    $(sel)?.addEventListener("input", persistState);
+  });
+  $("#c-inst")?.addEventListener("change", persistState);
+
   $("#checkout-form").addEventListener("submit", submitCheckout);
 
   // Sub-etapa 1: escolha da forma de pagamento (PIX / Cartão)
   $$(".pay-opt").forEach((t) => t.addEventListener("click", () => setPayMethod(t.dataset.payMethod)));
-  setPayMethod("pix");
+
+  // Retoma de onde o usuário parou (se houver); senão, começa no PIX.
+  restoreState().then((restored) => { if (!restored) setPayMethod("pix"); });
 
   // Navegação entre as sub-etapas do pagamento
   $$("[data-paynext]").forEach((b) => b.addEventListener("click", () => {
