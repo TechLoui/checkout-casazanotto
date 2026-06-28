@@ -227,20 +227,25 @@ export const createPixCharge = async (input) => {
   };
 };
 
+const paidPixResult = (entry, tid) => ({
+  status: "paid",
+  booking_id: entry.bookingId,
+  room: entry.room,
+  payment: { method: "pix", tid, reference: entry.reference, amount: entry.totalPrice, registered: entry.registered }
+});
+
 export const confirmPix = async (tid) => {
   const entry = pendingPix.get(tid);
   if (!entry) return { status: "expired" };
 
-  // Já reservado nesta sessão? Devolve o mesmo resultado (idempotente).
-  if (entry.bookingId) {
-    return { status: "paid", booking_id: entry.bookingId, room: entry.room, payment: { method: "pix", tid, amount: entry.totalPrice } };
-  }
+  // Já reservado? Devolve o mesmo resultado (idempotente).
+  if (entry.bookingId) return paidPixResult(entry, tid);
 
   const tx = await getPixTransaction(tid);
   const status = pixStatusOf(tx).toLowerCase();
   const data = pixData(tx); // amount/reference ficam dentro de qrCodeResponse
   if (status === "canceled" || status === "cancelled") return { status: "canceled" };
-  if (status !== "approved") return { status: "pending" };
+  if (status !== "approved") return { status: "pending" }; // não pago -> NÃO cria reserva
 
   // Confere valor e referência antes de criar a reserva (evita divergências).
   if (data.amount != null && Number(data.amount) !== entry.amountCents) {
@@ -250,30 +255,35 @@ export const confirmPix = async (tid) => {
     throw new Error("Referência do PIX divergente do esperado.");
   }
 
-  const booked = await bookStay({
-    input: entry.input,
-    option: entry.option,
-    totalPrice: entry.totalPrice,
-    reference: entry.reference,
-    tid,
-    amountCents: entry.amountCents,
-    method: "pix"
-  });
-  entry.bookingId = booked.booking_id;
-  entry.room = booked.room;
+  // IDEMPOTÊNCIA: cria a reserva UMA única vez por cobrança, mesmo com polling
+  // e webhook chegando juntos. O teste+atribuição do promise é síncrono (sem
+  // await no meio), então chamadas concorrentes reaproveitam o mesmo promise.
+  if (!entry.bookingPromise) {
+    entry.bookingPromise = (async () => {
+      const booked = await bookStay({
+        input: entry.input,
+        option: entry.option,
+        totalPrice: entry.totalPrice,
+        reference: entry.reference,
+        tid,
+        amountCents: entry.amountCents,
+        method: "pix"
+      });
+      entry.bookingId = booked.booking_id;
+      entry.room = booked.room;
+      entry.registered = await registerArtaxPayment(booked.booking_id, {
+        method: "pix",
+        totalPrice: entry.totalPrice,
+        installments: 1,
+        confirmed: true
+      });
+      return booked;
+    })().catch((err) => {
+      entry.bookingPromise = null; // libera p/ nova tentativa se falhou
+      throw err;
+    });
+  }
 
-  // Lança o pagamento PIX (já pago) na reserva do Artax.
-  const paymentRegistered = await registerArtaxPayment(booked.booking_id, {
-    method: "pix",
-    totalPrice: entry.totalPrice,
-    installments: 1,
-    confirmed: true
-  });
-
-  return {
-    status: "paid",
-    booking_id: booked.booking_id,
-    room: booked.room,
-    payment: { method: "pix", tid, reference: entry.reference, amount: entry.totalPrice, registered: paymentRegistered }
-  };
+  await entry.bookingPromise;
+  return paidPixResult(entry, tid);
 };
