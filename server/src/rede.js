@@ -106,13 +106,16 @@ export const authorize = async ({ amountCents, reference, installments = 1, card
     reference,
     amount: amountCents,
     installments,
-    softDescriptor: config.rede.softDescriptor,
     cardHolderName: card.holderName,
     cardNumber: card.number,
     expirationMonth: card.expirationMonth,
     expirationYear: card.expirationYear,
     securityCode: card.securityCode
   };
+  // Só envia softDescriptor se habilitado (senão a Rede recusa com returnCode 63).
+  if (config.rede.sendSoftDescriptor && config.rede.softDescriptor) {
+    requestBody.softDescriptor = config.rede.softDescriptor;
+  }
 
   const response = await fetch(config.rede.transactionsUrl, {
     method: "POST",
@@ -249,7 +252,12 @@ export const getPixTransaction = async (tid) => {
   return data;
 };
 
-/** Normaliza o status do PIX: "Approved" | "Pending" | "Canceled" (ou o que vier). */
-export const pixStatusOf = (tx) => String(tx?.status || "").trim();
+/**
+ * Normaliza o status do PIX. Na API v2 o status vem DENTRO de qrCodeResponse
+ * (ex.: { qrCodeResponse: { status: "Pending" | "Approved" | "Canceled" } }).
+ */
+export const pixStatusOf = (tx) => String(tx?.qrCodeResponse?.status || tx?.status || "").trim();
+/** Bloco de dados do PIX (amount/reference/tid) — também dentro de qrCodeResponse. */
+export const pixData = (tx) => tx?.qrCodeResponse || tx || {};
 
 export { RedeError };

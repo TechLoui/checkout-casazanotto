@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { checkAvailability, createBooking, addBookingPayment, ArtaxError } from "./artaxnet.js";
-import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf } from "./rede.js";
+import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf, pixData } from "./rede.js";
 import { ValidationError } from "./validation.js";
 
 const nightsBetween = (arrival, departure) =>
@@ -237,15 +237,16 @@ export const confirmPix = async (tid) => {
   }
 
   const tx = await getPixTransaction(tid);
-  const status = pixStatusOf(tx);
-  if (status === "Canceled") return { status: "canceled" };
-  if (status !== "Approved") return { status: "pending" };
+  const status = pixStatusOf(tx).toLowerCase();
+  const data = pixData(tx); // amount/reference ficam dentro de qrCodeResponse
+  if (status === "canceled" || status === "cancelled") return { status: "canceled" };
+  if (status !== "approved") return { status: "pending" };
 
   // Confere valor e referência antes de criar a reserva (evita divergências).
-  if (Number(tx.amount) !== entry.amountCents) {
+  if (data.amount != null && Number(data.amount) !== entry.amountCents) {
     throw new Error("Valor do PIX divergente do esperado.");
   }
-  if (tx.reference && tx.reference !== entry.reference) {
+  if (data.reference && data.reference !== entry.reference) {
     throw new Error("Referência do PIX divergente do esperado.");
   }
 

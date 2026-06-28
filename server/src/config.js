@@ -43,6 +43,9 @@ export const config = {
     oauthUrl: process.env.REDE_OAUTH_URL || "https://rl7-sandbox-api.useredecloud.com.br/oauth2/token",
     transactionsUrl: (process.env.REDE_TRANSACTIONS_URL || "https://sandbox-erede.useredecloud.com.br/v2/transactions").replace(/\/$/, ""),
     softDescriptor: process.env.REDE_SOFT_DESCRIPTOR || "CasaZanotto",
+    // O softDescriptor exige habilitação no portal da Rede. Se não estiver
+    // habilitado, enviar causa returnCode 63. Só envia se REDE_SEND_SOFT_DESCRIPTOR=true.
+    sendSoftDescriptor: process.env.REDE_SEND_SOFT_DESCRIPTOR === "true",
     maxInstallments: Number(process.env.MAX_INSTALLMENTS) || 6,
     webhookToken: process.env.REDE_WEBHOOK_TOKEN || "",
 
