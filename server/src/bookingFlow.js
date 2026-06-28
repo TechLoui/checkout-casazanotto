@@ -57,6 +57,7 @@ const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents
     arrival_date: input.arrival_date,
     departure_date: input.departure_date,
     rateplan_id: option.rateplanId,
+    status: config.artax.bookingStatus, // 2 = Confirmado (criada só após pagamento)
     comment: [input.comment, `Pagamento Rede TID ${tid} ref ${reference}`].filter(Boolean).join(" | "),
     guest: input.guest,
     room_units: {

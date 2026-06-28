@@ -28,7 +28,11 @@ export const config = {
     paymentMethodPix: Number(process.env.ARTAX_PM_PIX) || 5957,
     paymentMethodCard: Number(process.env.ARTAX_PM_CARD) || 8473,
     // Centro de custo opcional para os pagamentos (deixe vazio se não usar).
-    costCenterId: Number(process.env.ARTAX_COST_CENTER_ID) || null
+    costCenterId: Number(process.env.ARTAX_COST_CENTER_ID) || null,
+    // Status com que a reserva é criada: 1 Pré-reserva · 2 Confirmado · 3 Hospedado
+    // 4 Check-out · 5 Cancelado · 6 No Show. Como só criamos após o pagamento,
+    // o padrão é 2 (Confirmado).
+    bookingStatus: Number(process.env.ARTAX_BOOKING_STATUS) || 2
   },
 
   rede: {

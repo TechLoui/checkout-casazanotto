@@ -1606,6 +1606,9 @@ legend {
     margin-bottom: 12px;
   }
 
+  .form-block { padding: 14px; }
+  .form-block legend { margin-bottom: 4px; }
+
   .panel-kicker {
     margin-bottom: 6px;
     font-size: 0.66rem;
@@ -2175,6 +2178,15 @@ body.embed .summary { height: auto; position: static; }
 @media (max-width: 1040px) {
   .summary { display: none; }
   .pay-review { display: block; margin-bottom: 18px; }
+}
+
+/* Mobile: resumo compacto (só quarto + total) p/ o formulário caber na tela.
+   Fica no fim do arquivo p/ vencer a definição base na cascata. */
+@media (max-width: 760px) {
+  .pay-review { margin-bottom: 14px; }
+  .pay-review-head { padding: 10px 14px; border-radius: var(--radius-sm); }
+  .pay-review-head strong { font-size: 1.05rem; }
+  .pay-review-rows { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
