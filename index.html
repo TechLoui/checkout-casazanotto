@@ -18,14 +18,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260626-pix">
+    <link rel="stylesheet" href="styles.css?v=20260628-hero2">
     <link rel="preload" as="image" href="assets/suite.webp">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20260626-pix" defer></script>
-    <script src="hero.js?v=20260626-pix" defer></script>
+    <script src="script.js?v=20260628-hero2" defer></script>
+    <script src="hero.js?v=20260628-hero2" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -100,25 +100,53 @@
     </header>
 
     <main id="conteudo">
-      <section class="hero" id="topo" aria-label="Pousada Casa Zanotto">
+      <section class="hero hero-premium" id="topo" aria-label="Pousada Casa Zanotto">
         <div class="hero-slider" data-hero-slider aria-hidden="true">
-          <img class="hero-slide is-active" src="assets/pool.webp" alt="">
-          <img class="hero-slide" src="assets/garden.webp" alt="">
-          <img class="hero-slide" src="assets/hidden-bg.webp" alt="">
-          <img class="hero-slide" src="assets/river.webp" alt="">
+          <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="">
+          <img class="hero-slide" src="assets/hero.webp" alt="">
+          <img class="hero-slide" src="assets/gallery/61-Foto-20-scaled.webp" alt="">
           <img class="hero-slide" src="assets/brand.webp" alt="">
-          <img class="hero-slide" src="assets/gallery/55-12-de-mar.-de-2026-21_37_34.webp" alt="">
-          <img class="hero-slide" src="assets/gallery/75-Foto-67-scaled.webp" alt="">
+          <img class="hero-slide" src="assets/gallery/66-Foto-31-scaled.webp" alt="">
+          <img class="hero-slide" src="assets/lounge.webp" alt="">
+          <img class="hero-slide" src="assets/suite.webp" alt="">
         </div>
         <div class="hero-overlay"></div>
 
         <div class="hero-content">
           <div class="hero-text">
-            <h1>Descanse no<br><em>coração</em> de Piri</h1>
+            <p class="hero-eyebrow"><i data-lucide="map-pin" aria-hidden="true"></i> Centro Histórico de Pirenópolis</p>
+            <h1>Pousada Casa Zanotto</h1>
             <p class="hero-copy">
-              Piscina aquecida, hidromassagem e deck beira rio — o conforto de uma
-              pousada boutique a poucos passos de tudo.
+              Piscina aquecida, hidromassagem e deck beira rio — o conforto de uma pousada boutique a poucos passos de tudo.
             </p>
+            <div class="hero-hooks" aria-label="Destaques principais">
+              <article class="hero-hook">
+                <span class="hero-hook-icon" aria-hidden="true">
+                  <svg viewBox="0 0 48 48" role="img">
+                    <path d="M24 43s13-12.1 13-24a13 13 0 0 0-26 0c0 11.9 13 24 13 24Z" fill="none"/>
+                    <circle cx="24" cy="19" r="5.2" fill="none"/>
+                    <path d="M17 31h14" fill="none"/>
+                  </svg>
+                </span>
+                <span>
+                  <strong>No Centro Histórico</strong>
+                  <small>A poucos passos das principais atrações, restaurantes e cafés.</small>
+                </span>
+              </article>
+              <article class="hero-hook">
+                <span class="hero-hook-icon" aria-hidden="true">
+                  <svg viewBox="0 0 48 48" role="img">
+                    <path d="M8 29c5.3 0 5.3-4 10.6-4s5.3 4 10.7 4 5.3-4 10.7-4" fill="none"/>
+                    <path d="M8 37c5.3 0 5.3-4 10.6-4s5.3 4 10.7 4 5.3-4 10.7-4" fill="none"/>
+                    <path d="M18 18c0-5 3-6.2 3-9m8 9c0-5 3-6.2 3-9" fill="none"/>
+                  </svg>
+                </span>
+                <span>
+                  <strong>Água aquecida e rio</strong>
+                  <small>Piscina aquecida, hidromassagem e deck beira rio.</small>
+                </span>
+              </article>
+            </div>
             <div class="hero-actions">
               <a class="button button-primary" href="#reservar">
                 <i data-lucide="calendar-check" aria-hidden="true"></i>
@@ -128,23 +156,6 @@
                 <i data-lucide="message-circle" aria-hidden="true"></i>
                 Falar com a pousada
               </a>
-            </div>
-            <div class="hero-proof" aria-label="Destaques da hospedagem">
-              <div>
-                <i data-lucide="map-pin" aria-hidden="true"></i>
-                <span>200 m</span>
-                <p>da Rua do Lazer</p>
-              </div>
-              <div>
-                <i data-lucide="log-in" aria-hidden="true"></i>
-                <span>14h</span>
-                <p>check-in</p>
-              </div>
-              <div>
-                <i data-lucide="log-out" aria-hidden="true"></i>
-                <span>12h</span>
-                <p>check-out</p>
-              </div>
             </div>
           </div>
 
@@ -186,22 +197,48 @@
 
         <div class="promise-row">
           <article class="promise-card">
-            <span class="icon-badge"><i data-lucide="map-pin" aria-hidden="true"></i></span>
+            <span class="icon-badge icon-badge-custom" aria-hidden="true">
+              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
+                <path d="M32 56s18-16.7 18-34a18 18 0 0 0-36 0c0 17.3 18 34 18 34Z"/>
+                <circle cx="32" cy="23" r="7"/>
+                <path d="M22 42h20"/>
+              </svg>
+            </span>
             <h3>Centro Histórico</h3>
             <p>Vá a pé para cafés, restaurantes e pontos turísticos.</p>
           </article>
           <article class="promise-card">
-            <span class="icon-badge"><i data-lucide="waves" aria-hidden="true"></i></span>
+            <span class="icon-badge icon-badge-custom" aria-hidden="true">
+              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
+                <path d="M11 38c7 0 7-6 14-6s7 6 14 6 7-6 14-6"/>
+                <path d="M11 48c7 0 7-6 14-6s7 6 14 6 7-6 14-6"/>
+                <path d="M25 22c0-6 4-7 4-12m10 12c0-6 4-7 4-12"/>
+              </svg>
+            </span>
             <h3>Descanso de verdade</h3>
             <p>Piscina aquecida e hidromassagem para relaxar.</p>
           </article>
           <article class="promise-card">
-            <span class="icon-badge"><i data-lucide="trees" aria-hidden="true"></i></span>
+            <span class="icon-badge icon-badge-custom" aria-hidden="true">
+              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
+                <path d="M18 49c0-13 7-23 14-23s14 10 14 23"/>
+                <path d="M32 54V27"/>
+                <path d="M18 36c-4-7-2-15 5-19 6 2 9 7 9 13"/>
+                <path d="M46 36c4-7 2-15-5-19-6 2-9 7-9 13"/>
+              </svg>
+            </span>
             <h3>Natureza dentro da experiência</h3>
             <p>Jardins, Paisagismo e Deck Beira Rio.</p>
           </article>
           <article class="promise-card">
-            <span class="icon-badge"><i data-lucide="wifi" aria-hidden="true"></i></span>
+            <span class="icon-badge icon-badge-custom" aria-hidden="true">
+              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
+                <path d="M16 31V19l16-9 16 9v12"/>
+                <path d="M22 54V30h20v24"/>
+                <path d="M28 54V40h8v14"/>
+                <path d="M16 31h32"/>
+              </svg>
+            </span>
             <h3>Conforto no quarto</h3>
             <p>Enxoval premium, ar, TV Smart e frigobar.</p>
           </article>
@@ -211,7 +248,7 @@
       <section class="story-section">
         <div class="story-media">
           <img class="story-photo story-photo-large" src="assets/brand.webp" alt="Hidromassagem aquecida rodeada por jardim na Pousada Casa Zanotto">
-          <img class="story-photo story-photo-small" src="assets/garden.webp" alt="Jardim arborizado da Pousada Casa Zanotto">
+          <img class="story-photo story-photo-small" src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardim arborizado da Pousada Casa Zanotto">
         </div>
         <div class="story-copy">
           <p class="eyebrow">Nossa pousada</p>
@@ -240,7 +277,7 @@
           </div>
         </div>
         <div class="ritual-panel">
-          <img src="assets/river.webp" alt="Área externa e deck da Pousada Casa Zanotto">
+          <img src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardins e varandas da Pousada Casa Zanotto">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
             <h2>Deck beira rio, jardins e quiosque para desacelerar com privacidade.</h2>
@@ -275,7 +312,7 @@
             Buffet servido com variedade, ingredientes artesanais e sabores regionais, para transformar a manhã em parte da experiência.
           </p>
         </div>
-        <img src="assets/gallery/75-Foto-67-scaled.webp" alt="Buffet de café da manhã com frutas, bolos e itens artesanais">
+        <img src="assets/river.webp" alt="Buffet de café da manhã com frutas, bolos e itens artesanais">
       </section>
 
       <section class="section gallery-section" id="galeria">
@@ -422,14 +459,224 @@
         </div>
       </section>
 
-      <section class="section reserve-section" id="reservar" aria-label="Reservar online">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="calendar-check" aria-hidden="true"></i> Reserva online</p>
-          <h2>Reserve sua estadia agora</h2>
-          <p class="section-lead">Escolha as datas, a acomodação e finalize em poucos passos — sem sair do site.</p>
-        </div>
-        <div class="reserve-frame">
-          <iframe data-reserve-frame src="checkout.html?embed=1" title="Reserva — Pousada Casa Zanotto" loading="lazy" scrolling="no"></iframe>
+      <section class="section reserve-section reserve-studio" id="reservar" aria-label="Reservar online">
+        <div class="reserve-shell">
+          <div class="reserve-copy">
+            <p class="eyebrow"><i data-lucide="calendar-check" aria-hidden="true"></i> Reserva online</p>
+            <h2>Reserve sua estadia agora</h2>
+            <p class="section-lead">Escolha as datas, a acomodação e finalize em poucos passos.</p>
+          </div>
+
+          <form class="booking-form premium-booking-form compact-booking" data-compact-booking>
+            <div class="compact-steps" aria-label="Etapas da reserva">
+              <button class="is-active" type="button" data-home-tab="dates" aria-current="step"><span>1</span> Datas</button>
+              <button type="button" data-home-tab="guests"><span>2</span> Hóspedes</button>
+              <button type="button" data-home-tab="rooms"><span>3</span> Quarto</button>
+              <button type="button" data-home-tab="guest"><span>4</span> Dados</button>
+              <button type="button" data-home-tab="payment"><span>5</span> Pagamento</button>
+            </div>
+
+            <section class="compact-step-panel" data-home-panel="dates">
+              <div class="compact-panel-heading">
+                <p>Etapa 1 de 5</p>
+                <h3>Escolha suas datas</h3>
+              </div>
+              <div class="home-rangecal" data-home-cal>
+                <div class="home-rangecal-summary">
+                  <button class="home-date-pill is-active" type="button" data-home-cal-infield>
+                    <small>Check-in</small>
+                    <strong data-home-cal-in>Selecionar</strong>
+                  </button>
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                  <button class="home-date-pill" type="button" data-home-cal-outfield>
+                    <small>Check-out</small>
+                    <strong data-home-cal-out>Selecionar</strong>
+                  </button>
+                </div>
+                <p class="home-rangecal-hint" data-home-cal-hint>Selecione a data de <b>check-in</b>.</p>
+                <div class="home-rangecal-head">
+                  <button class="home-cal-nav" type="button" data-home-cal-prev aria-label="Mês anterior">
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                  </button>
+                  <strong data-home-cal-title>-</strong>
+                  <button class="home-cal-nav" type="button" data-home-cal-next aria-label="Próximo mês">
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="home-rangecal-grid" data-home-cal-grid></div>
+              </div>
+              <input type="hidden" name="entrada" data-home-arrival>
+              <input type="hidden" name="saida" data-home-departure>
+              <div class="compact-actions">
+                <button class="button button-primary" type="button" data-home-next="guests">
+                  Continuar
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </section>
+
+            <section class="compact-step-panel" data-home-panel="guests" hidden>
+              <div class="compact-panel-heading">
+                <p>Etapa 2 de 5</p>
+                <h3>Informe os hóspedes</h3>
+              </div>
+              <div class="home-guests-grid">
+                <label class="home-counter-field">
+                  <span>Adultos <small>maiores de 13 anos</small></span>
+                  <span class="home-stepper" data-home-stepper data-min="1" data-max="9">
+                    <button type="button" data-home-dec aria-label="Menos adultos">-</button>
+                    <input name="hospedes" type="text" inputmode="numeric" value="2" readonly aria-live="polite" data-home-adults>
+                    <button type="button" data-home-inc aria-label="Mais adultos">+</button>
+                  </span>
+                </label>
+                <label class="home-counter-field">
+                  <span>Crianças <small>0 a 12 anos</small></span>
+                  <span class="home-stepper" data-home-stepper data-min="0" data-max="6">
+                    <button type="button" data-home-dec aria-label="Menos crianças">-</button>
+                    <input name="kids" type="text" inputmode="numeric" value="0" readonly aria-live="polite" data-home-kids>
+                    <button type="button" data-home-inc aria-label="Mais crianças">+</button>
+                  </span>
+                </label>
+                <div class="home-ages" data-home-ages-wrap hidden>
+                  <span>Idade das crianças</span>
+                  <div class="home-ages-grid" data-home-ages></div>
+                </div>
+              </div>
+              <div class="compact-actions two-actions">
+                <button class="button button-ghost" type="button" data-home-prev="dates">
+                  <i data-lucide="arrow-left" aria-hidden="true"></i>
+                  Voltar
+                </button>
+                <button class="button button-primary" type="button" data-home-next="rooms">
+                  Ver quartos
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </section>
+
+            <section class="compact-step-panel" data-home-panel="rooms" hidden>
+              <div class="compact-panel-heading">
+                <p>Etapa 3 de 5</p>
+                <h3>Escolha a acomodação</h3>
+              </div>
+              <div class="home-search-summary">
+                <span data-home-review-in>-</span>
+                <span data-home-review-out>-</span>
+                <span data-home-review-guests>-</span>
+              </div>
+              <div class="home-room-list" data-home-room-list aria-live="polite"></div>
+              <p class="home-form-notice" data-home-notice hidden></p>
+              <div class="compact-actions two-actions">
+                <button class="button button-ghost" type="button" data-home-prev="guests">
+                  <i data-lucide="arrow-left" aria-hidden="true"></i>
+                  Alterar
+                </button>
+              </div>
+            </section>
+
+            <section class="compact-step-panel" data-home-panel="guest" hidden>
+              <div class="compact-panel-heading">
+                <p>Etapa 4 de 5</p>
+                <h3>Dados do hóspede</h3>
+              </div>
+              <div class="home-selected-room" data-home-selected-room></div>
+              <div class="home-guest-grid">
+                <label><span>Nome*</span><input type="text" autocomplete="given-name" data-home-guest-first></label>
+                <label><span>Sobrenome</span><input type="text" autocomplete="family-name" data-home-guest-last></label>
+                <label><span>Telefone*</span><input type="tel" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" data-home-guest-phone></label>
+                <label><span>E-mail</span><input type="email" autocomplete="email" data-home-guest-email></label>
+                <label>
+                  <span>Documento</span>
+                  <select data-home-guest-doctype>
+                    <option value="">Tipo</option>
+                    <option value="cpf">CPF</option>
+                    <option value="rg">RG</option>
+                    <option value="passport">Passaporte</option>
+                  </select>
+                </label>
+                <label><span>Número</span><input type="text" inputmode="numeric" data-home-guest-doc></label>
+              </div>
+              <p class="home-form-notice" data-home-guest-notice hidden></p>
+              <div class="compact-actions two-actions">
+                <button class="button button-ghost" type="button" data-home-prev="rooms">
+                  <i data-lucide="arrow-left" aria-hidden="true"></i>
+                  Voltar
+                </button>
+                <button class="button button-primary" type="button" data-home-next="payment">
+                  Continuar
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </section>
+
+            <section class="compact-step-panel" data-home-panel="payment" hidden>
+              <div class="compact-panel-heading">
+                <p>Etapa 5 de 5</p>
+                <h3>Pagamento</h3>
+              </div>
+              <div class="compact-review home-payment-review" aria-live="polite">
+                <div><span>Quarto</span><strong data-home-pay-room>-</strong></div>
+                <div><span>Total</span><strong data-home-pay-total>-</strong></div>
+                <div><span>Check-in</span><strong data-home-review-in>-</strong></div>
+                <div><span>Check-out</span><strong data-home-review-out>-</strong></div>
+              </div>
+              <div class="home-pay-choice">
+                <button class="is-active" type="button" data-home-pay-method="pix" aria-pressed="true">
+                  <i data-lucide="qr-code" aria-hidden="true"></i>
+                  <span><strong>PIX</strong><small>QR Code ou copia e cola</small></span>
+                </button>
+                <button type="button" data-home-pay-method="card" aria-pressed="false">
+                  <i data-lucide="credit-card" aria-hidden="true"></i>
+                  <span><strong>Cartão</strong><small>Em até 6x sem juros</small></span>
+                </button>
+              </div>
+              <div class="home-pay-pane" data-home-pay-pane="pix">
+                <p class="home-pay-hint"><i data-lucide="zap" aria-hidden="true"></i> Gere o PIX e pague no app do seu banco.</p>
+                <div class="home-pix-result" data-home-pix-result hidden>
+                  <img data-home-pix-img alt="QR Code PIX">
+                  <label><span>Pix copia e cola</span><textarea readonly data-home-pix-code aria-label="Código PIX copia e cola"></textarea></label>
+                  <button class="button button-ghost" type="button" data-home-pix-copy>
+                    <i data-lucide="copy" aria-hidden="true"></i>
+                    Copiar código
+                  </button>
+                  <p data-home-pix-status>Aguardando pagamento...</p>
+                </div>
+              </div>
+              <div class="home-pay-pane" data-home-pay-pane="card" hidden>
+                <div class="home-card-grid">
+                  <label class="wide"><span>Número do cartão*</span><input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" data-home-card-number></label>
+                  <label class="wide"><span>Nome impresso*</span><input type="text" autocomplete="cc-name" data-home-card-name></label>
+                  <label><span>Validade*</span><input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" data-home-card-exp></label>
+                  <label><span>CVV*</span><input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" data-home-card-cvv></label>
+                  <label class="wide"><span>Parcelas</span><select data-home-card-installments></select></label>
+                </div>
+              </div>
+              <p class="home-form-notice" data-home-pay-notice hidden></p>
+              <div class="compact-actions two-actions">
+                <button class="button button-ghost" type="button" data-home-prev="guest">
+                  <i data-lucide="arrow-left" aria-hidden="true"></i>
+                  Voltar
+                </button>
+                <button class="button button-primary booking-submit" type="submit" data-home-pay-submit>
+                  <i data-lucide="lock" aria-hidden="true"></i>
+                  <span>Gerar PIX</span>
+                </button>
+              </div>
+              <p class="reserve-fineprint">A reserva é criada após a confirmação do pagamento.</p>
+            </section>
+
+            <section class="compact-step-panel" data-home-panel="done" hidden>
+              <div class="compact-panel-heading">
+                <p>Reserva confirmada</p>
+                <h3>Tudo certo</h3>
+              </div>
+              <div class="home-success">
+                <i data-lucide="check-circle-2" aria-hidden="true"></i>
+                <strong data-home-success-id>Reserva confirmada.</strong>
+                <p>Você receberá os detalhes da hospedagem pelos canais informados.</p>
+              </div>
+            </section>
+          </form>
         </div>
       </section>
 
