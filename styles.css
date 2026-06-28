@@ -2933,8 +2933,10 @@ h3 {
 .compact-steps button span {
   display: inline-grid;
   place-items: center;
+  flex: 0 0 auto;
   width: 22px;
   height: 22px;
+  aspect-ratio: 1;
   border-radius: 50%;
   background: rgba(255, 107, 0, 0.1);
   color: var(--orange-dark);
@@ -3280,21 +3282,31 @@ h3 {
   text-transform: uppercase;
 }
 
-.home-guest-grid input,
-.home-guest-grid select,
-.home-card-grid input,
-.home-card-grid select,
-.home-pix-result textarea {
+/* Especificidade com .premium-booking-form p/ vencer a regra que zera border/altura */
+.premium-booking-form .home-guest-grid input,
+.premium-booking-form .home-guest-grid select,
+.premium-booking-form .home-card-grid input,
+.premium-booking-form .home-card-grid select,
+.premium-booking-form .home-pix-result textarea {
   width: 100%;
   min-height: 52px;
-  padding: 0 12px;
-  border: 1px solid rgba(98, 62, 42, 0.14);
+  height: auto;
+  padding: 0 14px;
+  border: 1px solid rgba(98, 62, 42, 0.2);
   border-radius: var(--radius-sm);
   background: #fff;
   color: var(--forest);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   outline: none;
+}
+.premium-booking-form .home-pix-result textarea { padding: 12px 14px; min-height: 90px; }
+.premium-booking-form .home-guest-grid input:focus,
+.premium-booking-form .home-guest-grid select:focus,
+.premium-booking-form .home-card-grid input:focus,
+.premium-booking-form .home-card-grid select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.14);
 }
 
 .home-card-grid .wide {
