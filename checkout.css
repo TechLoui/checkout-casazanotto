@@ -1644,10 +1644,11 @@ legend {
   }
 
   .panel[data-view="1"] form,
-  .panel[data-view="2"] .room-list,
   .panel[data-view="3"] form {
     overflow: visible;
   }
+  /* NÃO forçar overflow visible no room-list: ele precisa rolar na horizontal
+     (carrossel de quartos). O overflow-x:auto vem da media query <=1040px. */
 
   .rangecal {
     padding: 10px;
@@ -2187,6 +2188,36 @@ body.embed .summary { height: auto; position: static; }
   .pay-review-head { padding: 10px 14px; border-radius: var(--radius-sm); }
   .pay-review-head strong { font-size: 1.05rem; }
   .pay-review-rows { display: none; }
+}
+
+/* ===== Logo acima das etapas (aparece no mobile, onde o header some) ===== */
+.checkout-logo { display: none; }
+@media (max-width: 760px) {
+  .checkout-logo { display: block; width: 60px; margin: 2px auto 10px; }
+  .checkout-logo img { width: 100%; height: auto; display: block; }
+}
+
+/* ===== Calendário: campos clicáveis + destaque do passo ativo ===== */
+.rc-pill { cursor: pointer; }
+.rc-pick-in [data-cal-infield],
+.rc-pick-out [data-cal-outfield] {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.16);
+}
+
+/* ===== Resumo: logo (contain) no lugar da foto quando não há quarto ===== */
+.summary-media.is-logo { background: #fff; }
+.summary-media.is-logo::after { display: none; }
+.summary-media.is-logo img { object-fit: contain; padding: 16px; }
+
+/* ===== Etapa 2: cabeçalho centralizado no mobile ===== */
+@media (max-width: 760px) {
+  .panel-heading.split {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="checkout.css?v=20260628-timer2">
+    <link rel="stylesheet" href="checkout.css?v=20260628-mob">
     <!-- Backend (Railway): em produção, troque pela URL pública do seu serviço Railway. -->
     <script>
       if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
@@ -17,7 +17,7 @@
       }
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="checkout.js?v=20260628-timer2" defer></script>
+    <script src="checkout.js?v=20260628-mob" defer></script>
   </head>
   <body>
     <div class="checkout-bg" aria-hidden="true"></div>
@@ -43,6 +43,9 @@
     </header>
 
     <main class="checkout-wrap">
+      <a class="checkout-logo" href="index.html" aria-label="Pousada Casa Zanotto">
+        <img src="assets/logo.webp" alt="Pousada Casa Zanotto">
+      </a>
       <nav class="steps" aria-label="Etapas da reserva">
         <span class="step-chip is-active" data-step="1">
           <span class="step-index">1</span>
@@ -69,14 +72,13 @@
           <section class="panel" data-view="1" aria-labelledby="step-1-title">
             <div class="panel-heading">
               <span class="panel-kicker">Etapa 1 de 4</span>
-              <h2 id="step-1-title">Sua estadia em Pirenópolis</h2>
-              <p class="lede">Escolha as datas e o número de hóspedes para ver as acomodações disponíveis.</p>
+              <h2 id="step-1-title" data-searchtitle>Quando você vem?</h2>
             </div>
 
             <form id="search-form">
-              <div class="grid">
+              <!-- sub-passo: datas -->
+              <div class="searchstep" data-searchstep="dates">
                 <div class="field col-2">
-                  <label>Datas da estadia</label>
                   <div class="rangecal" data-cal>
                     <div class="rangecal-summary">
                       <div class="rc-pill" data-cal-infield>
@@ -100,32 +102,48 @@
                   <input type="hidden" id="arrival" name="arrival_date">
                   <input type="hidden" id="departure" name="departure_date">
                 </div>
-                <div class="field">
-                  <label>Adultos <span class="hint">maiores de 13 anos</span></label>
-                  <div class="stepper" data-min="1" data-max="9">
-                    <button type="button" data-dec aria-label="Menos adultos">-</button>
-                    <input id="adults" name="adults" type="text" inputmode="numeric" value="2" readonly aria-live="polite">
-                    <button type="button" data-inc aria-label="Mais adultos">+</button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Crianças <span class="hint">0 a 12 anos</span></label>
-                  <div class="stepper" data-min="0" data-max="6">
-                    <button type="button" data-dec aria-label="Menos crianças">-</button>
-                    <input id="kids" name="kids" type="text" inputmode="numeric" value="0" readonly aria-live="polite">
-                    <button type="button" data-inc aria-label="Mais crianças">+</button>
-                  </div>
-                </div>
-                <div class="field col-2 is-hidden" id="ages-wrap">
-                  <label>Idade das crianças</label>
-                  <div class="grid nested-grid" id="ages-inputs"></div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="button" data-search-next>
+                    Continuar
+                    <i data-lucide="arrow-right" aria-hidden="true"></i>
+                  </button>
                 </div>
               </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit" id="search-btn">
-                  <i data-lucide="search" aria-hidden="true"></i>
-                  Buscar quartos
-                </button>
+
+              <!-- sub-passo: hóspedes -->
+              <div class="searchstep is-hidden" data-searchstep="guests">
+                <div class="grid">
+                  <div class="field">
+                    <label>Adultos <span class="hint">maiores de 13 anos</span></label>
+                    <div class="stepper" data-min="1" data-max="9">
+                      <button type="button" data-dec aria-label="Menos adultos">-</button>
+                      <input id="adults" name="adults" type="text" inputmode="numeric" value="2" readonly aria-live="polite">
+                      <button type="button" data-inc aria-label="Mais adultos">+</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label>Crianças <span class="hint">0 a 12 anos</span></label>
+                    <div class="stepper" data-min="0" data-max="6">
+                      <button type="button" data-dec aria-label="Menos crianças">-</button>
+                      <input id="kids" name="kids" type="text" inputmode="numeric" value="0" readonly aria-live="polite">
+                      <button type="button" data-inc aria-label="Mais crianças">+</button>
+                    </div>
+                  </div>
+                  <div class="field col-2 is-hidden" id="ages-wrap">
+                    <label>Idade das crianças</label>
+                    <div class="grid nested-grid" id="ages-inputs"></div>
+                  </div>
+                </div>
+                <div class="form-actions two-actions">
+                  <button class="btn btn-ghost" type="button" data-search-back>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    Voltar
+                  </button>
+                  <button class="btn btn-primary" type="submit" id="search-btn">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    Buscar quartos
+                  </button>
+                </div>
               </div>
             </form>
           </section>

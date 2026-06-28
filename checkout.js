@@ -12,6 +12,7 @@ const API_BASE = (
 ).replace(/\/$/, "");
 const INSTALLMENTS_MAX = 6;
 const DEFAULT_SUMMARY_IMAGE = "assets/hidden-bg.webp";
+const LOGO_IMAGE = "assets/logo.webp";
 const FALLBACK_ROOM_IMAGES = [
   "assets/gallery/01-Apartamento-35.webp",
   "assets/gallery/02-Apartamento-36.webp",
@@ -129,11 +130,18 @@ const fmtDate = (iso) => {
 const nightsBetween = (a, b) =>
   Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000));
 
+// Sem quarto selecionado, mostra a logo (contain) no lugar da foto.
+const setSummaryMedia = (src, isLogo) => {
+  const img = $("#sum-image");
+  if (!img) return;
+  img.src = src;
+  img.closest(".summary-media")?.classList.toggle("is-logo", !!isLogo);
+};
+
 const updateSummary = () => {
   const s = state.search;
-  const summaryImage = $("#sum-image");
   if (!s) {
-    if (summaryImage) summaryImage.src = DEFAULT_SUMMARY_IMAGE;
+    setSummaryMedia(LOGO_IMAGE, true);
     return;
   }
   $("#sum-in").textContent = fmtDate(s.arrival_date);
@@ -144,17 +152,15 @@ const updateSummary = () => {
   if (state.selection) {
     $("#sum-room").textContent = state.selection.room_name;
     $("#sum-total").textContent = brl(state.selection.price);
-    if (summaryImage) {
-      summaryImage.src = state.selection.images?.[0] || state.selection.image || DEFAULT_SUMMARY_IMAGE;
-      summaryImage.alt = state.selection.room_name || "Acomodação selecionada";
-    }
+    const img = $("#sum-image");
+    if (img) img.alt = state.selection.room_name || "Acomodação selecionada";
+    setSummaryMedia(state.selection.images?.[0] || state.selection.image || LOGO_IMAGE, false);
   } else {
     $("#sum-room").textContent = "Sua reserva";
     $("#sum-total").textContent = "—";
-    if (summaryImage) {
-      summaryImage.src = DEFAULT_SUMMARY_IMAGE;
-      summaryImage.alt = "Pousada Casa Zanotto";
-    }
+    const img = $("#sum-image");
+    if (img) img.alt = "Pousada Casa Zanotto";
+    setSummaryMedia(LOGO_IMAGE, true);
   }
 };
 
@@ -189,7 +195,14 @@ const buildAgesInputs = () => {
   }
 };
 
-/* ---------- etapa 1: disponibilidade ---------- */
+/* ---------- etapa 1: disponibilidade (sub-passos datas -> hóspedes) ---------- */
+const goToSearchStep = (name) => {
+  $$("[data-searchstep]").forEach((p) => p.classList.toggle("is-hidden", p.dataset.searchstep !== name));
+  const t = $("[data-searchtitle]");
+  if (t) t.textContent = name === "guests" ? "Quantos hóspedes?" : "Quando você vem?";
+  refreshIcons();
+};
+
 const buildAvailabilityParams = (search) => {
   const params = new URLSearchParams({
     arrival_date: search.arrival_date,
@@ -453,8 +466,7 @@ const setupRoomCarousel = () => {
   };
   const go = (i) => {
     setActive(i);
-    const c = cards[idx];
-    if (c) list.scrollTo({ left: c.offsetLeft - (list.clientWidth - c.offsetWidth) / 2, behavior: "smooth" });
+    cards[idx]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   };
 
   prev.onclick = () => go(idx - 1);
@@ -965,6 +977,9 @@ const initCalendar = () => {
 
   const same = (a, b) => a && b && a.getTime() === b.getTime();
 
+  // Passo atual da seleção: "in" (check-in) ou "out" (check-out).
+  let selecting = arrival && !departure ? "out" : "in";
+
   const sync = () => {
     arrivalInput.value = arrival ? iso(arrival) : "";
     departureInput.value = departure ? iso(departure) : "";
@@ -972,9 +987,15 @@ const initCalendar = () => {
     outEl.textContent = departure ? fmt(departure) : "Selecionar";
     root.classList.toggle("rc-has-in", Boolean(arrival));
     root.classList.toggle("rc-has-out", Boolean(departure));
-    if (!arrival) hint.innerHTML = "Selecione a data de <b>check-in</b>.";
-    else if (!departure) hint.innerHTML = "Agora selecione a data de <b>check-out</b>.";
-    else hint.innerHTML = `Estadia de <b>${nightsBetween(iso(arrival), iso(departure))} noite(s)</b> selecionada.`;
+    root.classList.toggle("rc-pick-in", selecting === "in");
+    root.classList.toggle("rc-pick-out", selecting === "out");
+    if (selecting === "in") {
+      hint.innerHTML = "<b>Passo 1 de 2</b> · selecione o <b>check-in</b>";
+    } else if (!departure) {
+      hint.innerHTML = "<b>Passo 2 de 2</b> · selecione o <b>check-out</b>";
+    } else {
+      hint.innerHTML = `Estadia de <b>${nightsBetween(iso(arrival), iso(departure))} noite(s)</b> · toque num campo para alterar`;
+    }
   };
 
   const render = () => {
@@ -999,8 +1020,12 @@ const initCalendar = () => {
   };
 
   const pick = (d) => {
-    if (!arrival || departure || d <= arrival) {
+    if (selecting === "in") {
       arrival = d;
+      if (departure && departure <= d) departure = null;
+      selecting = "out"; // avança automaticamente p/ o passo 2
+    } else if (d <= arrival) {
+      arrival = d; // escolheu antes do check-in -> vira o novo check-in
       departure = null;
     } else {
       departure = d;
@@ -1014,8 +1039,12 @@ const initCalendar = () => {
     if (btn && !btn.disabled) pick(parse(btn.dataset.day));
   });
 
+  // Campos clicáveis: alternam o passo (escolher check-in / check-out).
+  $("[data-cal-infield]", root).addEventListener("click", () => { selecting = "in"; sync(); render(); });
+  $("[data-cal-outfield]", root).addEventListener("click", () => { if (arrival) { selecting = "out"; sync(); render(); } });
+
   grid.addEventListener("mouseover", (e) => {
-    if (!arrival || departure) return;
+    if (selecting !== "out" || !arrival) return;
     const btn = e.target.closest("[data-day]");
     if (!btn) return;
     const hov = parse(btn.dataset.day);
@@ -1063,8 +1092,19 @@ document.addEventListener("DOMContentLoaded", () => {
     selectRoom(decodeRoomData(card.dataset.room));
   });
 
-  $("#back-to-search").addEventListener("click", () => goToStep(1));
+  $("#back-to-search").addEventListener("click", () => { goToStep(1); goToSearchStep("dates"); });
   $("#back-to-rooms").addEventListener("click", () => goToStep(2));
+
+  // Sub-passos da etapa 1: datas -> hóspedes
+  $("[data-search-next]")?.addEventListener("click", () => {
+    if (!$("#arrival").value || !$("#departure").value) {
+      showNotice("Selecione o check-in e o check-out.");
+      return;
+    }
+    clearNotice();
+    goToSearchStep("guests");
+  });
+  $("[data-search-back]")?.addEventListener("click", () => goToSearchStep("dates"));
 
   $("#c-number").addEventListener("input", (e) => { maskCardNumber(e.target); updateCardPreview(); });
   $("#c-name").addEventListener("input", updateCardPreview);
