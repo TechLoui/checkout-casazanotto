@@ -84,4 +84,36 @@ export const listCostCenters = async () => {
   return data;
 };
 
+/** Lista os métodos de pagamento (para descobrir os IDs de PIX e Cartão). */
+export const listPaymentMethods = async () => {
+  const response = await fetch(`${config.artax.baseUrl}/payment-methods`, {
+    method: "GET",
+    headers: baseHeaders()
+  });
+  const data = await parseJsonSafe(response);
+  if (!response.ok) {
+    throw new ArtaxError(data.error || "Falha ao listar métodos de pagamento.", response.status, data);
+  }
+  return data;
+};
+
+/**
+ * Adiciona pagamento(s) a uma reserva existente.
+ * POST /booking/{booking_id}/payments — corpo JSON.
+ * Cada pagamento: { payment_method_id, gross_amount, installments, due_date,
+ *                   obs?, confirmed?, cost_center_id? }
+ */
+export const addBookingPayment = async (bookingId, payments) => {
+  const response = await fetch(`${config.artax.baseUrl}/booking/${bookingId}/payments`, {
+    method: "POST",
+    headers: { ...baseHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ payments })
+  });
+  const data = await parseJsonSafe(response);
+  if (!response.ok) {
+    throw new ArtaxError(data.error || "Falha ao registrar o pagamento na reserva.", response.status, data);
+  }
+  return data; // { message, bills: [...] }
+};
+
 export { ArtaxError };

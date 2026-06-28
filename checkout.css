@@ -1950,6 +1950,147 @@ body.embed .summary { height: auto; position: static; }
 
 .pay-hint svg { width: 18px; height: 18px; color: var(--orange); flex: 0 0 auto; }
 
+/* ---- Sub-etapas do pagamento (forma -> dados -> pagar) ---- */
+.paysteps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.paysteps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.paysteps li::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.paysteps li:last-child { flex: 0 0 auto; }
+.paysteps li:last-child::after { display: none; }
+.paysteps .ps-n {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  font-size: 0.78rem;
+  flex: 0 0 auto;
+}
+.paysteps li.is-active { color: var(--orange-dark); }
+.paysteps li.is-active .ps-n { background: var(--orange); border-color: var(--orange); color: #fff; }
+.paysteps li.is-done .ps-n { background: rgba(255, 107, 0, 0.12); border-color: var(--orange); color: var(--orange-dark); }
+
+/* ---- Sub-etapa 1: cards de forma de pagamento ---- */
+.pay-choice { display: grid; gap: 12px; margin-bottom: 4px; }
+@media (min-width: 560px) { .pay-choice { grid-template-columns: 1fr 1fr; } }
+.pay-opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  text-align: left;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  corner-shape: squircle;
+}
+.pay-opt:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+.pay-opt-ic {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 107, 0, 0.1);
+  color: var(--orange-dark);
+  flex: 0 0 auto;
+}
+.pay-opt-ic svg { width: 22px; height: 22px; }
+.pay-opt-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.pay-opt-txt strong { font-size: 1rem; }
+.pay-opt-txt small { color: var(--muted); font-size: 0.82rem; }
+.pay-opt-check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  color: transparent;
+  flex: 0 0 auto;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.pay-opt-check svg { width: 15px; height: 15px; }
+.pay-opt.is-active { border-color: var(--orange); background: rgba(255, 107, 0, 0.06); box-shadow: var(--shadow-orange); }
+.pay-opt.is-active .pay-opt-check { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+/* ---- Prévia do cartão (atualiza conforme digita) ---- */
+.card-preview {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1.586;
+  margin: 0 auto 18px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #2a2622, #4a3f36);
+  box-shadow: var(--shadow-strong);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  corner-shape: squircle;
+  transition: background 300ms ease;
+}
+.card-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 110% -10%, rgba(255, 255, 255, 0.18), transparent 60%);
+  pointer-events: none;
+}
+.card-preview[data-brand="visa"] { background: linear-gradient(135deg, #1a1f71, #2b3aa0); }
+.card-preview[data-brand="mastercard"] { background: linear-gradient(135deg, #3a1c10, #b35309); }
+.card-preview[data-brand="elo"] { background: linear-gradient(135deg, #111, #333); }
+.card-preview[data-brand="amex"] { background: linear-gradient(135deg, #0a6e8c, #16a5c9); }
+.card-preview[data-brand="hipercard"] { background: linear-gradient(135deg, #6b0f0f, #b81c1c); }
+.card-preview[data-brand="diners"],
+.card-preview[data-brand="discover"] { background: linear-gradient(135deg, #1f2a33, #46606e); }
+.cardp-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+.cardp-chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #e9c97a, #b8923f); }
+.cardp-brand { font-weight: 800; letter-spacing: 0.08em; font-size: 1rem; text-transform: uppercase; min-height: 1.2em; }
+.cardp-number {
+  position: relative;
+  z-index: 1;
+  font-size: 1.3rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.cardp-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; position: relative; z-index: 1; }
+.cardp-fld { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cardp-fld small { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
+.cardp-fld span { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardp-fld.cardp-exp { text-align: right; flex: 0 0 auto; }
+
 .pix-result {
   display: grid;
   grid-template-columns: auto 1fr;

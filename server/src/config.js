@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET", "REDE_PV", "REDE_TOKEN"];
+const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET"];
 
 export const config = {
   port: Number(process.env.PORT) || 8080,
@@ -22,15 +22,29 @@ export const config = {
     // Como interpretar o "price" retornado na disponibilidade:
     //   "total"     -> preço já é o total da estadia (padrão, igual ao exemplo da doc)
     //   "per_night" -> preço é por diária; multiplicamos pelo nº de noites
-    priceMode: process.env.ARTAX_PRICE_MODE === "per_night" ? "per_night" : "total"
+    priceMode: process.env.ARTAX_PRICE_MODE === "per_night" ? "per_night" : "total",
+    // Métodos de pagamento do Artax (GET /payment-methods):
+    //   5957 = REDE | PIX · 8473 = REDE | CARTÃO DE CRÉDITO
+    paymentMethodPix: Number(process.env.ARTAX_PM_PIX) || 5957,
+    paymentMethodCard: Number(process.env.ARTAX_PM_CARD) || 8473,
+    // Centro de custo opcional para os pagamentos (deixe vazio se não usar).
+    costCenterId: Number(process.env.ARTAX_COST_CENTER_ID) || null
   },
 
   rede: {
-    baseUrl: (process.env.REDE_BASE_URL || "https://api.userede.com.br/desenvolvedores/v1").replace(/\/$/, ""),
-    pv: process.env.REDE_PV || "",
-    token: process.env.REDE_TOKEN || "",
+    // API v2 unificada (cartão + PIX) — OAuth 2.0 (client_credentials -> Bearer).
+    // Em produção: clientId = PV e clientSecret = chave de integração.
+    clientId: process.env.REDE_CLIENT_ID || "",
+    clientSecret: process.env.REDE_CLIENT_SECRET || "",
+    oauthUrl: process.env.REDE_OAUTH_URL || "https://rl7-sandbox-api.useredecloud.com.br/oauth2/token",
+    transactionsUrl: (process.env.REDE_TRANSACTIONS_URL || "https://sandbox-erede.useredecloud.com.br/v2/transactions").replace(/\/$/, ""),
     softDescriptor: process.env.REDE_SOFT_DESCRIPTOR || "CasaZanotto",
-    maxInstallments: Number(process.env.MAX_INSTALLMENTS) || 6
+    maxInstallments: Number(process.env.MAX_INSTALLMENTS) || 6,
+    webhookToken: process.env.REDE_WEBHOOK_TOKEN || "",
+
+    // Modo simulação: NÃO chama a Rede; finge pagamento aprovado.
+    // Use SOMENTE em testes locais (PAYMENT_SIMULATE=true). A reserva no Artax é REAL.
+    simulate: process.env.PAYMENT_SIMULATE === "true"
   }
 };
 
@@ -42,5 +56,10 @@ export const assertConfig = () => {
       `[config] Variáveis de ambiente ausentes: ${missing.join(", ")}. ` +
         "Preencha o .env antes de processar pagamentos reais."
     );
+  }
+  if (config.rede.simulate) {
+    console.warn("[config] ⚠️  PAYMENT_SIMULATE=true — pagamentos SIMULADOS (a Rede NÃO é chamada). A reserva no Artax é REAL.");
+  } else if (!config.rede.clientId || !config.rede.clientSecret) {
+    console.warn("[config] Credenciais da Rede (REDE_CLIENT_ID/REDE_CLIENT_SECRET) ausentes. Pagamentos reais indisponíveis.");
   }
 };

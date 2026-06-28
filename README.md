@@ -42,13 +42,21 @@ Adicione uma a uma (NÃO precisa de `PORT`, o Railway injeta):
 | `ARTAX_CLIENT_ID` | *(sua client id do Artax)* |
 | `ARTAX_CLIENT_SECRET` | *(seu client secret do Artax)* |
 | `ARTAX_PRICE_MODE` | `total` |
-| `REDE_BASE_URL` | sandbox `…/desenvolvedores/v1` · produção `…/erede/v1` |
-| `REDE_PV` | *(filiação Rede)* |
-| `REDE_TOKEN` | *(token de integração Rede)* |
+| `ARTAX_PM_PIX` | `5957` *(REDE \| PIX — opcional, já tem default)* |
+| `ARTAX_PM_CARD` | `8473` *(REDE \| CARTÃO DE CRÉDITO — opcional)* |
+| `ARTAX_COST_CENTER_ID` | *(opcional — centro de custo do lançamento)* |
+| **e.Rede (v2 · OAuth 2.0 — cartão + PIX)** | |
+| `REDE_CLIENT_ID` | *(client id sandbox; em produção = PV)* |
+| `REDE_CLIENT_SECRET` | *(client secret sandbox; em produção = chave de integração)* |
+| `REDE_OAUTH_URL` | sandbox `https://rl7-sandbox-api.useredecloud.com.br/oauth2/token` · produção `https://api.userede.com.br/redelabs/oauth2/token` |
+| `REDE_TRANSACTIONS_URL` | sandbox `https://sandbox-erede.useredecloud.com.br/v2/transactions` · produção `https://api.userede.com.br/erede/v2/transactions` |
 | `REDE_SOFT_DESCRIPTOR` | `CasaZanotto` |
 | `MAX_INSTALLMENTS` | `6` |
+| `REDE_WEBHOOK_TOKEN` | *(token forte; o webhook PIX da Rede envia como `Bearer`)* |
+| **Outros** | |
 | `ALLOWED_ORIGINS` | URLs do site (ex.: `https://pousadacasazanotto.com,https://SEU-SITE.netlify.app`) |
-| `ARTAX_WEBHOOK_TOKEN` | *(opcional — só se for usar webhooks)* |
+| `ARTAX_WEBHOOK_TOKEN` | *(opcional — só se for usar webhooks do Artax)* |
+| `PAYMENT_SIMULATE` | *(só teste local: `true` simula pagamento aprovado sem chamar a Rede)* |
 
 > As chaves do Artax/Rede ficam **somente** aqui (no Railway). Elas nunca vão
 > para o frontend nem para o Git (o `.env` está no `.gitignore`).

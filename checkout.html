@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="checkout.css?v=20260626-pix">
+    <link rel="stylesheet" href="checkout.css?v=20260628-masks">
     <!-- Backend (Railway): em produção, troque pela URL pública do seu serviço Railway. -->
     <script>
       if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
@@ -17,7 +17,7 @@
       }
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="checkout.js?v=20260626-pix" defer></script>
+    <script src="checkout.js?v=20260628-masks" defer></script>
   </head>
   <body>
     <div class="checkout-bg" aria-hidden="true"></div>
@@ -152,12 +152,14 @@
           <section class="panel is-hidden" data-view="3" aria-labelledby="step-3-title">
             <div class="panel-heading">
               <span class="panel-kicker">Etapa 3 de 4</span>
-              <h2 id="step-3-title">Hóspede e pagamento</h2>
-              <p class="notice info">
-                <i data-lucide="lock" aria-hidden="true"></i>
-                Seus dados de cartão trafegam criptografados e não são armazenados em nosso site.
-              </p>
+              <h2 id="step-3-title" data-paystep-title>Forma de pagamento</h2>
             </div>
+
+            <ol class="paysteps" aria-label="Sub-etapas do pagamento">
+              <li data-paystep-dot="method" class="is-active"><span class="ps-n">1</span> Forma</li>
+              <li data-paystep-dot="guest"><span class="ps-n">2</span> Dados</li>
+              <li data-paystep-dot="pay"><span class="ps-n">3</span> Pagamento</li>
+            </ol>
 
             <div class="pay-review" aria-label="Revisão da reserva">
               <div class="pay-review-head">
@@ -173,105 +175,160 @@
             </div>
 
             <form id="checkout-form" autocomplete="on">
-              <fieldset class="form-block">
-                <legend>Dados do hóspede principal</legend>
-                <div class="grid">
-                  <div class="field">
-                    <label for="g-first">Nome*</label>
-                    <input id="g-first" name="first_name" autocomplete="given-name" required>
-                  </div>
-                  <div class="field">
-                    <label for="g-last">Sobrenome</label>
-                    <input id="g-last" name="last_name" autocomplete="family-name">
-                  </div>
-                  <div class="field">
-                    <label for="g-phone">Telefone (com DDD)*</label>
-                    <input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" required>
-                  </div>
-                  <div class="field">
-                    <label for="g-email">E-mail</label>
-                    <input id="g-email" name="email" type="email" autocomplete="email">
-                  </div>
-                  <div class="field">
-                    <label for="g-doctype">Tipo de documento</label>
-                    <select id="g-doctype" name="document_type">
-                      <option value="">-</option>
-                      <option value="cpf">CPF</option>
-                      <option value="rg">RG</option>
-                      <option value="passport">Passaporte</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="g-doc">Documento</label>
-                    <input id="g-doc" name="document" inputmode="numeric">
-                  </div>
+              <!-- SUB-ETAPA 1: forma de pagamento -->
+              <div class="paystep" data-paystep="method">
+                <div class="pay-choice">
+                  <button type="button" class="pay-opt is-active" data-pay-method="pix" aria-pressed="true">
+                    <span class="pay-opt-ic"><i data-lucide="qr-code" aria-hidden="true"></i></span>
+                    <span class="pay-opt-txt">
+                      <strong>PIX</strong>
+                      <small>Aprovação na hora · QR Code ou copia e cola</small>
+                    </span>
+                    <span class="pay-opt-check"><i data-lucide="check" aria-hidden="true"></i></span>
+                  </button>
+                  <button type="button" class="pay-opt" data-pay-method="card" aria-pressed="false">
+                    <span class="pay-opt-ic"><i data-lucide="credit-card" aria-hidden="true"></i></span>
+                    <span class="pay-opt-txt">
+                      <strong>Cartão de crédito</strong>
+                      <small>Em até 6x sem juros</small>
+                    </span>
+                    <span class="pay-opt-check"><i data-lucide="check" aria-hidden="true"></i></span>
+                  </button>
                 </div>
-              </fieldset>
-
-              <div class="pay-method" role="tablist" aria-label="Forma de pagamento">
-                <button type="button" class="pay-tab is-active" data-pay-method="pix" role="tab" aria-selected="true">
-                  <i data-lucide="qr-code" aria-hidden="true"></i> PIX
-                </button>
-                <button type="button" class="pay-tab" data-pay-method="card" role="tab" aria-selected="false">
-                  <i data-lucide="credit-card" aria-hidden="true"></i> Cartão
-                </button>
-              </div>
-
-              <div class="pay-pane" data-pane="pix">
-                <p class="pay-hint">
-                  <i data-lucide="zap" aria-hidden="true"></i>
-                  Gere o QR Code e pague pelo app do seu banco — a reserva é confirmada na hora.
-                </p>
-                <div class="pix-result is-hidden" data-pix-result>
-                  <div class="pix-qr"><img data-pix-img alt="QR Code do PIX"></div>
-                  <div class="pix-side">
-                    <span class="pix-label">Pix copia e cola</span>
-                    <div class="pix-copy">
-                      <input type="text" readonly data-pix-code aria-label="Código PIX copia e cola">
-                      <button type="button" class="btn-copy" data-pix-copy><i data-lucide="copy" aria-hidden="true"></i> Copiar</button>
-                    </div>
-                    <p class="pix-status" data-pix-status><span class="spinner spinner-dark"></span> Aguardando pagamento…</p>
-                  </div>
+                <div class="form-actions two-actions">
+                  <button class="btn btn-ghost" type="button" id="back-to-rooms">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    Voltar
+                  </button>
+                  <button class="btn btn-primary" type="button" data-paynext="guest">
+                    Continuar
+                    <i data-lucide="arrow-right" aria-hidden="true"></i>
+                  </button>
                 </div>
               </div>
 
-              <div class="pay-pane is-hidden" data-pane="card">
+              <!-- SUB-ETAPA 2: dados do hóspede -->
+              <div class="paystep is-hidden" data-paystep="guest">
                 <fieldset class="form-block">
-                  <legend>Cartão de crédito</legend>
+                  <legend>Dados do hóspede principal</legend>
                   <div class="grid">
-                    <div class="field col-2">
-                      <label for="c-number">Número do cartão*</label>
-                      <input id="c-number" name="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23">
-                    </div>
-                    <div class="field col-2">
-                      <label for="c-name">Nome impresso no cartão*</label>
-                      <input id="c-name" name="holderName" autocomplete="cc-name">
+                    <div class="field">
+                      <label for="g-first">Nome*</label>
+                      <input id="g-first" name="first_name" autocomplete="given-name" required>
                     </div>
                     <div class="field">
-                      <label for="c-exp">Validade (MM/AA)*</label>
-                      <input id="c-exp" name="exp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5">
+                      <label for="g-last">Sobrenome</label>
+                      <input id="g-last" name="last_name" autocomplete="family-name">
                     </div>
                     <div class="field">
-                      <label for="c-cvv">CVV*</label>
-                      <input id="c-cvv" name="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4">
+                      <label for="g-phone">Telefone (com DDD)*</label>
+                      <input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" required>
                     </div>
-                    <div class="field col-2">
-                      <label for="c-inst">Parcelas</label>
-                      <select id="c-inst" name="installments"></select>
+                    <div class="field">
+                      <label for="g-email">E-mail</label>
+                      <input id="g-email" name="email" type="email" autocomplete="email">
+                    </div>
+                    <div class="field">
+                      <label for="g-doctype">Tipo de documento</label>
+                      <select id="g-doctype" name="document_type">
+                        <option value="">-</option>
+                        <option value="cpf">CPF</option>
+                        <option value="rg">RG</option>
+                        <option value="passport">Passaporte</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="g-doc">Documento</label>
+                      <input id="g-doc" name="document" inputmode="numeric">
                     </div>
                   </div>
                 </fieldset>
+                <div class="form-actions two-actions">
+                  <button class="btn btn-ghost" type="button" data-payback="method">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    Voltar
+                  </button>
+                  <button class="btn btn-primary" type="button" data-paynext="pay">
+                    Continuar
+                    <i data-lucide="arrow-right" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
 
-              <div class="form-actions two-actions">
-                <button class="btn btn-ghost" type="button" id="back-to-rooms">
-                  <i data-lucide="arrow-left" aria-hidden="true"></i>
-                  Voltar
-                </button>
-                <button class="btn btn-primary" type="submit" id="pay-btn">
+              <!-- SUB-ETAPA 3: pagamento (PIX ou cartão) -->
+              <div class="paystep is-hidden" data-paystep="pay">
+                <p class="notice info">
                   <i data-lucide="lock" aria-hidden="true"></i>
-                  <span class="label">Pagar e reservar</span>
-                </button>
+                  Seus dados de cartão trafegam criptografados e não são armazenados em nosso site.
+                </p>
+
+                <div class="pay-pane" data-pane="pix">
+                  <p class="pay-hint">
+                    <i data-lucide="zap" aria-hidden="true"></i>
+                    Gere o QR Code e pague pelo app do seu banco — a reserva é confirmada na hora.
+                  </p>
+                  <div class="pix-result is-hidden" data-pix-result>
+                    <div class="pix-qr"><img data-pix-img alt="QR Code do PIX"></div>
+                    <div class="pix-side">
+                      <span class="pix-label">Pix copia e cola</span>
+                      <div class="pix-copy">
+                        <input type="text" readonly data-pix-code aria-label="Código PIX copia e cola">
+                        <button type="button" class="btn-copy" data-pix-copy><i data-lucide="copy" aria-hidden="true"></i> Copiar</button>
+                      </div>
+                      <p class="pix-status" data-pix-status><span class="spinner spinner-dark"></span> Aguardando pagamento…</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pay-pane is-hidden" data-pane="card">
+                  <div class="card-preview" data-card-preview data-brand="">
+                    <div class="cardp-top">
+                      <span class="cardp-chip" aria-hidden="true"></span>
+                      <span class="cardp-brand" data-cardp-brand></span>
+                    </div>
+                    <div class="cardp-number" data-cardp-number>•••• •••• •••• ••••</div>
+                    <div class="cardp-bottom">
+                      <div class="cardp-fld"><small>Titular</small><span data-cardp-name>NOME COMPLETO</span></div>
+                      <div class="cardp-fld cardp-exp"><small>Validade</small><span data-cardp-exp>MM/AA</span></div>
+                    </div>
+                  </div>
+                  <fieldset class="form-block">
+                    <legend>Cartão de crédito</legend>
+                    <div class="grid">
+                      <div class="field col-2">
+                        <label for="c-number">Número do cartão*</label>
+                        <input id="c-number" name="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23">
+                      </div>
+                      <div class="field col-2">
+                        <label for="c-name">Nome impresso no cartão*</label>
+                        <input id="c-name" name="holderName" autocomplete="cc-name">
+                      </div>
+                      <div class="field">
+                        <label for="c-exp">Validade (MM/AA)*</label>
+                        <input id="c-exp" name="exp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5">
+                      </div>
+                      <div class="field">
+                        <label for="c-cvv">CVV*</label>
+                        <input id="c-cvv" name="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4">
+                      </div>
+                      <div class="field col-2">
+                        <label for="c-inst">Parcelas</label>
+                        <select id="c-inst" name="installments"></select>
+                      </div>
+                    </div>
+                  </fieldset>
+                </div>
+
+                <div class="form-actions two-actions">
+                  <button class="btn btn-ghost" type="button" data-payback="guest">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    Voltar
+                  </button>
+                  <button class="btn btn-primary" type="submit" id="pay-btn">
+                    <i data-lucide="lock" aria-hidden="true"></i>
+                    <span class="label">Pagar e reservar</span>
+                  </button>
+                </div>
               </div>
             </form>
           </section>

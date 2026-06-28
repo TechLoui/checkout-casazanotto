@@ -491,11 +491,12 @@ const selectRoom = (opt) => {
     sel.appendChild(o);
   }
   goToStep(3);
+  goToPayStep("method"); // sempre começa pela escolha da forma de pagamento
 };
 
-/* ---------- máscaras de cartão ---------- */
+/* ---------- máscaras dos campos ---------- */
 const maskCardNumber = (el) => {
-  let v = el.value.replace(/\D/g, "").slice(0, 19);
+  const v = el.value.replace(/\D/g, "").slice(0, 19);
   el.value = v.replace(/(.{4})/g, "$1 ").trim();
 };
 const maskExpiry = (el) => {
@@ -505,17 +506,76 @@ const maskExpiry = (el) => {
 };
 const onlyDigits = (el) => { el.value = el.value.replace(/\D/g, ""); };
 
-/* ---------- etapa 3: pagamento (PIX ou cartão) ---------- */
+// Telefone: (62) 99999-9999  (aceita fixo de 10 e celular de 11 dígitos)
+const maskPhone = (el) => {
+  let v = el.value.replace(/\D/g, "").slice(0, 11);
+  if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3");
+  else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+  else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
+  else if (v.length > 0) v = v.replace(/^(\d{0,2})/, "($1");
+  el.value = v;
+};
+
+// CPF: 000.000.000-00
+const maskCPF = (el) => {
+  el.value = el.value
+    .replace(/\D/g, "")
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+
+// Documento: CPF formatado, passaporte alfanumérico, RG/demais só dígitos.
+const maskDocument = (el) => {
+  const type = $("#g-doctype")?.value;
+  if (type === "cpf") return maskCPF(el);
+  if (type === "passport") {
+    el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 9);
+    return;
+  }
+  el.value = el.value.replace(/\D/g, "").slice(0, 14);
+};
+
+/* ---------- etapa 3: pagamento (sub-etapas: forma -> dados -> pagar) ---------- */
 let payMethod = "pix";
 let pixPoll = null;
 let pixTimeout = null;
 
+const PAYSTEPS = ["method", "guest", "pay"];
+let payStep = "method";
+
+const payStepTitle = (name) =>
+  name === "guest" ? "Dados do hóspede"
+    : name === "pay" ? (payMethod === "pix" ? "Pague com PIX" : "Dados do cartão")
+      : "Forma de pagamento";
+
+const goToPayStep = (name) => {
+  payStep = name;
+  $$("[data-paystep]").forEach((p) => p.classList.toggle("is-hidden", p.dataset.paystep !== name));
+  const cur = PAYSTEPS.indexOf(name);
+  $$("[data-paystep-dot]").forEach((d) => {
+    const i = PAYSTEPS.indexOf(d.dataset.paystepDot);
+    d.classList.toggle("is-active", i === cur);
+    d.classList.toggle("is-done", i < cur);
+  });
+  const title = $("[data-paystep-title]");
+  if (title) title.textContent = payStepTitle(name);
+  if (name === "pay") setPayMethod(payMethod); // garante painel/campos corretos ao chegar
+  refreshIcons();
+  if (document.body.classList.contains("embed")) {
+    parent.postMessage({ cz: "step", value: 3 }, "*");
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
 const setPayMethod = (method) => {
   payMethod = method;
-  $$(".pay-tab").forEach((t) => {
+  $$(".pay-opt").forEach((t) => {
     const active = t.dataset.payMethod === method;
     t.classList.toggle("is-active", active);
-    t.setAttribute("aria-selected", String(active));
+    t.setAttribute("aria-pressed", String(active));
   });
   $$("[data-pane]").forEach((p) => p.classList.toggle("is-hidden", p.dataset.pane !== method));
   // Desabilita os campos do cartão quando não for cartão (evita validação em campo oculto).
@@ -525,6 +585,37 @@ const setPayMethod = (method) => {
   });
   const label = $("#pay-btn .label");
   if (label) label.textContent = method === "pix" ? "Gerar PIX" : "Pagar e reservar";
+  const title = $("[data-paystep-title]");
+  if (title && payStep === "pay") title.textContent = payStepTitle("pay");
+};
+
+/* ---------- bandeira do cartão + prévia ao vivo ---------- */
+const CARD_BRANDS = [
+  ["visa", /^4/, "Visa"],
+  ["mastercard", /^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/, "Mastercard"],
+  ["amex", /^3[47]/, "Amex"],
+  ["elo", /^(4011|4312|4389|4514|4576|5041|5066|5067|509\d|6277|6362|6363|650|6516|6550)/, "Elo"],
+  ["hipercard", /^(606282|3841)/, "Hipercard"],
+  ["diners", /^(36|38|30[0-5])/, "Diners"],
+  ["discover", /^(6011|64[4-9]|65)/, "Discover"]
+];
+const detectBrand = (digits) => {
+  for (const [key, re, label] of CARD_BRANDS) if (re.test(digits)) return { key, label };
+  return { key: "", label: "" };
+};
+const previewNumber = (digits) =>
+  ((digits || "") + "•".repeat(16)).slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+
+const updateCardPreview = () => {
+  const prev = $("[data-card-preview]");
+  if (!prev) return;
+  const digits = ($("#c-number")?.value || "").replace(/\D/g, "");
+  const { key, label } = detectBrand(digits);
+  prev.dataset.brand = key;
+  $("[data-cardp-number]").textContent = previewNumber(digits);
+  $("[data-cardp-name]").textContent = ($("#c-name")?.value || "").trim().toUpperCase() || "NOME COMPLETO";
+  $("[data-cardp-exp]").textContent = $("#c-exp")?.value || "MM/AA";
+  $("[data-cardp-brand]").textContent = label;
 };
 
 const baseReservationPayload = () => ({
@@ -556,7 +647,10 @@ const submitCheckout = (event) => {
   event.preventDefault();
   clearNotice();
   if (!state.selection || !state.search) return goToStep(1);
-  if (!guestValid()) return;
+  // Enter/submit avança as sub-etapas; só paga na última.
+  if (payStep === "method") return goToPayStep("guest");
+  if (payStep === "guest") { if (guestValid()) goToPayStep("pay"); return; }
+  if (!guestValid()) return goToPayStep("guest");
   if (payMethod === "pix") submitPix();
   else submitCard();
 };
@@ -648,7 +742,7 @@ const startPixPolling = (tid) => {
       });
       const data = await res.json();
       if (data.status === "paid") { stopPixPolling(); renderSuccess(data); }
-      else if (data.status === "expired") { stopPixPolling(); pixExpired(); }
+      else if (data.status === "expired" || data.status === "canceled") { stopPixPolling(); pixExpired(); }
     } catch (_) { /* mantém tentando */ }
   };
   pixPoll = setInterval(check, 4000);
@@ -822,15 +916,29 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#back-to-search").addEventListener("click", () => goToStep(1));
   $("#back-to-rooms").addEventListener("click", () => goToStep(2));
 
-  $("#c-number").addEventListener("input", (e) => maskCardNumber(e.target));
-  $("#c-exp").addEventListener("input", (e) => maskExpiry(e.target));
+  $("#c-number").addEventListener("input", (e) => { maskCardNumber(e.target); updateCardPreview(); });
+  $("#c-name").addEventListener("input", updateCardPreview);
+  $("#c-exp").addEventListener("input", (e) => { maskExpiry(e.target); updateCardPreview(); });
   $("#c-cvv").addEventListener("input", (e) => onlyDigits(e.target));
+
+  // Máscaras dos dados do hóspede
+  $("#g-phone").addEventListener("input", (e) => maskPhone(e.target));
+  $("#g-doc").addEventListener("input", (e) => maskDocument(e.target));
+  $("#g-doctype").addEventListener("change", () => maskDocument($("#g-doc")));
 
   $("#checkout-form").addEventListener("submit", submitCheckout);
 
-  // Abas de pagamento (PIX / Cartão)
-  $$(".pay-tab").forEach((t) => t.addEventListener("click", () => setPayMethod(t.dataset.payMethod)));
+  // Sub-etapa 1: escolha da forma de pagamento (PIX / Cartão)
+  $$(".pay-opt").forEach((t) => t.addEventListener("click", () => setPayMethod(t.dataset.payMethod)));
   setPayMethod("pix");
+
+  // Navegação entre as sub-etapas do pagamento
+  $$("[data-paynext]").forEach((b) => b.addEventListener("click", () => {
+    const target = b.dataset.paynext;
+    if (target === "pay" && !guestValid()) return;
+    goToPayStep(target);
+  }));
+  $$("[data-payback]").forEach((b) => b.addEventListener("click", () => goToPayStep(b.dataset.payback)));
 
   // Copiar o código PIX (copia e cola)
   $("[data-pix-copy]")?.addEventListener("click", async () => {

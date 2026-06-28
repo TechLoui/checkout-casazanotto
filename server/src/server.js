@@ -124,6 +124,23 @@ app.post("/api/pix/status", async (req, res, next) => {
   }
 });
 
+// Webhook PIX da Rede: evento PV.UPDATE_TRANSACTION_PIX -> confirma e cria a reserva.
+// Autenticação por Bearer (REDE_WEBHOOK_TOKEN). Responde 200 rápido e processa depois.
+app.post("/api/webhooks/erede/pix", (req, res) => {
+  const expected = config.rede.webhookToken;
+  if (expected && req.header("authorization") !== `Bearer ${expected}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const events = Array.isArray(req.body?.events) ? req.body.events : [];
+  const tid = req.body?.data?.id || req.body?.data?.tid;
+  res.status(200).json({ received: true });
+
+  if (!events.includes("PV.UPDATE_TRANSACTION_PIX") || !tid) return;
+  confirmPix(String(tid)).catch((error) =>
+    console.error("[webhook-pix] Falha ao confirmar PIX:", error.message)
+  );
+});
+
 // Centros de custo (útil para o painel; opcional).
 app.get("/api/cost-centers", async (req, res, next) => {
   try {
