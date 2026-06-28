@@ -170,9 +170,25 @@ const prefillFromQuery = () => {
   const arrival = p.get("arrival_date") || p.get("entrada");
   const departure = p.get("departure_date") || p.get("saida");
   const adults = p.get("adults") || p.get("hospedes");
+  const kids = p.get("kids") || p.get("children");
+  const ages = [...p.entries()]
+    .filter(([key]) => /^ages\[\d+\]$/.test(key) || key === "ages[]")
+    .map(([key, value], index) => ({
+      index: key === "ages[]" ? index : Number(key.match(/\d+/)?.[0] || index),
+      value
+    }))
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.value);
   if (arrival) $("#arrival").value = arrival;
   if (departure) $("#departure").value = departure;
   if (adults && Number(adults) >= 1) $("#adults").value = String(Math.min(Number(adults), 9));
+  if (kids && Number(kids) >= 0) {
+    $("#kids").value = String(Math.min(Number(kids), 6));
+    buildAgesInputs();
+    $$("#ages-inputs [data-age]").forEach((input, index) => {
+      if (ages[index] != null) input.value = String(Math.max(0, Math.min(12, Number(ages[index]) || 0)));
+    });
+  }
 
   // Sem pré-seleção de datas: o calendário começa vazio (a menos que venham
   // datas por query string). Só define a data mínima (hoje).
@@ -846,6 +862,16 @@ const renderSuccess = (data) => {
   currentPix = null;
   clearState();
   $("#booking-id").textContent = `Reserva nº ${data.booking_id}`;
+
+  // Aviso de e-mail de confirmação
+  const email = (data.guest_email || $("#g-email")?.value || "").trim();
+  const emailEl = $("[data-success-email]");
+  if (emailEl) {
+    emailEl.innerHTML = email
+      ? `<i data-lucide="mail-check" aria-hidden="true"></i> Enviamos a confirmação para <strong>${escapeHTML(email)}</strong>.`
+      : `<i data-lucide="mail-check" aria-hidden="true"></i> Confirmação enviada por e-mail.`;
+  }
+
   const p = data.payment || {};
   const methodLabel = p.method === "pix" ? "PIX" : `Cartão${p.installments ? ` · ${p.installments}x` : ""}`;
   $("#success-details").innerHTML = `
@@ -855,6 +881,7 @@ const renderSuccess = (data) => {
     <div class="summary-row"><span>Pagamento</span><span>${methodLabel}</span></div>
     <div class="summary-total"><span>Pago</span><strong>${brl(p.amount || state.selection.price)}</strong></div>`;
   goToStep(4);
+  refreshIcons();
 };
 
 /* ---------- persistência (localStorage): retoma de onde parou ---------- */
