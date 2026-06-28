@@ -2220,6 +2220,27 @@ body.embed .summary { height: auto; position: static; }
   }
 }
 
+/* ===== Mobile: cabeçalhos centralizados + etapa 2 compacta (caber sem corte) ===== */
+@media (max-width: 760px) {
+  .checkout-logo { width: 46px; margin: 0 auto 8px; }
+  .steps { margin-bottom: 10px; }
+  .panel { padding: 14px; }
+
+  /* Centraliza "Etapa X de 4" + título em todos os cards */
+  .panel-heading { margin-bottom: 8px; text-align: center; }
+  .panel-heading h2 { font-size: clamp(1.55rem, 7vw, 2rem); line-height: 1.12; }
+  .panel-heading.split { gap: 8px; }
+  .panel-heading.split > div { text-align: center; }
+
+  /* Etapa 2: foto menor e espaçamentos menores p/ o "Selecionar" não cortar */
+  .panel[data-view="2"] .btn-inline { min-height: 40px; padding: 8px 14px; }
+  .room-gallery { aspect-ratio: 2.7 / 1; }
+  .room-option { gap: 7px; padding: 8px; }
+  .room-meta { gap: 6px; }
+  .room-carousel-nav { margin-top: 6px; }
+  .rcn-btn { width: 34px; height: 34px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

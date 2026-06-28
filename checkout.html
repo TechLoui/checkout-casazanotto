@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="checkout.css?v=20260628-mob">
+    <link rel="stylesheet" href="checkout.css?v=20260628-mob2">
     <!-- Backend (Railway): em produção, troque pela URL pública do seu serviço Railway. -->
     <script>
       if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
@@ -17,7 +17,7 @@
       }
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="checkout.js?v=20260628-mob" defer></script>
+    <script src="checkout.js?v=20260628-mob2" defer></script>
   </head>
   <body>
     <div class="checkout-bg" aria-hidden="true"></div>
@@ -225,51 +225,86 @@
                 </div>
               </div>
 
-              <!-- SUB-ETAPA 2: dados do hóspede -->
+              <!-- SUB-ETAPA 2: dados do hóspede (3 mini-etapas) -->
               <div class="paystep is-hidden" data-paystep="guest">
-                <fieldset class="form-block">
-                  <legend>Dados do hóspede principal</legend>
-                  <div class="grid">
-                    <div class="field">
-                      <label for="g-first">Nome*</label>
-                      <input id="g-first" name="first_name" autocomplete="given-name" required>
+                <!-- 2a: nome -->
+                <div class="gueststep" data-gueststep="name">
+                  <fieldset class="form-block">
+                    <legend>Seu nome</legend>
+                    <div class="grid">
+                      <div class="field col-2">
+                        <label for="g-first">Nome*</label>
+                        <input id="g-first" name="first_name" autocomplete="given-name" required>
+                      </div>
+                      <div class="field col-2">
+                        <label for="g-last">Sobrenome</label>
+                        <input id="g-last" name="last_name" autocomplete="family-name">
+                      </div>
                     </div>
-                    <div class="field">
-                      <label for="g-last">Sobrenome</label>
-                      <input id="g-last" name="last_name" autocomplete="family-name">
-                    </div>
-                    <div class="field">
-                      <label for="g-phone">Telefone (com DDD)*</label>
-                      <input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" required>
-                    </div>
-                    <div class="field">
-                      <label for="g-email">E-mail</label>
-                      <input id="g-email" name="email" type="email" autocomplete="email">
-                    </div>
-                    <div class="field">
-                      <label for="g-doctype">Tipo de documento</label>
-                      <select id="g-doctype" name="document_type">
-                        <option value="">-</option>
-                        <option value="cpf">CPF</option>
-                        <option value="rg">RG</option>
-                        <option value="passport">Passaporte</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="g-doc">Documento</label>
-                      <input id="g-doc" name="document" inputmode="numeric">
-                    </div>
+                  </fieldset>
+                  <div class="form-actions two-actions">
+                    <button class="btn btn-ghost" type="button" data-payback="method">
+                      <i data-lucide="arrow-left" aria-hidden="true"></i> Voltar
+                    </button>
+                    <button class="btn btn-primary" type="button" data-guestnext="contact">
+                      Continuar <i data-lucide="arrow-right" aria-hidden="true"></i>
+                    </button>
                   </div>
-                </fieldset>
-                <div class="form-actions two-actions">
-                  <button class="btn btn-ghost" type="button" data-payback="method">
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
-                    Voltar
-                  </button>
-                  <button class="btn btn-primary" type="button" data-paynext="pay">
-                    Continuar
-                    <i data-lucide="arrow-right" aria-hidden="true"></i>
-                  </button>
+                </div>
+
+                <!-- 2b: contato -->
+                <div class="gueststep is-hidden" data-gueststep="contact">
+                  <fieldset class="form-block">
+                    <legend>Contato</legend>
+                    <div class="grid">
+                      <div class="field col-2">
+                        <label for="g-phone">Telefone (com DDD)*</label>
+                        <input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" required>
+                      </div>
+                      <div class="field col-2">
+                        <label for="g-email">E-mail</label>
+                        <input id="g-email" name="email" type="email" autocomplete="email">
+                      </div>
+                    </div>
+                  </fieldset>
+                  <div class="form-actions two-actions">
+                    <button class="btn btn-ghost" type="button" data-guestback="name">
+                      <i data-lucide="arrow-left" aria-hidden="true"></i> Voltar
+                    </button>
+                    <button class="btn btn-primary" type="button" data-guestnext="doc">
+                      Continuar <i data-lucide="arrow-right" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 2c: documento -->
+                <div class="gueststep is-hidden" data-gueststep="doc">
+                  <fieldset class="form-block">
+                    <legend>Documento <span class="hint">(opcional)</span></legend>
+                    <div class="grid">
+                      <div class="field col-2">
+                        <label for="g-doctype">Tipo de documento</label>
+                        <select id="g-doctype" name="document_type">
+                          <option value="">-</option>
+                          <option value="cpf">CPF</option>
+                          <option value="rg">RG</option>
+                          <option value="passport">Passaporte</option>
+                        </select>
+                      </div>
+                      <div class="field col-2">
+                        <label for="g-doc">Documento</label>
+                        <input id="g-doc" name="document" inputmode="numeric">
+                      </div>
+                    </div>
+                  </fieldset>
+                  <div class="form-actions two-actions">
+                    <button class="btn btn-ghost" type="button" data-guestback="contact">
+                      <i data-lucide="arrow-left" aria-hidden="true"></i> Voltar
+                    </button>
+                    <button class="btn btn-primary" type="button" data-paynext="pay">
+                      Continuar <i data-lucide="arrow-right" aria-hidden="true"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
 

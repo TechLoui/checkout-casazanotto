@@ -582,6 +582,7 @@ const goToPayStep = (name) => {
   });
   const title = $("[data-paystep-title]");
   if (title) title.textContent = payStepTitle(name);
+  if (name === "guest") goToGuestStep("name"); // dados em 3 mini-etapas
   if (name === "pay") setPayMethod(payMethod); // garante painel/campos corretos ao chegar
   refreshIcons();
   persistState();
@@ -590,6 +591,14 @@ const goToPayStep = (name) => {
   } else {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+};
+
+/* Dados do hóspede em 3 mini-etapas: nome -> contato -> documento */
+const goToGuestStep = (name) => {
+  $$("[data-gueststep]").forEach((g) => g.classList.toggle("is-hidden", g.dataset.gueststep !== name));
+  const t = $("[data-paystep-title]");
+  if (t) t.textContent = name === "contact" ? "Telefone e e-mail" : name === "doc" ? "Documento" : "Seu nome";
+  refreshIcons();
 };
 
 const setPayMethod = (method) => {
@@ -1137,6 +1146,16 @@ document.addEventListener("DOMContentLoaded", () => {
     goToPayStep(target);
   }));
   $$("[data-payback]").forEach((b) => b.addEventListener("click", () => goToPayStep(b.dataset.payback)));
+
+  // Mini-etapas dos dados: nome -> contato -> documento
+  $$("[data-guestnext]").forEach((b) => b.addEventListener("click", () => {
+    const target = b.dataset.guestnext;
+    if (target === "contact" && !$("#g-first").value.trim()) { showNotice("Informe o nome do hóspede."); return; }
+    if (target === "doc" && $("#g-phone").value.replace(/\D/g, "").length < 10) { showNotice("Informe um telefone válido com DDD."); return; }
+    clearNotice();
+    goToGuestStep(target);
+  }));
+  $$("[data-guestback]").forEach((b) => b.addEventListener("click", () => goToGuestStep(b.dataset.guestback)));
 
   // Copiar o código PIX (copia e cola)
   $("[data-pix-copy]")?.addEventListener("click", async () => {
