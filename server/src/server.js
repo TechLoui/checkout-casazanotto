@@ -131,16 +131,22 @@ app.post("/api/pix/status", async (req, res, next) => {
 app.post("/api/webhooks/erede/pix", (req, res) => {
   const expected = config.rede.webhookToken;
   if (expected && req.header("authorization") !== `Bearer ${expected}`) {
+    console.warn("[webhook:pix] 401 — token inválido ou ausente");
     return res.status(401).json({ error: "Unauthorized" });
   }
   const events = Array.isArray(req.body?.events) ? req.body.events : [];
   const tid = req.body?.data?.id || req.body?.data?.tid;
+  console.log("[webhook:pix] evento recebido", { events, "data.id": tid });
   res.status(200).json({ received: true });
 
-  if (!events.includes("PV.UPDATE_TRANSACTION_PIX") || !tid) return;
-  confirmPix(String(tid)).catch((error) =>
-    console.error("[webhook-pix] Falha ao confirmar PIX:", error.message)
-  );
+  if (events.includes("PV.UPDATE_TRANSACTION_PIX") && tid) {
+    confirmPix(String(tid))
+      .then((r) => console.log("[webhook:pix] confirmPix ->", { status: r.status, booking_id: r.booking_id }))
+      .catch((error) => console.error("[webhook:pix] falha ao confirmar:", error.message));
+  }
+  if (events.includes("PV.REFUND_PIX")) {
+    console.log("[webhook:pix] devolução/cancelamento notificado", { "data.id": tid });
+  }
 });
 
 // Centros de custo (útil para o painel; opcional).
