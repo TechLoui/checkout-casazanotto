@@ -293,3 +293,23 @@ export const confirmPix = async (tid) => {
   await entry.bookingPromise;
   return paidPixResult(entry, tid);
 };
+
+/**
+ * Reconciliação: varre os PIX pendentes e confirma os que já foram pagos —
+ * cobre o caso "cliente pagou e fechou a página" SEM depender do webhook.
+ * Roda periodicamente no servidor (ver server.js). É idempotente (usa confirmPix).
+ */
+export const reconcilePendingPix = async () => {
+  cleanupPix();
+  for (const [tid, entry] of pendingPix) {
+    if (entry.bookingId || entry.bookingPromise) continue; // já reservado / em andamento
+    try {
+      const res = await confirmPix(tid);
+      if (res.status === "paid") {
+        console.log("[pix] reconciliado -> reserva", res.booking_id, "tid", tid);
+      }
+    } catch (err) {
+      console.warn("[pix] reconciliação falhou", { tid, msg: err.message });
+    }
+  }
+};

@@ -7,7 +7,7 @@ import { config, assertConfig } from "./config.js";
 import { validateAvailability, validateCheckout, validatePix, ValidationError } from "./validation.js";
 import { checkAvailability, listCostCenters, ArtaxError } from "./artaxnet.js";
 import { RedeError } from "./rede.js";
-import { processCheckout, createPixCharge, confirmPix } from "./bookingFlow.js";
+import { processCheckout, createPixCharge, confirmPix, reconcilePendingPix } from "./bookingFlow.js";
 import { verifyArtaxWebhook, handleArtaxEvent } from "./webhooks.js";
 
 assertConfig();
@@ -176,3 +176,10 @@ app.use((error, req, res, _next) => {
 app.listen(config.port, () => {
   console.log(`Casa Zanotto checkout API rodando na porta ${config.port} (${config.nodeEnv})`);
 });
+
+// Reconciliação periódica do PIX: confirma pagamentos mesmo se o cliente fechou
+// a página (e o webhook ainda não estiver cadastrado). Idempotente.
+const PIX_RECONCILE_MS = Number(process.env.PIX_RECONCILE_MS) || 60_000;
+setInterval(() => {
+  reconcilePendingPix().catch((err) => console.warn("[pix] reconcile erro:", err.message));
+}, PIX_RECONCILE_MS).unref();
