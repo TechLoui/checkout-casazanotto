@@ -264,7 +264,10 @@ export const getPixTransaction = async (tid) => {
  */
 export const pixStatusOf = (tx) =>
   String(tx?.qrCodeResponse?.status || tx?.authorization?.status || tx?.status || "").trim();
-/** Bloco de dados do PIX (amount/reference/tid) — também dentro de qrCodeResponse. */
-export const pixData = (tx) => tx?.qrCodeResponse || tx || {};
+/**
+ * Bloco de dados do PIX (amount/reference/tid).
+ * Não-pago: vem em qrCodeResponse. PAGO: vem em authorization (sem qrCodeResponse).
+ */
+export const pixData = (tx) => tx?.authorization || tx?.qrCodeResponse || tx || {};
 
 export { RedeError };
