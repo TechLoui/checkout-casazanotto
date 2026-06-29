@@ -214,6 +214,7 @@ export const createPixCharge = async (input) => {
 
   const pix = await createPix({ amountCents, reference, expiresAt });
   if (!pix.tid) throw new Error("A Rede não retornou o identificador da cobrança PIX.");
+  console.log("[pix] criado", { tid: pix.tid, reference, amountCents });
 
   pendingPix.set(pix.tid, { input, option, totalPrice, amountCents, reference, bookingId: null, room: null, createdAt: Date.now() });
 

@@ -118,6 +118,8 @@ app.post("/api/pix/status", async (req, res, next) => {
   try {
     const tid = String(req.body?.tid || "").trim();
     if (!tid) throw new ValidationError("Identificador do PIX não informado.");
+    // Evita cache de proxy/navegador devolvendo um "pending" antigo.
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json(await confirmPix(tid));
   } catch (error) {
     next(error);
@@ -156,6 +158,7 @@ app.use((error, req, res, _next) => {
     return res.status(422).json({ error: error.message });
   }
   if (error instanceof RedeError) {
+    console.warn("[server] RedeError:", { code: error.returnCode, message: error.message });
     return res.status(402).json({ error: error.message, code: error.returnCode });
   }
   if (error instanceof ArtaxError) {

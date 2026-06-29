@@ -246,8 +246,13 @@ export const getPixTransaction = async (tid) => {
     headers: await authHeaders()
   });
   const data = await parseJsonSafe(response);
+  const st = data?.qrCodeResponse?.status || data?.authorization?.status || data?.status;
+  const rc = data?.qrCodeResponse?.returnCode || data?.returnCode;
+  // SEMPRE loga (sucesso e falha) p/ não ficarmos cegos no Railway.
+  console.log("[rede] getPixTransaction", { tid, http: response.status, status: st, returnCode: rc });
   if (!response.ok) {
-    throw new RedeError(data.returnMessage || "Falha ao consultar a transação PIX.", data.returnCode, data);
+    console.warn("[rede] getPixTransaction NÃO OK — corpo:", JSON.stringify(data).slice(0, 400));
+    throw new RedeError(data.returnMessage || data?.qrCodeResponse?.returnMessage || "Falha ao consultar a transação PIX.", rc, data);
   }
   return data;
 };
@@ -255,8 +260,10 @@ export const getPixTransaction = async (tid) => {
 /**
  * Normaliza o status do PIX. Na API v2 o status vem DENTRO de qrCodeResponse
  * (ex.: { qrCodeResponse: { status: "Pending" | "Approved" | "Canceled" } }).
+ * Cobre também authorization.status e o topo, por segurança.
  */
-export const pixStatusOf = (tx) => String(tx?.qrCodeResponse?.status || tx?.status || "").trim();
+export const pixStatusOf = (tx) =>
+  String(tx?.qrCodeResponse?.status || tx?.authorization?.status || tx?.status || "").trim();
 /** Bloco de dados do PIX (amount/reference/tid) — também dentro de qrCodeResponse. */
 export const pixData = (tx) => tx?.qrCodeResponse || tx || {};
 
