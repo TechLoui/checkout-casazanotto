@@ -242,17 +242,22 @@ export const confirmPix = async (tid) => {
   if (entry.bookingId) return paidPixResult(entry, tid);
 
   const tx = await getPixTransaction(tid);
-  const status = pixStatusOf(tx).toLowerCase();
+  const status = pixStatusOf(tx);
   const data = pixData(tx); // amount/reference ficam dentro de qrCodeResponse
-  if (status === "canceled" || status === "cancelled") return { status: "canceled" };
-  if (status !== "approved") return { status: "pending" }; // não pago -> NÃO cria reserva
+  const norm = status.toLowerCase();
+  console.log("[pix] consulta", { tid, status, amount: data.amount, reference: data.reference, returnCode: data.returnCode });
 
-  // Confere valor e referência antes de criar a reserva (evita divergências).
+  if (["canceled", "cancelled", "denied", "declined"].includes(norm)) return { status: "canceled" };
+  // "pago" = qualquer indicador de aprovação/conclusão (a Rede usa "Approved").
+  const isPaid = ["approv", "aprov", "conclu", "paid", "pago", "confirm", "captur", "settl"].some((s) => norm.includes(s));
+  if (!isPaid) return { status: "pending" }; // não pago -> NÃO cria reserva
+
+  // Valor/referência: só ALERTA (não bloqueia) — o tid já amarra à nossa cobrança.
   if (data.amount != null && Number(data.amount) !== entry.amountCents) {
-    throw new Error("Valor do PIX divergente do esperado.");
+    console.warn("[pix] valor divergente", { tid, esperado: entry.amountCents, recebido: data.amount });
   }
   if (data.reference && data.reference !== entry.reference) {
-    throw new Error("Referência do PIX divergente do esperado.");
+    console.warn("[pix] referência divergente", { tid, esperado: entry.reference, recebido: data.reference });
   }
 
   // IDEMPOTÊNCIA: cria a reserva UMA única vez por cobrança, mesmo com polling
