@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { checkAvailability, createBooking, addBookingPayment, ArtaxError } from "./artaxnet.js";
 import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf, pixData } from "./rede.js";
+import { itauTxid, createCob, getCob, cobPaid, cobCanceled } from "./itau.js";
 import { ValidationError } from "./validation.js";
 
 const nightsBetween = (arrival, departure) =>
@@ -210,21 +211,32 @@ export const createPixCharge = async (input) => {
   cleanupPix();
   const { option, totalPrice, amountCents } = await resolveStay(input);
   const reference = pixReference();
-  const expiresAt = new Date(Date.now() + PIX_EXPIRES_MIN * 60_000);
 
-  const pix = await createPix({ amountCents, reference, expiresAt });
-  if (!pix.tid) throw new Error("A Rede não retornou o identificador da cobrança PIX.");
-  console.log("[pix] criado", { tid: pix.tid, reference, amountCents });
+  let tid, qrCode, qrImage = "", expiresInSec;
+  if (config.pixProvider === "itau") {
+    tid = itauTxid();
+    const cob = await createCob({ txid: tid, amountCents, solicitacaoPagador: "Reserva Pousada Casa Zanotto" });
+    qrCode = cob.pixCopiaECola;
+    expiresInSec = config.itau.expiracao;
+  } else {
+    const expiresAt = new Date(Date.now() + PIX_EXPIRES_MIN * 60_000);
+    const pix = await createPix({ amountCents, reference, expiresAt });
+    if (!pix.tid) throw new Error("A Rede não retornou o identificador da cobrança PIX.");
+    tid = pix.tid;
+    qrCode = pix.qrCode;
+    qrImage = pix.qrImage;
+    expiresInSec = PIX_EXPIRES_MIN * 60;
+  }
+  console.log("[pix] criado", { provider: config.pixProvider, tid, reference, amountCents });
 
-  pendingPix.set(pix.tid, { input, option, totalPrice, amountCents, reference, bookingId: null, room: null, createdAt: Date.now() });
+  pendingPix.set(tid, { provider: config.pixProvider, input, option, totalPrice, amountCents, reference, bookingId: null, room: null, createdAt: Date.now() });
 
   return {
-    tid: pix.tid,
-    qrCode: pix.qrCode, // copia-e-cola (EMV)
-    qrImage: pix.qrImage, // imagem do QR em base64 (PNG)
+    tid,
+    qrCode, // copia-e-cola (EMV)
+    qrImage, // imagem do QR em base64 (PNG) — Itaú não envia; front gera do copia-e-cola
     amount: totalPrice,
-    expiration: pix.expiration,
-    expiresInSec: PIX_EXPIRES_MIN * 60
+    expiresInSec
   };
 };
 
@@ -242,24 +254,22 @@ export const confirmPix = async (tid) => {
   // Já reservado? Devolve o mesmo resultado (idempotente).
   if (entry.bookingId) return paidPixResult(entry, tid);
 
-  const tx = await getPixTransaction(tid);
-  const status = pixStatusOf(tx);
-  const data = pixData(tx); // amount/reference ficam dentro de qrCodeResponse
-  const norm = status.toLowerCase();
-  console.log("[pix] consulta", { tid, status, amount: data.amount, reference: data.reference, returnCode: data.returnCode });
-
-  if (["canceled", "cancelled", "denied", "declined"].includes(norm)) return { status: "canceled" };
-  // "pago" = qualquer indicador de aprovação/conclusão (a Rede usa "Approved").
-  const isPaid = ["approv", "aprov", "conclu", "paid", "pago", "confirm", "captur", "settl"].some((s) => norm.includes(s));
-  if (!isPaid) return { status: "pending" }; // não pago -> NÃO cria reserva
-
-  // Valor/referência: só ALERTA (não bloqueia) — o tid já amarra à nossa cobrança.
-  if (data.amount != null && Number(data.amount) !== entry.amountCents) {
-    console.warn("[pix] valor divergente", { tid, esperado: entry.amountCents, recebido: data.amount });
+  // Determina o status conforme o provedor (o tid já amarra à nossa cobrança).
+  let paid = false;
+  let canceled = false;
+  if (entry.provider === "itau") {
+    const cob = await getCob(tid);
+    paid = cobPaid(cob);
+    canceled = cobCanceled(cob);
+  } else {
+    const tx = await getPixTransaction(tid);
+    const norm = pixStatusOf(tx).toLowerCase();
+    console.log("[pix] consulta(rede)", { tid, status: norm });
+    canceled = ["canceled", "cancelled", "denied", "declined"].includes(norm);
+    paid = ["approv", "aprov", "conclu", "paid", "pago", "confirm", "captur", "settl"].some((s) => norm.includes(s));
   }
-  if (data.reference && data.reference !== entry.reference) {
-    console.warn("[pix] referência divergente", { tid, esperado: entry.reference, recebido: data.reference });
-  }
+  if (canceled) return { status: "canceled" };
+  if (!paid) return { status: "pending" }; // não pago -> NÃO cria reserva
 
   // IDEMPOTÊNCIA: cria a reserva UMA única vez por cobrança, mesmo com polling
   // e webhook chegando juntos. O teste+atribuição do promise é síncrono (sem

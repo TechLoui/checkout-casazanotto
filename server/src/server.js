@@ -149,6 +149,21 @@ app.post("/api/webhooks/erede/pix", (req, res) => {
   }
 });
 
+// Webhook PIX do Itaú (BACEN): recebe os pix recebidos e confirma cada txid.
+// Sem token: revalidamos cada txid consultando a cobrança no Itaú (autoritativo).
+app.post("/api/webhooks/itau/pix", (req, res) => {
+  const pixArr = Array.isArray(req.body?.pix) ? req.body.pix : [];
+  console.log("[webhook:itau] recebido", { qtd: pixArr.length });
+  res.status(200).json({ received: true });
+  for (const p of pixArr) {
+    const tid = p?.txid;
+    if (!tid) continue;
+    confirmPix(String(tid))
+      .then((r) => console.log("[webhook:itau] confirmPix ->", { status: r.status, booking_id: r.booking_id }))
+      .catch((e) => console.error("[webhook:itau] erro:", e.message));
+  }
+});
+
 // Centros de custo (útil para o painel; opcional).
 app.get("/api/cost-centers", async (req, res, next) => {
   try {

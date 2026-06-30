@@ -52,6 +52,25 @@ export const config = {
     // Modo simulação: NÃO chama a Rede; finge pagamento aprovado.
     // Use SOMENTE em testes locais (PAYMENT_SIMULATE=true). A reserva no Artax é REAL.
     simulate: process.env.PAYMENT_SIMULATE === "true"
+  },
+
+  // Qual provedor processa o PIX: "itau" (direto no banco, mTLS) ou "rede".
+  // Cartão continua sempre na Rede.
+  pixProvider: (process.env.PIX_PROVIDER || "rede").toLowerCase(),
+
+  itau: {
+    // PIX Recebimentos do Itaú (BACEN) — mTLS + OAuth.
+    clientId: process.env.ITAU_CLIENT_ID || "",
+    clientSecret: process.env.ITAU_CLIENT_SECRET || "",
+    pixKey: process.env.ITAU_PIX_KEY || "",
+    oauthUrl: process.env.ITAU_OAUTH_URL || "https://sts.itau.com.br/api/oauth/token",
+    baseUrl: (process.env.ITAU_BASE_URL || "https://secure.api.itau/pix_recebimentos/v2").replace(/\/$/, ""),
+    // Certificado/chave: em produção via base64 (Railway); em dev via caminho local.
+    certB64: process.env.ITAU_CERT_B64 || "",
+    keyB64: process.env.ITAU_KEY_B64 || "",
+    certPath: process.env.ITAU_CERT_PATH || "",
+    keyPath: process.env.ITAU_KEY_PATH || "",
+    expiracao: Number(process.env.ITAU_PIX_EXPIRACAO) || 900 // segundos de validade do QR
   }
 };
 
