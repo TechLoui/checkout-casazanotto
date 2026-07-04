@@ -4,9 +4,30 @@ import { checkAvailability, createBooking, addBookingPayment, ArtaxError } from 
 import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf, pixData } from "./rede.js";
 import { itauTxid, createCob, getCob, cobPaid, cobCanceled } from "./itau.js";
 import { ValidationError } from "./validation.js";
+import { sendBookingConfirmation } from "./email.js";
 
 const nightsBetween = (arrival, departure) =>
   Math.max(1, Math.round((new Date(departure) - new Date(arrival)) / 86_400_000));
+
+/** Dispara o e-mail de confirmação (fire-and-forget; nunca derruba a reserva). */
+const fireConfirmationEmail = ({ input, option, totalPrice, bookingId, method, tid }) => {
+  const to = input?.guest?.email;
+  if (!to) return;
+  sendBookingConfirmation({
+    to,
+    guestName: [input.guest.first_name, input.guest.last_name].filter(Boolean).join(" "),
+    roomName: option.roomName,
+    checkIn: input.arrival_date,
+    checkOut: input.departure_date,
+    nights: nightsBetween(input.arrival_date, input.departure_date),
+    adults: input.adults,
+    kids: input.kids,
+    totalPrice,
+    bookingId,
+    method,
+    tid
+  }).catch((e) => console.error("[email] falha inesperada:", e.message));
+};
 
 /** Encontra a opção (quarto + rateplan) e devolve o PREÇO AUTORITATIVO do Artax. */
 const resolveAuthoritativeOption = (availability, roomId, rateplanId) => {
@@ -173,6 +194,12 @@ export const processCheckout = async (input) => {
     confirmed: captured
   });
 
+  // E-mail de confirmação — SÓ após o pagamento (cartão efetivamente capturado).
+  // Não bloqueia a resposta ao cliente.
+  if (captured) {
+    fireConfirmationEmail({ input, option, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
+  }
+
   return {
     booking_id: booked.booking_id,
     room: booked.room,
@@ -293,6 +320,8 @@ export const confirmPix = async (tid) => {
         installments: 1,
         confirmed: true
       });
+      // E-mail de confirmação — dentro do bookingPromise (roda uma vez por cobrança).
+      fireConfirmationEmail({ input: entry.input, option: entry.option, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
       return booked;
     })().catch((err) => {
       entry.bookingPromise = null; // libera p/ nova tentativa se falhou

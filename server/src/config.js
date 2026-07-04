@@ -71,6 +71,21 @@ export const config = {
     certPath: process.env.ITAU_CERT_PATH || "",
     keyPath: process.env.ITAU_KEY_PATH || "",
     expiracao: Number(process.env.ITAU_PIX_EXPIRACAO) || 900 // segundos de validade do QR
+  },
+
+  // E-mail de confirmação (Resend). Marca por variável (BRAND_*) → mesmo código Casa/Vila.
+  // Sem RESEND_API_KEY/RESEND_FROM o envio vira no-op (não quebra a reserva).
+  email: {
+    apiKey: process.env.RESEND_API_KEY || "",
+    from: process.env.RESEND_FROM || "", // ex.: "Pousada Casa Zanotto <reservas@seudominio.com>"
+    replyTo: process.env.RESEND_REPLY_TO || "",
+    bcc: process.env.RESEND_BCC || "", // cópia para a pousada (opcional)
+    brandName: process.env.BRAND_NAME || "Pousada Casa Zanotto",
+    brandColor: process.env.BRAND_COLOR || "#ff6b00",
+    logoUrl: process.env.BRAND_LOGO_URL || "https://checkout-casazanotto.netlify.app/assets/logo.webp",
+    siteUrl: process.env.BRAND_SITE_URL || "",
+    phone: process.env.BRAND_PHONE || "",
+    address: process.env.BRAND_ADDRESS || ""
   }
 };
 
