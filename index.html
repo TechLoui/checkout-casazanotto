@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260628-home2">
+    <link rel="stylesheet" href="styles.css?v=20260704-mob4">
     <link rel="preload" as="image" href="assets/suite.webp">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
@@ -55,7 +55,7 @@
   </head>
   <body>
     <div class="intro-overlay" data-intro>
-      <video class="intro-video" data-intro-video muted playsinline preload="auto" poster="assets/hidden-bg.webp"></video>
+      <video class="intro-video" data-intro-video muted playsinline preload="metadata" poster="assets/hidden-bg.webp"></video>
       <button class="intro-skip" type="button" data-intro-skip aria-label="Pular introdução">
         Pular intro
         <i data-lucide="chevron-right" aria-hidden="true"></i>
@@ -103,12 +103,12 @@
       <section class="hero hero-premium" id="topo" aria-label="Pousada Casa Zanotto">
         <div class="hero-slider" data-hero-slider aria-hidden="true">
           <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="">
-          <img class="hero-slide" src="assets/hero.webp" alt="">
-          <img class="hero-slide" src="assets/gallery/61-Foto-20-scaled.webp" alt="">
-          <img class="hero-slide" src="assets/brand.webp" alt="">
-          <img class="hero-slide" src="assets/gallery/66-Foto-31-scaled.webp" alt="">
-          <img class="hero-slide" src="assets/lounge.webp" alt="">
-          <img class="hero-slide" src="assets/suite.webp" alt="">
+          <img class="hero-slide" data-src="assets/hero.webp" alt="">
+          <img class="hero-slide" data-src="assets/gallery/61-Foto-20-scaled.webp" alt="">
+          <img class="hero-slide" data-src="assets/brand.webp" alt="">
+          <img class="hero-slide" data-src="assets/gallery/66-Foto-31-scaled.webp" alt="">
+          <img class="hero-slide" data-src="assets/lounge.webp" alt="">
+          <img class="hero-slide" data-src="assets/suite.webp" alt="">
         </div>
         <div class="hero-overlay"></div>
 
@@ -247,8 +247,8 @@
 
       <section class="story-section">
         <div class="story-media">
-          <img class="story-photo story-photo-large" src="assets/brand.webp" alt="Hidromassagem aquecida rodeada por jardim na Pousada Casa Zanotto">
-          <img class="story-photo story-photo-small" src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardim arborizado da Pousada Casa Zanotto">
+          <img class="story-photo story-photo-large" src="assets/brand.webp" alt="Hidromassagem aquecida rodeada por jardim na Pousada Casa Zanotto" loading="lazy">
+          <img class="story-photo story-photo-small" src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardim arborizado da Pousada Casa Zanotto" loading="lazy">
         </div>
         <div class="story-copy">
           <p class="eyebrow">Nossa pousada</p>
@@ -263,21 +263,21 @@
 
       <section class="ritual-section">
         <div class="ritual-panel">
-          <img src="assets/pool.webp" alt="Piscina e área de lazer da Pousada Casa Zanotto">
+          <img src="assets/pool.webp" alt="Piscina e área de lazer da Pousada Casa Zanotto" loading="lazy">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
             <h2>Piscina Aquecida, para relaxar em qualquer época.</h2>
           </div>
         </div>
         <div class="ritual-panel">
-          <img src="assets/brand.webp" alt="Hidromassagem aquecida da Pousada Casa Zanotto">
+          <img src="assets/brand.webp" alt="Hidromassagem aquecida da Pousada Casa Zanotto" loading="lazy">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
             <h2>Hidromassagem Aquecida, um dos espaços mais desejados da pousada.</h2>
           </div>
         </div>
         <div class="ritual-panel">
-          <img src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardins e varandas da Pousada Casa Zanotto">
+          <img src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardins e varandas da Pousada Casa Zanotto" loading="lazy">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
             <h2>Deck beira rio, jardins e quiosque para desacelerar com privacidade.</h2>
@@ -312,7 +312,7 @@
             Buffet servido com variedade, ingredientes artesanais e sabores regionais, para transformar a manhã em parte da experiência.
           </p>
         </div>
-        <img src="assets/river.webp" alt="Buffet de café da manhã com frutas, bolos e itens artesanais">
+        <img src="assets/river.webp" alt="Buffet de café da manhã com frutas, bolos e itens artesanais" loading="lazy">
       </section>
 
       <section class="section gallery-section" id="galeria">

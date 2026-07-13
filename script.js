@@ -4,7 +4,7 @@ const HOME_API_BASE = (
     ? "http://localhost:8080/api"
     : "https://checkout-casazanotto-production.up.railway.app/api")
 ).replace(/\/$/, "");
-const HOME_INSTALLMENTS_MAX = 6;
+const HOME_INSTALLMENTS_MAX = 4;
 const HOME_FALLBACK_ROOM_IMAGES = [
   "assets/rooms/standard/01.webp",
   "assets/rooms/bangalo/01.webp",
@@ -1363,6 +1363,17 @@ const initHeroSlider = () => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (slides.length < 2 || reduceMotion) return;
 
+  // As fotos além da primeira só têm data-src no HTML (não competem com o
+  // conteúdo crítico do primeiro paint). Carrega elas depois que a página
+  // termina de carregar, com folga antes de entrarem no rodízio.
+  const hydrateSlides = () => {
+    slides.forEach((slide) => {
+      if (slide.dataset.src && !slide.src) slide.src = slide.dataset.src;
+    });
+  };
+  if (document.readyState === "complete") hydrateSlides();
+  else window.addEventListener("load", hydrateSlides, { once: true });
+
   let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (activeIndex < 0) activeIndex = 0;
 
@@ -1879,6 +1890,7 @@ const initCursorGlow = () => {
   document.addEventListener("mouseleave", () => {
     visible = false;
     glow.classList.remove("is-visible");
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
   });
 
   // Grow the glow over interactive elements.

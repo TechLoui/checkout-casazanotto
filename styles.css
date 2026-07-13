@@ -2562,11 +2562,7 @@ h3 {
 }
 
 .hero-hook::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: linear-gradient(180deg, #ffaf66, #ff5a00);
+  content: none;
 }
 
 .hero-hook::after,
@@ -4301,11 +4297,11 @@ svg {
 
   .hero-premium .hero-content {
     width: min(100% - 28px, var(--container));
-    min-height: 94svh;
+    min-height: 92svh;
     display: flex;
     justify-content: flex-end;
     align-items: stretch;
-    padding: 92px 0 calc(42px + env(safe-area-inset-bottom));
+    padding: 78px 0 calc(38px + env(safe-area-inset-bottom));
     text-align: left;
   }
 
@@ -4347,25 +4343,26 @@ svg {
   }
 
   .hero-hook {
-    padding: 11px 12px;
+    padding: 10px 13px;
+    gap: 12px;
   }
 
   .hero-hook-icon {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
 
   .hero-hook-icon svg {
-    width: 23px;
-    height: 23px;
+    width: 21px;
+    height: 21px;
   }
 
   .hero-hook strong {
-    font-size: 0.88rem;
+    font-size: 0.9rem;
   }
 
   .hero-hook small {
-    font-size: 0.72rem;
+    display: none; /* descrição some no mobile: hooks viram chips compactos (menos poluição) */
   }
 
   .hero-premium .hero-actions {
@@ -4380,17 +4377,7 @@ svg {
   }
 
   .hero-premium .hero-logo-wrap {
-    position: absolute;
-    top: 22px;
-    right: 0;
-    display: grid;
-    margin: 0;
-  }
-
-  .hero-premium .hero-logo-disc {
-    width: 94px;
-    min-width: 94px;
-    box-shadow: 0 16px 46px rgba(0, 0, 0, 0.32), 0 8px 26px rgba(255, 107, 0, 0.22);
+    display: none; /* header já tem a logo; some com o disco no mobile pra limpar o hero */
   }
 
   .hero-premium .hero-scroll {
@@ -4417,13 +4404,19 @@ svg {
   }
 
   .reserve-copy {
-    min-height: 300px;
-    padding: 24px 18px;
+    min-height: 148px;
+    padding: 18px 18px 20px;
     border-radius: 10px;
   }
 
+  .reserve-copy h2 {
+    font-size: 1.6rem;
+    line-height: 1.06;
+  }
+
   .reserve-copy .section-lead {
-    font-size: 0.94rem;
+    margin-top: 8px;
+    font-size: 0.9rem;
   }
 
   .reserve-highlights {

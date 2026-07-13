@@ -67,7 +67,9 @@
     playIntro();
   }
 
-  // Parallax no mouse (relativo à seção).
+  // Parallax no mouse (relativo à seção). Só faz trabalho de verdade quando a
+  // aba está visível E a seção está na tela — evita rodar pra sempre em
+  // segundo plano ou com a seção fora do viewport (custava fluidez à toa).
   let mx = 0, my = 0, tx = 0, ty = 0;
   section.addEventListener("mousemove", (e) => {
     const r = section.getBoundingClientRect();
@@ -76,14 +78,22 @@
   });
   section.addEventListener("mouseleave", () => { mx = 0; my = 0; });
 
+  let sectionInView = true;
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(([entry]) => { sectionInView = entry.isIntersecting; }, { rootMargin: "200px" });
+    io.observe(section);
+  }
+
   const parallax = () => {
-    tx += (mx - tx) * 0.05;
-    ty += (my - ty) * 0.05;
-    cards.forEach((card) => {
-      // profundidade limitada para um movimento leve e uniforme
-      const d = Math.min(parseFloat(card.dataset.depth) || 8, 11);
-      card.style.translate = `${(tx * d * 0.42).toFixed(2)}px ${(ty * d * 0.24).toFixed(2)}px`;
-    });
+    if (!document.hidden && sectionInView) {
+      tx += (mx - tx) * 0.05;
+      ty += (my - ty) * 0.05;
+      cards.forEach((card) => {
+        // profundidade limitada para um movimento leve e uniforme
+        const d = Math.min(parseFloat(card.dataset.depth) || 8, 11);
+        card.style.translate = `${(tx * d * 0.42).toFixed(2)}px ${(ty * d * 0.24).toFixed(2)}px`;
+      });
+    }
     requestAnimationFrame(parallax);
   };
   parallax();

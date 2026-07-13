@@ -51,7 +51,7 @@ Adicione uma a uma (NÃO precisa de `PORT`, o Railway injeta):
 | `REDE_OAUTH_URL` | sandbox `https://rl7-sandbox-api.useredecloud.com.br/oauth2/token` · produção `https://api.userede.com.br/redelabs/oauth2/token` |
 | `REDE_TRANSACTIONS_URL` | sandbox `https://sandbox-erede.useredecloud.com.br/v2/transactions` · produção `https://api.userede.com.br/erede/v2/transactions` |
 | `REDE_SOFT_DESCRIPTOR` | `CasaZanotto` |
-| `MAX_INSTALLMENTS` | `6` |
+| `MAX_INSTALLMENTS` | `4` |
 | `REDE_WEBHOOK_TOKEN` | *(token forte; o webhook PIX da Rede envia como `Bearer`)* |
 | **Outros** | |
 | `ALLOWED_ORIGINS` | `https://pousadacasazanotto.com.br,https://www.pousadacasazanotto.com.br` |

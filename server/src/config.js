@@ -59,7 +59,7 @@ export const config = {
     // O softDescriptor exige habilitação no portal da Rede. Se não estiver
     // habilitado, enviar causa returnCode 63. Só envia se REDE_SEND_SOFT_DESCRIPTOR=true.
     sendSoftDescriptor: process.env.REDE_SEND_SOFT_DESCRIPTOR === "true",
-    maxInstallments: Number(process.env.MAX_INSTALLMENTS) || 6,
+    maxInstallments: Number(process.env.MAX_INSTALLMENTS) || 4,
     webhookToken: process.env.REDE_WEBHOOK_TOKEN || "",
 
     // Modo simulação: NÃO chama a Rede; finge pagamento aprovado.

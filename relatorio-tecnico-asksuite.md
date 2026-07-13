@@ -11,7 +11,7 @@ A pousada opera hoje um motor de reservas próprio, embutido direto na home do s
 | Componente | Solução |
 |---|---|
 | Frontend | Site estático — hospedado na Hostinger, domínio `pousadacasazanotto.com.br` |
-| Backend | Node.js / Express (Railway) |
+ cn| Backend | Node.js / Express (Railway) |
 | PMS | ArtaxNet |
 | Pagamento · cartão | e.Rede API v2 — pré-autorização + captura |
 | Pagamento · PIX | e.Rede ou Itaú (mTLS), configurável |
