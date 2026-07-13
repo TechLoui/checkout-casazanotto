@@ -73,8 +73,22 @@ const normalizeTotals = (data, nights) => {
   return data;
 };
 
+// Exige X-Api-Key para chamadas servidor-a-servidor (sem header Origin) —
+// é como parceiros (ex.: Asksuite) consomem a cotação. Chamadas do navegador
+// vindas do próprio site sempre trazem Origin e já foram validadas pelo CORS
+// acima, então passam direto sem precisar de chave.
+const requirePartnerKeyForServerCalls = (req, res, next) => {
+  if (req.headers.origin) return next();
+  const key = req.header("x-api-key");
+  const validKeys = Object.values(config.partnerApiKeys).filter(Boolean);
+  if (!validKeys.length || !validKeys.includes(key)) {
+    return res.status(401).json({ error: "API key inválida ou ausente." });
+  }
+  next();
+};
+
 // Disponibilidade de quartos.
-app.get("/api/availability", async (req, res, next) => {
+app.get("/api/availability", requirePartnerKeyForServerCalls, async (req, res, next) => {
   try {
     const params = validateAvailability({
       arrival_date: req.query.arrival_date,

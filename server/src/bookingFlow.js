@@ -5,6 +5,7 @@ import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf, 
 import { itauTxid, createCob, getCob, cobPaid, cobCanceled } from "./itau.js";
 import { ValidationError } from "./validation.js";
 import { sendBookingConfirmation } from "./email.js";
+import { notifyAsksuiteBooking } from "./partners.js";
 
 const nightsBetween = (arrival, departure) =>
   Math.max(1, Math.round((new Date(departure) - new Date(arrival)) / 86_400_000));
@@ -27,6 +28,27 @@ const fireConfirmationEmail = ({ input, option, totalPrice, bookingId, method, t
     method,
     tid
   }).catch((e) => console.error("[email] falha inesperada:", e.message));
+};
+
+/** Notifica parceiros (ex.: Asksuite) quando a reserva é confirmada — para rastreio de conversão. */
+const fireAsksuiteNotification = ({ input, option, totalPrice, bookingId, method, tid }) => {
+  notifyAsksuiteBooking({
+    event: "booking.confirmed",
+    booking_id: bookingId,
+    arrival_date: input.arrival_date,
+    departure_date: input.departure_date,
+    nights: nightsBetween(input.arrival_date, input.departure_date),
+    room: { id: input.roomId, name: option.roomName },
+    guests: { adults: input.adults, kids: input.kids },
+    guest: {
+      first_name: input.guest?.first_name,
+      last_name: input.guest?.last_name,
+      email: input.guest?.email,
+      phone: input.guest?.phone
+    },
+    payment: { method, amount: totalPrice, currency: "BRL", tid },
+    confirmed_at: new Date().toISOString()
+  }).catch((e) => console.error("[asksuite] falha inesperada:", e.message));
 };
 
 /** Encontra a opção (quarto + rateplan) e devolve o PREÇO AUTORITATIVO do Artax. */
@@ -198,6 +220,7 @@ export const processCheckout = async (input) => {
   // Não bloqueia a resposta ao cliente.
   if (captured) {
     fireConfirmationEmail({ input, option, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
+    fireAsksuiteNotification({ input, option, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
   }
 
   return {
@@ -320,8 +343,9 @@ export const confirmPix = async (tid) => {
         installments: 1,
         confirmed: true
       });
-      // E-mail de confirmação — dentro do bookingPromise (roda uma vez por cobrança).
+      // E-mail de confirmação e webhook da Asksuite — dentro do bookingPromise (roda uma vez por cobrança).
       fireConfirmationEmail({ input: entry.input, option: entry.option, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
+      fireAsksuiteNotification({ input: entry.input, option: entry.option, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
       return booked;
     })().catch((err) => {
       entry.bookingPromise = null; // libera p/ nova tentativa se falhou

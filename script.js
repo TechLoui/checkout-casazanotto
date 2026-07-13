@@ -1238,18 +1238,34 @@ const initCompactBookingFlow = () => {
   });
 
   window.CZHomeBooking = {
-    prefill({ arrival: inValue, departure: outValue, adults }) {
+    // Usado tanto por widgets internos quanto pelo deep-link de parceiros
+    // (ex.: Asksuite) — ver initDeepLinkBooking(). Quando check-in e check-out
+    // já vêm preenchidos, pula direto pra disponibilidade (etapa "rooms").
+    prefill({ arrival: inValue, departure: outValue, adults, kids, ages } = {}) {
       const parsedIn = parseLocalDate(inValue);
       const parsedOut = parseLocalDate(outValue);
       if (parsedIn) arrival = parsedIn;
       if (parsedOut && (!parsedIn || parsedOut > parsedIn)) departure = parsedOut;
       if (adultsInput && adults) adultsInput.value = String(Math.max(1, Math.min(9, Number(adults) || 2)));
+      if (kidsInput && kids != null) {
+        kidsInput.value = String(Math.max(0, Math.min(6, Number(kids) || 0)));
+        buildAges();
+        if (Array.isArray(ages)) {
+          form.querySelectorAll("[data-home-age]").forEach((input, index) => {
+            if (ages[index] != null) input.value = String(Math.max(0, Math.min(17, Number(ages[index]) || 0)));
+          });
+        }
+      }
       selecting = departure ? "out" : "in";
       view = new Date((arrival || today).getFullYear(), (arrival || today).getMonth(), 1);
-      resetAvailability();
       renderCalendar();
       form.scrollIntoView({ behavior: "smooth", block: "center" });
-      goToStep(arrival && departure ? "guests" : "dates");
+      if (arrival && departure) {
+        fetchAvailability();
+      } else {
+        resetAvailability();
+        goToStep("dates");
+      }
     }
   };
 
@@ -2142,6 +2158,27 @@ const initReserveEmbed = () => {
   });
 };
 
+/* Deep-link (ex.: parceiros como a Asksuite): se a URL trouxer check-in/
+   check-out, prefila o motor de reservas da home e já busca a disponibilidade.
+   Mesmos nomes de parâmetro aceitos pelo site (arrival_date/entrada, etc.). */
+const initDeepLinkBooking = () => {
+  const p = new URLSearchParams(location.search);
+  const arrival = p.get("arrival_date") || p.get("entrada");
+  const departure = p.get("departure_date") || p.get("saida");
+  if (!arrival || !departure) return;
+  const adults = p.get("adults") || p.get("hospedes");
+  const kids = p.get("kids") || p.get("children");
+  const ages = [...p.entries()]
+    .filter(([key]) => /^ages\[\d+\]$/.test(key) || key === "ages[]")
+    .map(([key, value], index) => ({
+      index: key === "ages[]" ? index : Number(key.match(/\d+/)?.[0] || index),
+      value
+    }))
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.value);
+  window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages });
+};
+
 window.addEventListener("DOMContentLoaded", () => {
   initIcons();
   initIntro();
@@ -2155,6 +2192,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initMobileFloatingControls();
   initBookingForm();
   initCompactBookingFlow();
+  initDeepLinkBooking();
   initHeroSlider();
   initGalleryCarousel();
   initScrollAnimations();

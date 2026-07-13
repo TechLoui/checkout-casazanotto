@@ -3,19 +3,19 @@
 Site da **Pousada Casa Zanotto** (frontend estático) + **backend de reservas**
 (checkout transparente Rede/Itaú → cria a reserva na ArtaxNet).
 
+O motor de reservas (busca → quartos → dados do hóspede → pagamento) é
+embutido direto na home, na seção `#reservar` — não há mais uma página de
+checkout separada.
+
 ## 📁 Estrutura do projeto
 
 ```
 .
-├── index.html            # site (home)
-├── checkout.html         # checkout (também embutido na home via iframe)
+├── index.html            # site (home) — inclui o motor de reservas embutido
 ├── styles.css            # estilos do site
-├── checkout.css          # estilos do checkout
-├── script.js             # JS do site
-├── checkout.js           # JS do checkout
+├── script.js             # JS do site + motor de reservas (#reservar)
 ├── hero.js               # animação da seção "A casa em imagens"
 ├── assets/               # imagens (logo, galeria, quartos, café, hidro, vídeos)
-├── netlify.toml          # publica o frontend estático na Netlify
 └── server/               # ⬅️ BACKEND (é ISTO que o Railway puxa)
     ├── package.json      # start: node src/server.js
     ├── railway.json      # config de deploy do Railway
@@ -54,7 +54,7 @@ Adicione uma a uma (NÃO precisa de `PORT`, o Railway injeta):
 | `MAX_INSTALLMENTS` | `6` |
 | `REDE_WEBHOOK_TOKEN` | *(token forte; o webhook PIX da Rede envia como `Bearer`)* |
 | **Outros** | |
-| `ALLOWED_ORIGINS` | URLs do site (ex.: `https://pousadacasazanotto.com,https://SEU-SITE.netlify.app`) |
+| `ALLOWED_ORIGINS` | `https://pousadacasazanotto.com.br,https://www.pousadacasazanotto.com.br` |
 | `ARTAX_WEBHOOK_TOKEN` | *(opcional — só se for usar webhooks do Artax)* |
 | `PAYMENT_SIMULATE` | *(só teste local: `true` simula pagamento aprovado sem chamar a Rede)* |
 
@@ -64,13 +64,17 @@ Adicione uma a uma (NÃO precisa de `PORT`, o Railway injeta):
 Depois do deploy, o Railway te dá uma URL pública, ex.:
 `https://sitecasazanotto-production.up.railway.app`
 
-## 🌐 Deploy do FRONTEND na Netlify
-- Conecte o repo na Netlify; ela publica a raiz (`publish = "."`).
-- Edite **`checkout.html`** e troque o placeholder pela URL do Railway:
-  ```html
-  window.CZ_CHECKOUT_API = "https://SUA-URL.up.railway.app/api";
-  ```
-- Garanta que o domínio do site esteja em `ALLOWED_ORIGINS` no Railway (CORS).
+## 🌐 Deploy do FRONTEND na Hostinger
+- Site estático hospedado na Hostinger, no domínio **pousadacasazanotto.com.br**
+  (upload dos arquivos da raiz — `index.html`, `styles.css`, `script.js`,
+  `hero.js`, `assets/` — via o painel/gerenciador de arquivos da Hostinger).
+- `script.js` já aponta por padrão para a URL de produção do backend no
+  Railway (`HOME_API_BASE`). Só precisa sobrescrever definindo
+  `window.CZ_CHECKOUT_API` antes de carregar o `script.js` se a URL do
+  Railway mudar.
+- Garanta que `https://pousadacasazanotto.com.br` (e a variante `www`, se
+  usada) esteja em `ALLOWED_ORIGINS` no Railway (CORS) — senão o site fica
+  no ar, mas a busca de disponibilidade e o pagamento param de funcionar.
 
 ## 💻 Rodar localmente
 ```bash
@@ -80,6 +84,6 @@ npm start                                           # http://localhost:8080
 
 # frontend (em outra aba) — sirva a raiz em http://localhost:5500
 ```
-Em `localhost`, o checkout já chama `http://localhost:8080/api` automaticamente.
+Em `localhost`, o motor de reservas já chama `http://localhost:8080/api` automaticamente.
 
 Detalhes do backend (endpoints, cartões de teste, segurança/PCI): ver `server/README.md`.

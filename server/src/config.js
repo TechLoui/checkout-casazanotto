@@ -14,6 +14,19 @@ export const config = {
     .map((origin) => origin.trim())
     .filter(Boolean),
 
+  // Chaves de API de parceiros (chamadas servidor-a-servidor à API de
+  // disponibilidade/cotação — ex.: Asksuite). Enviadas no header X-Api-Key.
+  partnerApiKeys: {
+    asksuite: process.env.ASKSUITE_API_KEY || ""
+  },
+
+  // Webhook de reserva confirmada para a Asksuite (rastreio de conversão).
+  // Sem ASKSUITE_WEBHOOK_URL o envio vira no-op (não quebra a reserva).
+  asksuite: {
+    webhookUrl: process.env.ASKSUITE_WEBHOOK_URL || "",
+    webhookSecret: process.env.ASKSUITE_WEBHOOK_SECRET || ""
+  },
+
   artax: {
     baseUrl: (process.env.ARTAX_BASE_URL || "https://artaxnet.com/pms-api/v1").replace(/\/$/, ""),
     clientId: process.env.ARTAX_CLIENT_ID || "",
@@ -82,7 +95,7 @@ export const config = {
     bcc: process.env.RESEND_BCC || "", // cópia para a pousada (opcional)
     brandName: process.env.BRAND_NAME || "Pousada Casa Zanotto",
     brandColor: process.env.BRAND_COLOR || "#ff6b00",
-    logoUrl: process.env.BRAND_LOGO_URL || "https://checkout-casazanotto.netlify.app/assets/logo.webp",
+    logoUrl: process.env.BRAND_LOGO_URL || "https://pousadacasazanotto.com.br/assets/logo.webp",
     siteUrl: process.env.BRAND_SITE_URL || "",
     phone: process.env.BRAND_PHONE || "",
     address: process.env.BRAND_ADDRESS || ""

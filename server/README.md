@@ -6,7 +6,7 @@ reserva na **ArtaxNet**. Também recebe os **webhooks** do Artax com validação
 assinatura.
 
 ```
-Cliente (checkout.html)
+Cliente (index.html, seção #reservar)
    │  POST /api/checkout  (dados + cartão, via HTTPS)
    ▼
 Backend  ──1── GET  Artax /rooms/availability   (reconfere preço real)
@@ -73,13 +73,15 @@ Resposta `201`:
 ```
 
 ## 5. Conectar o site (frontend)
-O `checkout.html` chama a API pela constante `API_BASE` em `checkout.js`.
-Em produção, defina a URL do backend **antes** de carregar o script, por ex. no
-`<head>` do `checkout.html`:
+O motor de reservas é embutido em `index.html` (seção `#reservar`) e chama a
+API pela constante `HOME_API_BASE` em `script.js`, que já aponta por padrão
+para a URL de produção do Railway. Pra apontar pra outra URL, defina **antes**
+de carregar o `script.js`:
 ```html
-<script>window.CZ_CHECKOUT_API = "https://api.pousadacasazanotto.com/api";</script>
+<script>window.CZ_CHECKOUT_API = "https://sua-url.up.railway.app/api";</script>
 ```
-E registre o domínio do site em `ALLOWED_ORIGINS`.
+E registre o domínio do site (hoje: `https://pousadacasazanotto.com.br`,
+hospedado na Hostinger) em `ALLOWED_ORIGINS`, no Railway.
 
 ## 6. Cartões de teste (sandbox e.Rede)
 Use a `REDE_BASE_URL` de sandbox. Cartões comuns de homologação:
