@@ -26,6 +26,49 @@ const parseJsonSafe = async (response) => {
 };
 
 /**
+ * Fallback de fotos por tipo de quarto (mesmo mapeamento usado no site,
+ * ver script.js → HOME_ROOM_PHOTOS). O Artax nem sempre tem foto cadastrada
+ * pra cada quarto/tarifa — isso garante que a API sempre devolve ao menos
+ * uma imagem, com URL absoluta (útil pra quem consome a API de fora, como
+ * a Asksuite).
+ */
+const ROOM_PHOTO_COUNTS = { standard: 15, bangalo: 14, gold: 8, "gold-master": 8 };
+
+const roomSlugFromName = (name) => {
+  const normalized = String(name || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  if (normalized.includes("master")) return "gold-master";
+  if (normalized.includes("gold")) return "gold";
+  if (normalized.includes("bangal")) return "bangalo";
+  if (normalized.includes("standard")) return "standard";
+  return null;
+};
+
+const localRoomImages = (roomName) => {
+  const slug = roomSlugFromName(roomName);
+  const count = slug && ROOM_PHOTO_COUNTS[slug];
+  if (!count) return [];
+  return Array.from({ length: count }, (_, i) => `${config.siteUrl}/assets/rooms/${slug}/${String(i + 1).padStart(2, "0")}.webp`);
+};
+
+/** Anexa `image`/`images` (URLs absolutas) em cada quarto/tarifa da disponibilidade. */
+const enrichRoomImages = (data) => {
+  if (!data?.rooms || Array.isArray(data.rooms)) return data;
+  for (const plans of Object.values(data.rooms)) {
+    for (const opt of Object.values(plans)) {
+      const images = localRoomImages(opt.room_name);
+      if (images.length) {
+        opt.images = images;
+        opt.image = images[0];
+      }
+    }
+  }
+  return data;
+};
+
+/**
  * Verifica disponibilidade de quartos.
  * GET /rooms/availability — parâmetros enviados na query string.
  */
@@ -42,7 +85,7 @@ export const checkAvailability = async ({ arrival_date, departure_date, adults, 
   if (!response.ok) {
     throw new ArtaxError(data.error || "Falha ao consultar disponibilidade.", response.status, data);
   }
-  return data;
+  return enrichRoomImages(data);
 };
 
 /**

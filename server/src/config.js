@@ -4,10 +4,16 @@ dotenv.config();
 
 const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET"];
 
+// URL pública do site (Hostinger) — usada pra montar URLs absolutas de
+// imagens dos quartos na API (parceiros como a Asksuite) e no rodapé do
+// e-mail de confirmação.
+const SITE_URL = (process.env.SITE_URL || "https://pousadacasazanotto.com.br").replace(/\/$/, "");
+
 export const config = {
   port: Number(process.env.PORT) || 8080,
   nodeEnv: process.env.NODE_ENV || "development",
   isProduction: process.env.NODE_ENV === "production",
+  siteUrl: SITE_URL,
 
   allowedOrigins: (process.env.ALLOWED_ORIGINS || "")
     .split(",")
@@ -95,8 +101,8 @@ export const config = {
     bcc: process.env.RESEND_BCC || "", // cópia para a pousada (opcional)
     brandName: process.env.BRAND_NAME || "Pousada Casa Zanotto",
     brandColor: process.env.BRAND_COLOR || "#ff6b00",
-    logoUrl: process.env.BRAND_LOGO_URL || "https://pousadacasazanotto.com.br/assets/logo.webp",
-    siteUrl: process.env.BRAND_SITE_URL || "",
+    logoUrl: process.env.BRAND_LOGO_URL || `${SITE_URL}/assets/logo.webp`,
+    siteUrl: process.env.BRAND_SITE_URL || SITE_URL,
     phone: process.env.BRAND_PHONE || "",
     address: process.env.BRAND_ADDRESS || ""
   }
