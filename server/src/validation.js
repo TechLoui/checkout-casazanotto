@@ -71,6 +71,7 @@ export const validateStayGuest = (body) => {
     roomId,
     rateplanId,
     comment: String(body.comment || "").slice(0, 500),
+    coupon: String(body.coupon || "").trim().toUpperCase().slice(0, 30) || undefined,
     guest: {
       first_name: firstName,
       last_name: String(guest.last_name || "").trim() || undefined,

@@ -20,6 +20,18 @@ export const config = {
     .map((origin) => origin.trim())
     .filter(Boolean),
 
+  // Cupons de desconto (checkout). Formato: "CODIGO:PERCENTUAL,OUTRO:10".
+  // Ex.: COUPONS=BEMVINDO10:10,ASKSUITETESTE:99
+  coupons: (process.env.COUPONS || "")
+    .split(",")
+    .map((pair) => pair.trim())
+    .filter(Boolean)
+    .reduce((acc, pair) => {
+      const [code, percent] = pair.split(":").map((part) => part.trim());
+      if (code && Number(percent) > 0) acc[code.toUpperCase()] = Number(percent);
+      return acc;
+    }, {}),
+
   // Chaves de API de parceiros (chamadas servidor-a-servidor à API de
   // disponibilidade/cotação — ex.: Asksuite). Enviadas no header X-Api-Key.
   partnerApiKeys: {

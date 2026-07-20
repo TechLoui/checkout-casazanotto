@@ -70,6 +70,23 @@ const resolveAuthoritativeOption = (availability, roomId, rateplanId) => {
   };
 };
 
+/** Confere se um código de cupom é válido; devolve { code, percent } ou null. */
+export const validateCoupon = (code) => {
+  if (!code) return null;
+  const normalized = String(code).trim().toUpperCase();
+  const percent = config.coupons[normalized];
+  return percent ? { code: normalized, percent } : null;
+};
+
+/** Aplica o desconto do cupom (se houver) sobre o preço autoritativo. */
+const applyCoupon = (code, basePrice) => {
+  if (!code) return { totalPrice: basePrice, coupon: null };
+  const coupon = validateCoupon(code);
+  if (!coupon) throw new ValidationError("Cupom inválido ou expirado.");
+  const totalPrice = Number((basePrice * (1 - coupon.percent / 100)).toFixed(2));
+  return { totalPrice, coupon };
+};
+
 /** Reconfere disponibilidade no momento da compra e calcula o total a cobrar. */
 const resolveStay = async (input) => {
   const availability = await checkAvailability({
@@ -84,9 +101,10 @@ const resolveStay = async (input) => {
     throw new ValidationError("A opção escolhida não está mais disponível para estas datas. Refaça a busca.");
   }
   const nights = nightsBetween(input.arrival_date, input.departure_date);
-  const totalPrice =
+  const basePrice =
     config.artax.priceMode === "per_night" ? Number((option.price * nights).toFixed(2)) : option.price;
-  return { option, totalPrice, amountCents: Math.round(totalPrice * 100) };
+  const { totalPrice, coupon } = applyCoupon(input.coupon, basePrice);
+  return { option, totalPrice, amountCents: Math.round(totalPrice * 100), coupon };
 };
 
 /**
@@ -96,13 +114,14 @@ const resolveStay = async (input) => {
  *  - pix: o valor já foi recebido; não há refund PIX automático aqui, então
  *         alertamos para DEVOLUÇÃO MANUAL e orientamos o cliente a contatar a pousada.
  */
-const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents, method = "card" }) => {
+const bookStay = async ({ input, option, totalPrice, reference, tid, amountCents, method = "card", coupon }) => {
+  const couponNote = coupon ? `Cupom ${coupon.code} (-${coupon.percent}%)` : null;
   const bookingPayload = {
     arrival_date: input.arrival_date,
     departure_date: input.departure_date,
     rateplan_id: option.rateplanId,
     status: config.artax.bookingStatus, // 2 = Confirmado (criada só após pagamento)
-    comment: [input.comment, `Pagamento Rede TID ${tid} ref ${reference}`].filter(Boolean).join(" | "),
+    comment: [input.comment, couponNote, `Pagamento Rede TID ${tid} ref ${reference}`].filter(Boolean).join(" | "),
     guest: input.guest,
     room_units: {
       [input.roomId]: {
@@ -185,7 +204,7 @@ const registerArtaxPayment = async (bookingId, { method, totalPrice, installment
 
 /* ============ CARTÃO: pré-autoriza → cria reserva → captura ============ */
 export const processCheckout = async (input) => {
-  const { option, totalPrice, amountCents } = await resolveStay(input);
+  const { option, totalPrice, amountCents, coupon } = await resolveStay(input);
   const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
   // 1) Pré-autorização (NÃO cobra ainda — só reserva o limite).
@@ -197,7 +216,7 @@ export const processCheckout = async (input) => {
   }
 
   // 2) Cria a reserva no Artax (se falhar, bookStay cancela a pré-autorização → cliente não é cobrado).
-  const booked = await bookStay({ input, option, totalPrice, reference, tid: auth.tid, amountCents });
+  const booked = await bookStay({ input, option, totalPrice, reference, tid: auth.tid, amountCents, coupon });
 
   // 3) Reserva garantida → captura (só agora cobra de fato).
   let captured = true;
@@ -233,6 +252,7 @@ export const processCheckout = async (input) => {
       reference,
       installments: input.installments,
       amount: totalPrice,
+      coupon: coupon ? { code: coupon.code, percent: coupon.percent } : null,
       captured,
       registered: paymentRegistered
     }
@@ -259,7 +279,7 @@ const pixReference = () =>
 
 export const createPixCharge = async (input) => {
   cleanupPix();
-  const { option, totalPrice, amountCents } = await resolveStay(input);
+  const { option, totalPrice, amountCents, coupon } = await resolveStay(input);
   const reference = pixReference();
 
   let tid, qrCode, qrImage = "", expiresInSec;
@@ -279,13 +299,14 @@ export const createPixCharge = async (input) => {
   }
   console.log("[pix] criado", { provider: config.pixProvider, tid, reference, amountCents });
 
-  pendingPix.set(tid, { provider: config.pixProvider, input, option, totalPrice, amountCents, reference, bookingId: null, room: null, createdAt: Date.now() });
+  pendingPix.set(tid, { provider: config.pixProvider, input, option, totalPrice, amountCents, coupon, reference, bookingId: null, room: null, createdAt: Date.now() });
 
   return {
     tid,
     qrCode, // copia-e-cola (EMV)
     qrImage, // imagem do QR em base64 (PNG) — Itaú não envia; front gera do copia-e-cola
     amount: totalPrice,
+    coupon: coupon ? { code: coupon.code, percent: coupon.percent } : null,
     expiresInSec
   };
 };
@@ -294,7 +315,14 @@ const paidPixResult = (entry, tid) => ({
   status: "paid",
   booking_id: entry.bookingId,
   room: entry.room,
-  payment: { method: "pix", tid, reference: entry.reference, amount: entry.totalPrice, registered: entry.registered }
+  payment: {
+    method: "pix",
+    tid,
+    reference: entry.reference,
+    amount: entry.totalPrice,
+    coupon: entry.coupon ? { code: entry.coupon.code, percent: entry.coupon.percent } : null,
+    registered: entry.registered
+  }
 });
 
 export const confirmPix = async (tid) => {
@@ -333,7 +361,8 @@ export const confirmPix = async (tid) => {
         reference: entry.reference,
         tid,
         amountCents: entry.amountCents,
-        method: "pix"
+        method: "pix",
+        coupon: entry.coupon
       });
       entry.bookingId = booked.booking_id;
       entry.room = booked.room;

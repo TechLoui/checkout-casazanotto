@@ -101,45 +101,40 @@ X-Api-Key: <chave>
 ```
 Vale só para `GET /api/availability`, em chamadas servidor-a-servidor. A chave específica da Asksuite foi enviada por canal separado (não fica neste documento). Sem rate limit dedicado — segue o limite geral do backend (80 req/min por IP), já que vocês sinalizaram não ter um mínimo necessário do lado de vocês.
 
-## 4. Rastreio de conversão — ✅ webhook implementado do nosso lado, falta só a URL de vocês
+## 4. Rastreio de conversão — ✅ Pixel instalado + evento de compra disparando
 
-Optamos por **webhook server-to-server** (em vez de dataLayer/GTM, já que não temos Tag Manager instalado hoje). O backend já está pronto para chamar uma URL de vocês assim que uma reserva é confirmada — tanto no fluxo de cartão quanto no de PIX (cobrindo também os casos em que o hóspede fecha a aba antes de ver a confirmação, já que o PIX é detectado por webhook do provedor ou pela varredura periódica).
+A Asksuite definiu: rastreio via **script do Pixel**, com evento `purchase` disparado sempre que um viajante concluir uma reserva no site (webhook fica como alternativa futura, não é requisito agora).
 
-**O que falta:** a URL de callback de vocês. Assim que tivermos, só precisamos configurá-la — o envio já está implementado.
-
-**Requisição enviada por nós:**
-```
-POST <sua URL de callback>
-Content-Type: application/json
-Authorization: Bearer <segredo compartilhado>   (opcional, se vocês quiserem)
+**Pixel instalado** (snippet da documentação oficial — https://integrations-docs.asksuite.com/pixel):
+```html
+<!-- Start Asksuite Pixel -->
+<script src="https://pixel.asksuite.com/asktag.js"></script>
+<!-- End Asksuite Pixel -->
 ```
 
-**Corpo (JSON):**
-```json
-{
-  "event": "booking.confirmed",
-  "booking_id": 1365372,
-  "arrival_date": "2026-08-10",
-  "departure_date": "2026-08-12",
-  "nights": 2,
-  "room": { "id": "301", "name": "Suíte Standard" },
-  "guests": { "adults": 2, "kids": 0 },
-  "guest": {
-    "first_name": "Maria",
-    "last_name": "Silva",
-    "email": "maria@example.com",
-    "phone": "62999991234"
-  },
-  "payment": { "method": "pix", "amount": 600, "currency": "BRL", "tid": "..." },
-  "confirmed_at": "2026-08-05T14:32:10.000Z"
-}
+**Evento de compra implementado**, no formato Enhanced Ecommerce documentado por vocês (`ecommerce.purchase`, não o formato GA4 mais novo — ajustamos depois de ler a doc oficial). Disparado no momento exato da confirmação da reserva (cartão capturado ou PIX pago):
+```javascript
+window.dataLayer.push({ ecommerce: null }); // limpa o objeto anterior
+window.dataLayer.push({
+  event: "purchase",
+  ecommerce: {
+    currencyCode: "BRL",
+    purchase: {
+      actionField: { id: "1365372", revenue: "600.00" },
+      products: [
+        { id: "301", name: "Suíte Standard", price: "600.00", quantity: 1 }
+      ]
+    }
+  }
+});
 ```
+Com controle de duplicidade (não dispara de novo em recarregamento/voltar) e sem quebrar a reserva do hóspede se algo falhar.
 
-Características: fire-and-forget (não bloqueia a confirmação da reserva pro hóspede), timeout de 5s, sem retry automático em caso de falha (loga o erro do nosso lado). Se vocês quiserem retry/fila do lado de vocês, é só tratar como um evento at-least-once.
+**O que ainda não está confirmado:** a documentação do Pixel não menciona nenhum ID de propriedade/conta pra identificar a Casa Zanotto — só o script genérico acima. Precisamos que vocês confirmem se a identificação da conta é automática (pelo domínio) ou se falta algum passo de configuração do lado de vocês pra reconhecer os eventos como sendo da nossa propriedade.
 
 **Precisamos de vocês:**
-- A URL de callback (`https://...`).
-- Se querem um segredo compartilhado para validar a origem (enviamos como `Authorization: Bearer <segredo>` se vocês fornecerem um).
+- Confirmar se falta algum ID/config de propriedade pra identificar a Casa Zanotto, ou se é automático pelo domínio.
+- Validar que o evento está chegando certo (temos um teste real pra mostrar, se precisar).
 
 ## Perguntas em aberto
 
@@ -150,9 +145,16 @@ Características: fire-and-forget (não bloqueia a confirmação da reserva pro 
 | Só cotação ou também cria reserva pela API | ✅ resolvido — só cotação, com redirecionamento pro motor de reservas |
 | Autenticação da API | ✅ resolvido — header `X-Api-Key` |
 | Rate limit / SLA esperado | ✅ resolvido — sem mínimo exigido pela Asksuite |
-| Rastreio: dataLayer (GTM) ou webhook | ✅ resolvido — webhook, já implementado do nosso lado |
-| URL de callback do webhook | 🔶 pendente — aguardando vocês |
-| Segredo compartilhado para o webhook (opcional) | 🔶 pendente — aguardando vocês (se quiserem) |
+| Rastreio: Pixel ou webhook | ✅ resolvido — Pixel com evento `purchase` (Enhanced Ecommerce); webhook fica pra uma integração futura, se fizer sentido |
+| Snippet do Pixel | 🔶 código pronto, falta publicar na Hostinger — é o único bloqueio restante |
+| ID de propriedade/conta da Casa Zanotto | ✅ resolvido — automático: a Asksuite vincula a reserva à empresa assim que o script estiver no ar |
+| Ambiente de homologação separado de produção | ✅ resolvido — não existe; validação é feita com reserva de teste em produção mesmo |
+| Validação do evento | ✅ resolvido — via reserva de teste (cupom de 99% ou o próprio Luiz reserva), depois de publicar o script |
+| Cancelamento/alteração de reserva (não temos esse fluxo pelo site) | ✅ resolvido — não é bloqueante pra Asksuite |
+| Reserva com múltiplos quartos (hoje só suportamos 1 por vez) | ✅ resolvido — aceitável ficar só com 1 item em `products[]` |
+| Pixel exige consentimento de cookies (site não tem banner hoje) | 🔶 pendente — ainda não respondido |
+
+*Webhook de reserva confirmada já está implementado no backend (payload documentado numa versão anterior deste doc) e pode ser reaproveitado se, no futuro, fizer mais sentido pra vocês do que o Pixel.*
 
 ---
-*Contato técnico: Luiz — Pousada Casa Zanotto. Documento atualizado em 13/07/2026.*
+*Contato técnico: Luiz — Pousada Casa Zanotto. Documento atualizado em 14/07/2026.*

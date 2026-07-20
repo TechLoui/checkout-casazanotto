@@ -469,6 +469,46 @@ const homeBrl = (value) =>
 
 const homeOnlyDigits = (value) => String(value || "").replace(/\D/g, "");
 
+/* Evento de compra no formato Enhanced Ecommerce esperado pelo Pixel da
+   Asksuite (dataLayer.ecommerce.purchase — ver integrations-docs.asksuite.com/pixel).
+   Dedup por reserva (sessionStorage) evita duplicar em recarregamento ou
+   botão voltar; nunca deixa o pixel quebrar a confirmação pro hóspede. */
+const pushPurchaseEvent = (data, room) => {
+  try {
+    const bookingId = data?.booking_id;
+    if (!bookingId) return;
+    const dedupeKey = `cz-purchase-${bookingId}`;
+    if (sessionStorage.getItem(dedupeKey)) return;
+    sessionStorage.setItem(dedupeKey, "1");
+
+    const value = Number(data?.payment?.amount ?? room?.price ?? 0);
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null }); // limpa o objeto anterior antes de empurrar o novo
+    window.dataLayer.push({
+      event: "purchase",
+      ecommerce: {
+        currencyCode: "BRL",
+        purchase: {
+          actionField: {
+            id: String(bookingId),
+            revenue: value.toFixed(2)
+          },
+          products: [
+            {
+              id: String(data?.room?.id ?? room?.roomId ?? ""),
+              name: data?.room?.name || room?.room_name || "",
+              price: value.toFixed(2),
+              quantity: 1
+            }
+          ]
+        }
+      }
+    });
+  } catch (error) {
+    console.error("[pixel] falha ao registrar evento de compra:", error);
+  }
+};
+
 const homeToImageList = (value) => {
   if (!value) return [];
   if (typeof value === "string") return [value];
@@ -946,6 +986,7 @@ const initCompactBookingFlow = () => {
     if (successId) {
       successId.textContent = data?.booking_id ? `Reserva nº ${data.booking_id}` : "Reserva confirmada.";
     }
+    pushPurchaseEvent(data, state.room);
     goToStep("done");
   };
 
