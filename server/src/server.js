@@ -7,7 +7,7 @@ import { config, assertConfig } from "./config.js";
 import { validateAvailability, validateCheckout, validatePix, ValidationError } from "./validation.js";
 import { checkAvailability, listCostCenters, ArtaxError } from "./artaxnet.js";
 import { RedeError } from "./rede.js";
-import { processCheckout, createPixCharge, confirmPix, reconcilePendingPix, validateCoupon } from "./bookingFlow.js";
+import { processCheckout, createPixCharge, confirmPix, reconcilePendingPix } from "./bookingFlow.js";
 import { verifyArtaxWebhook, handleArtaxEvent } from "./webhooks.js";
 
 assertConfig();
@@ -103,13 +103,6 @@ app.get("/api/availability", requirePartnerKeyForServerCalls, async (req, res, n
   } catch (error) {
     next(error);
   }
-});
-
-// Valida um cupom de desconto (usado no front pra mostrar o total já com desconto).
-app.get("/api/coupon", (req, res) => {
-  const coupon = validateCoupon(req.query.code);
-  if (!coupon) return res.status(404).json({ error: "Cupom inválido ou expirado." });
-  res.json({ valid: true, code: coupon.code, percent: coupon.percent });
 });
 
 // Checkout por CARTÃO: cobra na Rede e cria a reserva no Artax (só se aprovado).

@@ -80,7 +80,7 @@ de carregar o `script.js`:
 ```html
 <script>window.CZ_CHECKOUT_API = "https://sua-url.up.railway.app/api";</script>
 ```
-E registre o domínio do site (hoje: `https://pousadacasazanotto.com.br`,
+E registre o domínio do site (hoje: `https://pousadacasazanotto.com`,
 hospedado na Hostinger) em `ALLOWED_ORIGINS`, no Railway.
 
 ## 6. Cartões de teste (sandbox e.Rede)
@@ -124,3 +124,40 @@ Use a `REDE_BASE_URL` de sandbox. Cartões comuns de homologação:
   padrão. Se for **por diária**, basta definir `ARTAX_PRICE_MODE=per_night` no
   `.env` — o backend multiplica pelo nº de noites (tanto na exibição quanto na
   cobrança), sem mexer no código.
+
+## 11. Migração de segurança Itaú (PIX) — prazo 15/09/2026
+Doc oficial: https://devportal.itau.com.br/certificados-apis-expiracao-2026
+
+O Itaú está trocando a cadeia de certificados (nova Root CA + intermediário)
+e os endereços de conexão usados nas APIs. **Não afeta** o certificado mTLS
+dinâmico (`ITAU_CERT_B64`/`ITAU_KEY_B64`) nem webhooks — só a validação do
+certificado *do servidor do Itaú* e a URL base.
+
+**Status (17/08/2026): cadeia baixada e validada.** A nova cadeia é CA
+**pública** (GlobalSign Root R46 + intermediários GCC R46 OV/EV TLS CA 2025,
+emitidos set/2025). `sts.itau.com.br` **também está na migração** (tem
+certificado novo assinado pela mesma CA — confirmado pelos arquivos
+baixados, mesmo não aparecendo na tabela pública da página).
+
+Bundle pronto (Root + 2 intermediários, sem os certificados-folha por
+domínio — esses expiram a cada ~200 dias e são rotacionados pelo Itaú, não
+servem como âncora de confiança):
+- `pix/itau-nova-ca.pem` — uso local via `ITAU_CA_PATH`
+- `pix/itau-nova-ca.b64` — conteúdo pronto pra colar em `ITAU_CA_B64` no Railway
+
+**Ação pendente:** colar o conteúdo de `pix/itau-nova-ca.b64` na variável
+`ITAU_CA_B64` do ambiente de produção (Railway) e redeployar — o código em
+`src/itau.js` já lê essa variável automaticamente, sem precisar de mais
+nenhuma mudança. **Não esperar o prazo de 15/09**: os certificados-folha do
+Itaú já foram emitidos em 29-30/07/2026, ou seja, a troca já está ativa nos
+servidores. Se `PIX_PROVIDER=itau` estiver ligado em produção, isso pode já
+estar (ou ficar a qualquer momento) causando falha de TLS nas cobranças PIX.
+
+Ainda não confirmado (baixa prioridade — não bloqueia o acima): se o
+certificado mTLS **do cliente** (o que já usamos, válido até 30/06/2027)
+precisa ser reemitido por causa dessa migração. Pergunta já redigida em
+`duvida-itau-migracao-certificados.md`.
+
+**Não trocar `ITAU_BASE_URL`/`ITAU_OAUTH_URL` ainda** — os endereços atuais
+continuam válidos e já estão servindo a cadeia nova; só migrar para
+`secure.gateway.api.itau` depois que o Itaú confirmar que é obrigatório.

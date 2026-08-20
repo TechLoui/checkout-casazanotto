@@ -7,7 +7,7 @@ const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET"];
 // URL pública do site (Hostinger) — usada pra montar URLs absolutas de
 // imagens dos quartos na API (parceiros como a Asksuite) e no rodapé do
 // e-mail de confirmação.
-const SITE_URL = (process.env.SITE_URL || "https://pousadacasazanotto.com.br").replace(/\/$/, "");
+const SITE_URL = (process.env.SITE_URL || "https://pousadacasazanotto.com").replace(/\/$/, "");
 
 export const config = {
   port: Number(process.env.PORT) || 8080,
@@ -20,18 +20,6 @@ export const config = {
     .map((origin) => origin.trim())
     .filter(Boolean),
 
-  // Cupons de desconto (checkout). Formato: "CODIGO:PERCENTUAL,OUTRO:10".
-  // Ex.: COUPONS=BEMVINDO10:10,ASKSUITETESTE:99
-  coupons: (process.env.COUPONS || "")
-    .split(",")
-    .map((pair) => pair.trim())
-    .filter(Boolean)
-    .reduce((acc, pair) => {
-      const [code, percent] = pair.split(":").map((part) => part.trim());
-      if (code && Number(percent) > 0) acc[code.toUpperCase()] = Number(percent);
-      return acc;
-    }, {}),
-
   // Chaves de API de parceiros (chamadas servidor-a-servidor à API de
   // disponibilidade/cotação — ex.: Asksuite). Enviadas no header X-Api-Key.
   partnerApiKeys: {
@@ -42,7 +30,13 @@ export const config = {
   // Sem ASKSUITE_WEBHOOK_URL o envio vira no-op (não quebra a reserva).
   asksuite: {
     webhookUrl: process.env.ASKSUITE_WEBHOOK_URL || "",
-    webhookSecret: process.env.ASKSUITE_WEBHOOK_SECRET || ""
+    webhookSecret: process.env.ASKSUITE_WEBHOOK_SECRET || "",
+    // Nova API de rastreio por sessão (_askSI) pedida pelo Felippe (Asksuite,
+    // 17/08/2026), endpoint confirmado em 18/08/2026. A chave é obrigatória
+    // (sem ASKSUITE_PURCHASE_API_KEY o envio vira no-op — nunca mandamos sem
+    // autenticação). Ver partners.js → notifyAsksuitePurchase.
+    purchaseApiUrl: (process.env.ASKSUITE_PURCHASE_API_URL || "https://cookies.asksuite.com/reservation/events").replace(/\/$/, ""),
+    purchaseApiKey: process.env.ASKSUITE_PURCHASE_API_KEY || ""
   },
 
   artax: {
@@ -101,6 +95,10 @@ export const config = {
     keyB64: process.env.ITAU_KEY_B64 || "",
     certPath: process.env.ITAU_CERT_PATH || "",
     keyPath: process.env.ITAU_KEY_PATH || "",
+    // Nova cadeia de certificados do Itaú (Root CA + intermediário) — migração
+    // de segurança com prazo 15/09/2026. Opcional (ver server/src/itau.js).
+    caB64: process.env.ITAU_CA_B64 || "",
+    caPath: process.env.ITAU_CA_PATH || "",
     expiracao: Number(process.env.ITAU_PIX_EXPIRACAO) || 900 // segundos de validade do QR
   },
 

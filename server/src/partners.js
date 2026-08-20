@@ -34,3 +34,38 @@ export const notifyAsksuiteBooking = async (payload) => {
     clearTimeout(timeout);
   }
 };
+
+/**
+ * Notifica a Asksuite da compra vinculada a uma sessão de atendimento
+ * (_askSI) — pedido do Felippe (Asksuite), endpoint confirmado em 18/08/2026:
+ * POST https://cookies.asksuite.com/reservation/events, header x-api-key.
+ * Fire-and-forget; nunca derruba a reserva. No-op se ASKSUITE_PURCHASE_API_KEY
+ * não estiver configurada (nunca chamamos a API deles sem autenticação).
+ */
+export const notifyAsksuitePurchase = async (payload) => {
+  const { purchaseApiUrl: url, purchaseApiKey: key } = config.asksuite;
+  if (!url || !key) return;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      console.error("[asksuite] purchase API respondeu erro:", res.status, (await res.text().catch(() => "")).slice(0, 300));
+      return;
+    }
+    console.log("[asksuite] purchase API notificada", { ask_si: payload?.session?._askSI });
+  } catch (err) {
+    console.error("[asksuite] falha ao notificar purchase API:", err.message);
+  } finally {
+    clearTimeout(timeout);
+  }
+};

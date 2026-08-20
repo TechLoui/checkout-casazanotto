@@ -473,7 +473,7 @@ const homeOnlyDigits = (value) => String(value || "").replace(/\D/g, "");
    Asksuite (dataLayer.ecommerce.purchase — ver integrations-docs.asksuite.com/pixel).
    Dedup por reserva (sessionStorage) evita duplicar em recarregamento ou
    botão voltar; nunca deixa o pixel quebrar a confirmação pro hóspede. */
-const pushPurchaseEvent = (data, room) => {
+const pushPurchaseEvent = (data, selectedRooms) => {
   try {
     const bookingId = data?.booking_id;
     if (!bookingId) return;
@@ -481,7 +481,11 @@ const pushPurchaseEvent = (data, room) => {
     if (sessionStorage.getItem(dedupeKey)) return;
     sessionStorage.setItem(dedupeKey, "1");
 
-    const value = Number(data?.payment?.amount ?? room?.price ?? 0);
+    const serverRooms = Array.isArray(data?.rooms) && data.rooms.length ? data.rooms : null;
+    const fallbackRooms = (selectedRooms || []).map((r) => ({ id: r.roomId, name: r.room_name, price: r.price }));
+    const rooms = serverRooms || fallbackRooms;
+    const value = Number(data?.payment?.amount ?? rooms.reduce((sum, r) => sum + Number(r.price || 0), 0));
+
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ ecommerce: null }); // limpa o objeto anterior antes de empurrar o novo
     window.dataLayer.push({
@@ -493,14 +497,12 @@ const pushPurchaseEvent = (data, room) => {
             id: String(bookingId),
             revenue: value.toFixed(2)
           },
-          products: [
-            {
-              id: String(data?.room?.id ?? room?.roomId ?? ""),
-              name: data?.room?.name || room?.room_name || "",
-              price: value.toFixed(2),
-              quantity: 1
-            }
-          ]
+          products: rooms.map((r) => ({
+            id: String(r.id ?? ""),
+            name: r.name || "",
+            price: Number(r.price || 0).toFixed(2),
+            quantity: 1
+          }))
         }
       }
     });
@@ -600,7 +602,6 @@ const homeFlattenRooms = (rooms) => {
       variant: (fullName.split("|")[1] || "").trim(),
       price: Number(opt.price || 0),
       pricePerNight: Number(opt.price_per_nights) || null,
-      capacity: opt.capacity || null,
       images: safeImages,
       image: safeImages[0]
     });
@@ -657,13 +658,17 @@ const initCompactBookingFlow = () => {
   const selectedRoom = form.querySelector("[data-home-selected-room]");
   const paySubmit = form.querySelector("[data-home-pay-submit]");
   const paySubmitLabel = paySubmit?.querySelector("span");
+  const cartSummary = form.querySelector("[data-home-cart-summary]");
+  const cartCount = form.querySelector("[data-home-cart-count]");
+  const cartTotalEl = form.querySelector("[data-home-cart-total]");
+  const roomsContinueBtn = form.querySelector("[data-home-rooms-continue]");
   const panels = Array.from(form.querySelectorAll("[data-home-panel]"));
   const tabs = Array.from(form.querySelectorAll("[data-home-tab]"));
   const stepIndex = { dates: 0, guests: 1, rooms: 2, guest: 3, payment: 4, done: 5 };
   const state = {
     rooms: [],
+    selectedRooms: [],
     search: null,
-    room: null,
     payMethod: "pix",
     pixPoll: null,
     pixExpiresAt: 0,
@@ -695,13 +700,25 @@ const initCompactBookingFlow = () => {
 
   const resetAvailability = () => {
     state.rooms = [];
+    state.selectedRooms = [];
     state.search = null;
-    state.room = null;
     if (roomList) roomList.innerHTML = "";
     if (selectedRoom) selectedRoom.textContent = "";
     clearNotice(notice);
     clearNotice(guestNotice);
     clearNotice(payNotice);
+    updateCartSummary();
+  };
+
+  const cartTotal = () => state.selectedRooms.reduce((sum, r) => sum + r.price, 0);
+
+  /** Atualiza o resumo do carrinho e o botão "Continuar" na etapa de quartos. */
+  const updateCartSummary = () => {
+    const count = state.selectedRooms.length;
+    if (cartSummary) cartSummary.hidden = count === 0;
+    if (cartCount) cartCount.textContent = count === 1 ? "1 acomodação selecionada" : `${count} acomodações selecionadas`;
+    if (cartTotalEl) cartTotalEl.textContent = homeBrl(cartTotal());
+    if (roomsContinueBtn) roomsContinueBtn.disabled = count === 0;
   };
 
   const stopPixPolling = () => {
@@ -737,16 +754,19 @@ const initCompactBookingFlow = () => {
     setText("[data-home-review-guests]", guestText);
     setText("[data-home-review-nights]", nights ? `${nights} noite(s)` : "-");
 
-    if (state.room) {
-      setText("[data-home-pay-room]", state.room.variant ? `${state.room.room_name} · ${state.room.variant}` : state.room.room_name);
-      setText("[data-home-pay-total]", homeBrl(state.room.price));
+    if (state.selectedRooms.length) {
+      const roomLabel = (r) => (r.variant ? `${r.room_name} · ${r.variant}` : r.room_name);
+      const names = state.selectedRooms.map(roomLabel).join(", ");
+      setText("[data-home-pay-room]", names);
+      setText("[data-home-pay-total]", homeBrl(cartTotal()));
       if (selectedRoom) {
-        selectedRoom.textContent = `${state.room.room_name}${state.room.variant ? ` · ${state.room.variant}` : ""} selecionado · ${homeBrl(state.room.price)}`;
+        selectedRoom.textContent = `${names} selecionado(s) · ${homeBrl(cartTotal())}`;
       }
     } else {
       setText("[data-home-pay-room]", "-");
       setText("[data-home-pay-total]", "-");
     }
+    updateCartSummary();
   };
 
   const syncCalendar = () => {
@@ -797,7 +817,7 @@ const initCompactBookingFlow = () => {
   const goToStep = (step, shouldScroll = true) => {
     if (step !== "dates" && (!arrivalInput.value || !departureInput.value)) {
       activeStep = "dates";
-    } else if ((step === "guest" || step === "payment") && !state.room) {
+    } else if ((step === "guest" || step === "payment") && !state.selectedRooms.length) {
       activeStep = "rooms";
     } else {
       activeStep = step;
@@ -859,26 +879,27 @@ const initCompactBookingFlow = () => {
     }
     const nights = compactNightsBetween(arrivalInput.value, departureInput.value) || 1;
     roomList.innerHTML = rooms.map((room, index) => {
-      const cap = room.capacity
-        ? `Até ${room.capacity.adults || "-"} adulto(s)${room.capacity.kids ? ` + ${room.capacity.kids} criança(s)` : ""}`
-        : "Disponível para as datas escolhidas";
       const title = room.variant ? `${room.room_name} · ${room.variant}` : room.room_name;
-      const selected = state.room?.roomId === room.roomId && state.room?.rateplanId === room.rateplanId;
+      const selected = state.selectedRooms.some((r) => r.roomId === room.roomId && r.rateplanId === room.rateplanId);
       return `
         <article class="home-room-option${selected ? " is-selected" : ""}" data-home-room-card="${index}">
-          <img src="${homeEscapeHTML(room.image)}" alt="${homeEscapeHTML(title)}" loading="${index === 0 ? "eager" : "lazy"}">
+          <div class="home-room-media">
+            <img src="${homeEscapeHTML(room.image)}" alt="${homeEscapeHTML(title)}" loading="${index === 0 ? "eager" : "lazy"}">
+            <span class="home-room-check${selected ? " is-checked" : ""}" data-home-room-select="${index}" role="checkbox" aria-checked="${selected}" aria-label="${selected ? "Remover" : "Selecionar"} ${homeEscapeHTML(title)}">
+              <i data-lucide="check" aria-hidden="true"></i>
+            </span>
+          </div>
           <div class="home-room-body">
             <h4>${homeEscapeHTML(room.room_name)}</h4>
             ${room.variant ? `<p>${homeEscapeHTML(room.variant)}</p>` : ""}
-            <p>${homeEscapeHTML(cap)}</p>
             <div class="home-room-price">
               <span>
                 ${room.pricePerNight ? `<small>${homeBrl(room.pricePerNight)} / noite</small>` : ""}
                 <strong>${homeBrl(room.price)}</strong>
                 <small>total · ${nights} noite(s)</small>
               </span>
-              <button class="button button-primary" type="button" data-home-room-select="${index}">
-                Selecionar
+              <button class="button ${selected ? "button-ghost" : "button-primary"}" type="button" data-home-room-select="${index}">
+                ${selected ? "Remover" : "Selecionar"}
               </button>
             </div>
           </div>
@@ -916,13 +937,13 @@ const initCompactBookingFlow = () => {
     }
   };
 
-  const selectRoom = (room) => {
-    state.room = room;
-    buildInstallments(room.price);
+  const toggleRoomSelection = (room) => {
+    const idx = state.selectedRooms.findIndex((r) => r.roomId === room.roomId && r.rateplanId === room.rateplanId);
+    if (idx >= 0) state.selectedRooms.splice(idx, 1);
+    else state.selectedRooms.push(room);
     renderRooms(state.rooms);
     updateReview();
     clearNotice(notice);
-    goToStep("guest");
   };
 
   const guestPayload = () => ({
@@ -957,12 +978,20 @@ const initCompactBookingFlow = () => {
     return true;
   };
 
-  const baseReservationPayload = () => ({
-    ...state.search,
-    room_id: state.room.roomId,
-    rateplan_id: state.room.rateplanId,
-    guest: guestPayload()
-  });
+  const baseReservationPayload = () => {
+    const rooms = state.selectedRooms.map((r) => ({ room_id: r.roomId, rateplan_id: r.rateplanId }));
+    const primaryRoom = rooms[0];
+    return {
+      ...state.search,
+      rooms,
+      // Compatibilidade temporária com versões anteriores do backend no Railway.
+      // O backend atual usa `rooms`; o legado espera estes campos na raiz.
+      room_id: primaryRoom?.room_id,
+      rateplan_id: primaryRoom?.rateplan_id,
+      ask_si: getAskSi() || undefined,
+      guest: guestPayload()
+    };
+  };
 
   const setPayMethod = (method) => {
     state.payMethod = method;
@@ -986,7 +1015,7 @@ const initCompactBookingFlow = () => {
     if (successId) {
       successId.textContent = data?.booking_id ? `Reserva nº ${data.booking_id}` : "Reserva confirmada.";
     }
-    pushPurchaseEvent(data, state.room);
+    pushPurchaseEvent(data, state.selectedRooms);
     goToStep("done");
   };
 
@@ -1104,15 +1133,16 @@ const initCompactBookingFlow = () => {
       await fetchAvailability();
       return;
     }
-    if (target === "guest" && !state.room) {
+    if (target === "guest" && !state.selectedRooms.length) {
       goToStep("rooms");
-      showNotice(notice, "Selecione uma acomodação para continuar.");
+      showNotice(notice, "Selecione ao menos uma acomodação para continuar.");
       return;
     }
+    if (target === "guest") buildInstallments(cartTotal());
     if (target === "payment") {
-      if (!state.room) {
+      if (!state.selectedRooms.length) {
         goToStep("rooms");
-        showNotice(notice, "Selecione uma acomodação para continuar.");
+        showNotice(notice, "Selecione ao menos uma acomodação para continuar.");
         return;
       }
       if (!validateGuest(true)) {
@@ -1194,7 +1224,7 @@ const initCompactBookingFlow = () => {
     const button = event.target.closest("[data-home-room-select]");
     if (!button) return;
     const room = state.rooms[Number(button.dataset.homeRoomSelect)];
-    if (room) selectRoom(room);
+    if (room) toggleRoomSelection(room);
   });
 
   form.querySelectorAll("[data-home-next], [data-home-prev], [data-home-tab]").forEach((button) => {
@@ -1265,9 +1295,9 @@ const initCompactBookingFlow = () => {
       fetchAvailability();
       return;
     }
-    if (!state.room) {
+    if (!state.selectedRooms.length) {
       goToStep("rooms");
-      showNotice(notice, "Selecione uma acomodação para continuar.");
+      showNotice(notice, "Selecione ao menos uma acomodação para continuar.");
       return;
     }
     if (!validateGuest(true)) {
@@ -1401,8 +1431,16 @@ const initMobileFloatingControls = () => {
 
 const initHeroSlider = () => {
   const slides = Array.from(document.querySelectorAll("[data-hero-slider] .hero-slide"));
+  const eyebrow = document.querySelector("[data-hero-eyebrow]");
+  const title = document.querySelector("[data-hero-title]");
+  const copy = document.querySelector("[data-hero-copy]");
+  const progress = document.querySelector("[data-hero-progress]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (slides.length < 2 || reduceMotion) return;
+  if (!slides.length) return;
+
+  if (progress) {
+    progress.innerHTML = slides.map((_, index) => `<button type="button" aria-label="Ver slide ${index + 1}" data-hero-go="${index}"></button>`).join("");
+  }
 
   // As fotos além da primeira só têm data-src no HTML (não competem com o
   // conteúdo crítico do primeiro paint). Carrega elas depois que a página
@@ -1418,10 +1456,37 @@ const initHeroSlider = () => {
   let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (activeIndex < 0) activeIndex = 0;
 
+  const showSlide = (nextIndex) => {
+    const next = slides[nextIndex];
+    if (!next) return;
+    slides[activeIndex]?.classList.remove("is-active");
+    activeIndex = nextIndex;
+    next.classList.add("is-active");
+    const text = document.querySelector(".hero-text");
+    text?.classList.add("is-changing");
+    window.setTimeout(() => {
+      if (eyebrow) eyebrow.textContent = next.dataset.eyebrow || "Casa Zanotto";
+      if (title) title.textContent = next.dataset.title || "Pousada Casa Zanotto";
+      if (copy) copy.textContent = next.dataset.copy || "";
+      text?.classList.remove("is-changing");
+      fitOneLineTitles();
+    }, reduceMotion ? 0 : 130);
+    progress?.querySelectorAll("button").forEach((button, index) => {
+      button.classList.toggle("is-active", index === activeIndex);
+      button.setAttribute("aria-current", index === activeIndex ? "true" : "false");
+    });
+  };
+
+  showSlide(activeIndex);
+  progress?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-hero-go]");
+    if (button) showSlide(Number(button.dataset.heroGo));
+  });
+
+  if (slides.length < 2 || reduceMotion) return;
+
   const showNext = () => {
-    slides[activeIndex].classList.remove("is-active");
-    activeIndex = (activeIndex + 1) % slides.length;
-    slides[activeIndex].classList.add("is-active");
+    showSlide((activeIndex + 1) % slides.length);
   };
 
   let timer = window.setInterval(showNext, 5200);
@@ -1668,279 +1733,6 @@ const initOneLineTitles = () => {
   }, { passive: true });
 };
 
-/* Intro em vídeo (desktop). Mudo + autoplay; some ao terminar/pular/Esc.
-   No mobile/reduced-motion o overlay fica display:none (CSS) e nem baixamos o vídeo. */
-const initIntro = () => {
-  const overlay = document.querySelector("[data-intro]");
-  if (!overlay) return;
-  // CSS esconde no mobile e em prefers-reduced-motion → não carrega o vídeo.
-  if (window.getComputedStyle(overlay).display === "none") {
-    overlay.classList.add("is-done");
-    return;
-  }
-
-  const video = overlay.querySelector("[data-intro-video]");
-  const skip = overlay.querySelector("[data-intro-skip]");
-  let done = false;
-
-  const end = () => {
-    if (done) return;
-    done = true;
-    overlay.classList.add("is-hiding");
-    document.body.classList.remove("intro-active");
-    window.setTimeout(() => overlay.classList.add("is-done"), 780);
-    try { video.pause(); } catch (_) {}
-  };
-
-  document.body.classList.add("intro-active");
-  const isMobile = window.matchMedia("(max-width: 1023px)").matches;
-  video.src = isMobile ? "assets/Intro%20Mobile.mp4" : "assets/Intro%20Desktop.mp4";
-  video.muted = true;
-  video.addEventListener("ended", end);
-  video.addEventListener("error", end);
-  skip?.addEventListener("click", end);
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") end();
-  });
-
-  const played = video.play?.();
-  if (played && typeof played.catch === "function") {
-    played.catch(() => end()); // se o autoplay for bloqueado, libera o site
-  }
-};
-
-/* ----------------------------------------------------------------------------
-   Aura background — fluid neon shader adapted to white canvas + orange lines.
-   Based on the "Fluid Neon" WebGL effect, re-tuned so the lines read as warm
-   orange ink flowing across a soft warm-white field.
----------------------------------------------------------------------------- */
-const initAura = () => {
-  const mount = document.querySelector("[data-aura]");
-  if (!mount || !window.THREE) return;
-
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const isMobile = window.matchMedia("(max-width: 760px)").matches;
-
-  let renderer;
-  try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
-  } catch (error) {
-    return; // WebGL unavailable — the warm-white page background remains.
-  }
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, isMobile ? 1.4 : 1.8);
-  renderer.setPixelRatio(pixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  mount.appendChild(renderer.domElement);
-
-  const vertexShader = `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = vec4(position, 1.0);
-    }
-  `;
-
-  const fragmentShader = `
-    precision highp float;
-    uniform float uTime;
-    uniform vec2 uResolution;
-    uniform vec3 uColor1;
-    uniform vec3 uColor2;
-    uniform vec3 uBgColor;
-    uniform float uSpeed;
-    uniform float uComplexity;
-    uniform float uDensity;
-    uniform float uIntensity;
-    uniform vec2 uMouse;
-    uniform float uHoverEffect;
-    varying vec2 vUv;
-
-    mat2 rot(float a) {
-      float s = sin(a), c = cos(a);
-      return mat2(c, -s, s, c);
-    }
-
-    void main() {
-      vec2 p = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
-      vec2 original_p = p;
-      float time = uTime * uSpeed * 0.5;
-      p *= rot(0.2);
-
-      if (uHoverEffect > 0.0) {
-        vec2 m = uMouse;
-        m.x *= uResolution.x / min(uResolution.x, uResolution.y);
-        m.y *= uResolution.y / min(uResolution.x, uResolution.y);
-        m *= rot(0.2);
-        float mouseDist = length(p - m);
-        float force = smoothstep(1.5, 0.0, mouseDist) * uHoverEffect;
-        p += (p - m) * force * 0.18;
-        p *= rot(force * 0.14);
-      }
-
-      float iterations = floor(uComplexity);
-      float glow = 0.0;
-      vec3 colAccum = vec3(0.0);
-
-      for (float i = 1.0; i <= 20.0; i++) {
-        if (i > iterations) break;
-        p *= rot(sin(time * 0.05) * 0.1 + 0.08);
-        vec2 q = p;
-        float dist = length(p);
-        q *= rot(dist * uDensity * 0.25 - time * 0.3);
-        float freq = uDensity * 0.8;
-        q.x += sin(q.y * freq + time * 0.5 + i * 0.15) * 0.5;
-        q.y += cos(q.x * freq - time * 0.5 - i * 0.15) * 0.5;
-        vec2 r = q;
-        r.x += sin(q.y * freq * 2.0 - time * 0.8) * 0.25;
-        r.y += cos(q.x * freq * 2.0 + time * 0.8) * 0.25;
-        float wave = sin(r.x * freq * 1.5 + time) * 0.6 + cos(r.y * freq * 0.5 - time * 0.7) * 0.4;
-        float d = abs(r.y - wave);
-        float core = 0.004 / max(d, 0.0025);
-        float soft1 = exp(-d * 8.0) * 0.6;
-        float soft2 = exp(-d * 2.0) * 0.2;
-        float mixFactor = sin(r.x * 3.0 + r.y * 2.0 + time + i * 1.6) * 0.5 + 0.5;
-        vec3 layerColor = mix(uColor1, uColor2, mixFactor);
-        float attenuation = 1.0 / (i * 0.6 + 1.0);
-        float inten = (core + soft1 + soft2) * uIntensity * attenuation * 30.0;
-        glow += inten;
-        colAccum += layerColor * inten;
-        p = r * 1.05;
-      }
-
-      vec3 lineColor = colAccum / max(glow, 0.0001);
-      float mask = 1.0 - exp(-glow * 2.4);
-
-      // Fade the ink toward the edges so the centre stays the visual focus.
-      float vignette = 1.0 - smoothstep(0.35, 2.3, length(original_p));
-      mask *= mix(0.5, 1.0, vignette);
-
-      vec3 finalColor = mix(uBgColor, lineColor, clamp(mask, 0.0, 1.0));
-      gl_FragColor = vec4(finalColor, 1.0);
-    }
-  `;
-
-  const uniforms = {
-    uTime: { value: 0.0 },
-    uResolution: { value: new THREE.Vector2(window.innerWidth * pixelRatio, window.innerHeight * pixelRatio) },
-    uColor1: { value: new THREE.Color("#ff8a3d") },
-    uColor2: { value: new THREE.Color("#ff5a00") },
-    uBgColor: { value: new THREE.Color("#fffaf5") },
-    uSpeed: { value: 0.26 },
-    uComplexity: { value: isMobile ? 5.0 : 7.0 },
-    uDensity: { value: 2.15 },
-    uIntensity: { value: 0.03 },
-    uMouse: { value: new THREE.Vector2(0, 0) },
-    uHoverEffect: { value: reduceMotion ? 0.0 : 1.0 }
-  };
-
-  const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, depthWrite: false, depthTest: false });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-  scene.add(mesh);
-
-  const targetMouse = new THREE.Vector2(0, 0);
-  const updateMouse = (x, y) => {
-    targetMouse.x = (x / window.innerWidth) * 2 - 1;
-    targetMouse.y = -(y / window.innerHeight) * 2 + 1;
-  };
-  window.addEventListener("mousemove", (e) => updateMouse(e.clientX, e.clientY), { passive: true });
-  window.addEventListener("touchmove", (e) => {
-    if (e.touches.length) updateMouse(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
-
-  const clock = new THREE.Clock();
-  let running = true;
-
-  const renderFrame = () => {
-    uniforms.uMouse.value.x += (targetMouse.x - uniforms.uMouse.value.x) * 0.05;
-    uniforms.uMouse.value.y += (targetMouse.y - uniforms.uMouse.value.y) * 0.05;
-    uniforms.uTime.value = clock.getElapsedTime();
-    renderer.render(scene, camera);
-  };
-
-  const animate = () => {
-    if (!running) return;
-    renderFrame();
-    requestAnimationFrame(animate);
-  };
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      uniforms.uResolution.value.set(window.innerWidth * pixelRatio, window.innerHeight * pixelRatio);
-      if (reduceMotion) renderFrame();
-    }, 150);
-  });
-
-  // Pause the loop when the tab is hidden to save battery/GPU.
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      running = false;
-    } else if (!reduceMotion && !running) {
-      running = true;
-      animate();
-    }
-  });
-
-  if (reduceMotion) {
-    renderFrame(); // single elegant static frame
-  } else {
-    animate();
-  }
-};
-
-/* Soft orange glow that trails the cursor (fine-pointer devices only). */
-const initCursorGlow = () => {
-  const glow = document.querySelector("[data-cursor]");
-  if (!glow) return;
-
-  const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (!finePointer) return;
-
-  document.body.classList.add("has-cursor-glow");
-
-  let targetX = window.innerWidth / 2;
-  let targetY = window.innerHeight / 2;
-  let currentX = targetX;
-  let currentY = targetY;
-  let visible = false;
-  let raf = 0;
-
-  const loop = () => {
-    currentX += (targetX - currentX) * 0.16;
-    currentY += (targetY - currentY) * 0.16;
-    glow.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%)`;
-    raf = requestAnimationFrame(loop);
-  };
-
-  window.addEventListener("mousemove", (event) => {
-    targetX = event.clientX;
-    targetY = event.clientY;
-    if (!visible) {
-      visible = true;
-      glow.classList.add("is-visible");
-    }
-    if (!raf) raf = requestAnimationFrame(loop);
-  });
-
-  document.addEventListener("mouseleave", () => {
-    visible = false;
-    glow.classList.remove("is-visible");
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-  });
-
-  // Grow the glow over interactive elements.
-  document.addEventListener("pointerover", (event) => {
-    const interactive = event.target.closest("a, button, summary, .mobile-float-button, .hero-hook, .promise-card, .suite-card, .ritual-panel, .feature-band, .reserve-shell, .field-control, .review-grid blockquote, .faq-list details, .dgc-slide, .gallery-card");
-    glow.classList.toggle("is-active", Boolean(interactive));
-  });
-};
-
 /* Pointer-follow spotlight + subtle tilt on premium cards. */
 const initCardInteractions = () => {
   const spotlightCards = document.querySelectorAll(
@@ -2047,20 +1839,20 @@ const initHeaderState = () => {
 ---------------------------------------------------------------------------- */
 const accommodations = [
   {
-    slug: "standard", name: "Suíte Standard", count: 15, tag: "Casal · Triplo",
-    desc: "Conforto essencial com ar-condicionado, TV Smart, frigobar e enxoval premium."
-  },
-  {
-    slug: "bangalo", name: "Bangalô Colonial", count: 14, tag: "Charme colonial",
-    desc: "Privacidade e charme colonial em meio ao jardim — perfeito para casais."
+    slug: "gold-master", name: "Suíte Gold Master", count: 8, tag: "Premium",
+    desc: "A acomodação mais especial para comemorar, com o máximo de requinte."
   },
   {
     slug: "gold", name: "Suíte Gold", count: 8, tag: "Varanda · Vista verde",
     desc: "Mais espaço e varanda privativa. Ideal para casal, triplo ou quádruplo."
   },
   {
-    slug: "gold-master", name: "Suíte Gold Master", count: 8, tag: "Premium",
-    desc: "A acomodação mais especial para comemorar, com o máximo de requinte."
+    slug: "standard", name: "Suíte Standard", count: 15, tag: "Casal · Triplo",
+    desc: "Conforto essencial com ar-condicionado, TV Smart, frigobar e enxoval premium."
+  },
+  {
+    slug: "bangalo", name: "Bangalô Colonial", count: 14, tag: "Charme colonial",
+    desc: "Privacidade e charme colonial em meio ao jardim, perfeito para casais."
   }
 ];
 
@@ -2108,7 +1900,7 @@ const initRooms = () => {
     .map((room) => {
       const slides = Array.from({ length: room.count }, (_, i) => {
         const src = `assets/rooms/${room.slug}/${String(i + 1).padStart(2, "0")}.webp`;
-        return `<img src="${src}" alt="${room.name} — foto ${i + 1}" loading="lazy" draggable="false">`;
+        return `<img src="${src}" alt="${room.name}, foto ${i + 1}" loading="lazy" draggable="false">`;
       }).join("");
       const dots = Array.from({ length: room.count }, (_, i) =>
         `<button type="button" class="rc-dot${i === 0 ? " is-active" : ""}" data-dot="${i}" aria-label="Foto ${i + 1}"></button>`
@@ -2159,7 +1951,7 @@ const initAmenities = () => {
   container.innerHTML = amenities
     .map((a) => {
       const slides = Array.from({ length: a.count }, (_, i) =>
-        `<img src="assets/${a.slug}/${String(i + 1).padStart(2, "0")}.webp" alt="${a.name} — foto ${i + 1}" loading="lazy" draggable="false">`
+        `<img src="assets/${a.slug}/${String(i + 1).padStart(2, "0")}.webp" alt="${a.name}, foto ${i + 1}" loading="lazy" draggable="false">`
       ).join("");
       const dots = Array.from({ length: a.count }, (_, i) =>
         `<button type="button" class="rc-dot${i === 0 ? " is-active" : ""}" data-dot="${i}" aria-label="Foto ${i + 1}"></button>`
@@ -2211,10 +2003,34 @@ const initReserveEmbed = () => {
   });
 };
 
+/* Identificador de sessão da Asksuite (_askSI) — presente no link direto que
+   a IA deles gera. Guardado em sessionStorage pra sobreviver às etapas do
+   motor de reservas e ser enviado no /api/checkout e /api/pix/create,
+   permitindo à Asksuite vincular a compra ao atendimento (pedido do
+   Felippe, 17/08/2026). */
+const CZ_ASK_SI_KEY = "cz_ask_si";
+const captureAskSi = () => {
+  try {
+    const p = new URLSearchParams(location.search);
+    const askSi = p.get("_askSI") || p.get("_askSi") || p.get("askSI");
+    if (askSi) sessionStorage.setItem(CZ_ASK_SI_KEY, askSi);
+  } catch (_) {
+    /* sessionStorage indisponível (modo privado etc.) — segue sem rastreio */
+  }
+};
+const getAskSi = () => {
+  try {
+    return sessionStorage.getItem(CZ_ASK_SI_KEY) || "";
+  } catch (_) {
+    return "";
+  }
+};
+
 /* Deep-link (ex.: parceiros como a Asksuite): se a URL trouxer check-in/
    check-out, prefila o motor de reservas da home e já busca a disponibilidade.
    Mesmos nomes de parâmetro aceitos pelo site (arrival_date/entrada, etc.). */
 const initDeepLinkBooking = () => {
+  captureAskSi();
   const p = new URLSearchParams(location.search);
   const arrival = p.get("arrival_date") || p.get("entrada");
   const departure = p.get("departure_date") || p.get("saida");
@@ -2234,12 +2050,9 @@ const initDeepLinkBooking = () => {
 
 window.addEventListener("DOMContentLoaded", () => {
   initIcons();
-  initIntro();
   initRooms();
   initAmenities();
   initReserveEmbed();
-  initAura();
-  initCursorGlow();
   initHeaderState();
   initMenu();
   initMobileFloatingControls();

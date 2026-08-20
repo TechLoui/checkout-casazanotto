@@ -18,14 +18,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260714-1">
+    <link rel="stylesheet" href="styles.css?v=20260722-1">
     <link rel="preload" as="image" href="assets/suite.webp">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20260714-1" defer></script>
-    <script src="hero.js?v=20260714-1" defer></script>
+    <script src="script.js?v=20260722-1" defer></script>
+    <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
     <!-- End Asksuite Pixel -->
@@ -57,19 +56,10 @@
     </script>
   </head>
   <body>
-    <div class="intro-overlay" data-intro>
-      <video class="intro-video" data-intro-video muted playsinline preload="metadata" poster="assets/hidden-bg.webp"></video>
-      <button class="intro-skip" type="button" data-intro-skip aria-label="Pular introdução">
-        Pular intro
-        <i data-lucide="chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
-    <div class="aura-bg" data-aura aria-hidden="true"></div>
-    <div class="cursor-glow" data-cursor aria-hidden="true"></div>
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
     <header class="site-header" data-header>
-      <a class="brand" href="#topo" aria-label="Pousada Casa Zanotto — início">
+      <a class="brand" href="#topo" aria-label="Página inicial da Pousada Casa Zanotto">
         <img src="assets/logo.webp" alt="Pousada Casa Zanotto" width="58" height="74">
         <span class="brand-text">
           <strong>Pousada</strong>
@@ -105,51 +95,21 @@
     <main id="conteudo">
       <section class="hero hero-premium" id="topo" aria-label="Pousada Casa Zanotto">
         <div class="hero-slider" data-hero-slider aria-hidden="true">
-          <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="">
-          <img class="hero-slide" data-src="assets/hero.webp" alt="">
-          <img class="hero-slide" data-src="assets/gallery/61-Foto-20-scaled.webp" alt="">
-          <img class="hero-slide" data-src="assets/brand.webp" alt="">
-          <img class="hero-slide" data-src="assets/gallery/66-Foto-31-scaled.webp" alt="">
-          <img class="hero-slide" data-src="assets/lounge.webp" alt="">
-          <img class="hero-slide" data-src="assets/suite.webp" alt="">
+          <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="" data-eyebrow="Centro Histórico" data-title="Pirenópolis começa aqui." data-copy="Hospede-se a poucos passos dos principais restaurantes, cafés e atrações da cidade.">
+          <img class="hero-slide" data-src="assets/hero.webp" alt="" data-eyebrow="Experiência completa" data-title="Não é só hospedagem. É tempo bem vivido." data-copy="Conforto, cuidado e tranquilidade reunidos para você aproveitar cada momento da viagem.">
+          <img class="hero-slide" data-src="assets/gallery/61-Foto-20-scaled.webp" alt="" data-eyebrow="Água aquecida" data-title="Mergulhe. Relaxe. Esqueça do relógio." data-copy="Piscina aquecida e hidromassagem para desacelerar em qualquer época do ano.">
+          <img class="hero-slide" data-src="assets/brand.webp" alt="" data-eyebrow="Café da manhã" data-title="Manhãs que começam com sabor." data-copy="Um café da manhã completo, preparado com carinho e já incluso na sua estadia.">
+          <img class="hero-slide" data-src="assets/gallery/66-Foto-31-scaled.webp" alt="" data-eyebrow="Beira rio" data-title="Deixe a natureza mudar o seu ritmo." data-copy="Deck à beira do Rio das Almas, redes e cantinhos feitos para descansar de verdade.">
+          <img class="hero-slide" data-src="assets/lounge.webp" alt="" data-eyebrow="Casa Zanotto" data-title="Espaços que convidam a ficar." data-copy="Ambientes acolhedores para conversar, contemplar e criar boas memórias.">
+          <img class="hero-slide" data-src="assets/suite.webp" alt="" data-eyebrow="Acomodações" data-title="Conforto em cada detalhe." data-copy="Suítes aconchegantes, cuidadosamente preparadas para noites tranquilas em Pirenópolis.">
         </div>
         <div class="hero-overlay"></div>
 
         <div class="hero-content">
           <div class="hero-text">
-            <p class="hero-eyebrow"><i data-lucide="map-pin" aria-hidden="true"></i> Centro Histórico de Pirenópolis</p>
-            <h1>Pousada Casa Zanotto</h1>
-            <p class="hero-copy">
-              Piscina aquecida, hidromassagem e deck beira rio — o conforto de uma pousada boutique a poucos passos de tudo.
-            </p>
-            <div class="hero-hooks" aria-label="Destaques principais">
-              <article class="hero-hook">
-                <span class="hero-hook-icon" aria-hidden="true">
-                  <svg viewBox="0 0 48 48" role="img">
-                    <path d="M24 43s13-12.1 13-24a13 13 0 0 0-26 0c0 11.9 13 24 13 24Z" fill="none"/>
-                    <circle cx="24" cy="19" r="5.2" fill="none"/>
-                    <path d="M17 31h14" fill="none"/>
-                  </svg>
-                </span>
-                <span>
-                  <strong>No Centro Histórico</strong>
-                  <small>A poucos passos das principais atrações, restaurantes e cafés.</small>
-                </span>
-              </article>
-              <article class="hero-hook">
-                <span class="hero-hook-icon" aria-hidden="true">
-                  <svg viewBox="0 0 48 48" role="img">
-                    <path d="M8 29c5.3 0 5.3-4 10.6-4s5.3 4 10.7 4 5.3-4 10.7-4" fill="none"/>
-                    <path d="M8 37c5.3 0 5.3-4 10.6-4s5.3 4 10.7 4 5.3-4 10.7-4" fill="none"/>
-                    <path d="M18 18c0-5 3-6.2 3-9m8 9c0-5 3-6.2 3-9" fill="none"/>
-                  </svg>
-                </span>
-                <span>
-                  <strong>Água aquecida e rio</strong>
-                  <small>Piscina aquecida, hidromassagem e deck beira rio.</small>
-                </span>
-              </article>
-            </div>
+            <p class="hero-eyebrow"><i data-lucide="sparkles" aria-hidden="true"></i> <span data-hero-eyebrow>Centro Histórico</span></p>
+            <h1 data-hero-title>Pirenópolis começa aqui.</h1>
+            <p class="hero-copy" data-hero-copy>Hospede-se a poucos passos dos principais restaurantes, cafés e atrações da cidade.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#reservar">
                 <i data-lucide="calendar-check" aria-hidden="true"></i>
@@ -160,6 +120,7 @@
                 Falar com a pousada
               </a>
             </div>
+            <div class="hero-progress" data-hero-progress aria-label="Slides da apresentação"></div>
           </div>
 
           <div class="hero-logo-wrap" aria-hidden="true">
@@ -255,18 +216,18 @@
         </div>
         <div class="story-copy">
           <p class="eyebrow">Nossa pousada</p>
-          <h2>Ideal para quem quer descansar bem em Pirenópolis</h2>
+          <h2>Ideal para quem quer se conectar com a natureza sem abrir mão da localização.</h2>
           <ul class="check-list">
-            <li><i data-lucide="check" aria-hidden="true"></i> Para casais, suítes aconchegantes, hidromassagens aquecidas e clima romântico.</li>
-            <li><i data-lucide="check" aria-hidden="true"></i> Para famílias, conforto, lazer e localização prática no Centro Histórico.</li>
-            <li><i data-lucide="check" aria-hidden="true"></i> Peça decoração romântica para aniversário de namoro, lua de mel, pedido de casamento ou celebração especial.</li>
+            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para casais:</strong> suítes aconchegantes, hidromassagens aquecidas e clima romântico.</li>
+            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para famílias:</strong> conforto, lazer e localização prática no Centro Histórico.</li>
+            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para ficar ainda mais especial:</strong> peça decoração romântica de aniversário, namoro, lua de mel, pedido de casamento ou celebração especial.</li>
           </ul>
         </div>
       </section>
 
       <section class="ritual-section">
         <div class="ritual-panel">
-          <img src="assets/pool.webp" alt="Piscina e área de lazer da Pousada Casa Zanotto" loading="lazy">
+          <img src="assets/gallery/61-Foto-20-scaled.webp" alt="Piscina e área de lazer da Pousada Casa Zanotto" loading="lazy">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
             <h2>Piscina Aquecida, para relaxar em qualquer época.</h2>
@@ -283,7 +244,7 @@
           <img src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardins e varandas da Pousada Casa Zanotto" loading="lazy">
           <div>
             <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
-            <h2>Deck beira rio, jardins e quiosque para desacelerar com privacidade.</h2>
+            <h2>Redes e Paisagismo para desacelerar.</h2>
           </div>
         </div>
       </section>
@@ -302,7 +263,7 @@
         <div class="section-heading centered">
           <p class="eyebrow"><i data-lucide="coffee" aria-hidden="true"></i> Estrutura &amp; Lazer</p>
           <h2>Café da manhã e hidromassagem</h2>
-          <p class="section-lead">Manhãs com sabor de casa e água aquecida para relaxar a qualquer hora — deslize as fotos de cada experiência.</p>
+          <p class="section-lead">Manhãs com sabor de casa e água aquecida para relaxar a qualquer hora. Deslize as fotos de cada experiência.</p>
         </div>
         <div class="rooms-grid amenities-grid" data-amenities></div>
       </section>
@@ -463,11 +424,14 @@
       </section>
 
       <section class="section reserve-section reserve-studio" id="reservar" aria-label="Reservar online">
+        <div class="section-heading centered">
+          <p class="eyebrow"><i data-lucide="calendar-check" aria-hidden="true"></i> Reserva online</p>
+          <h2>Reserve sua estadia agora</h2>
+          <p class="section-lead">Escolha as datas, a acomodação e finalize em poucos passos.</p>
+        </div>
         <div class="reserve-shell">
-          <div class="reserve-copy">
-            <p class="eyebrow"><i data-lucide="calendar-check" aria-hidden="true"></i> Reserva online</p>
-            <h2>Reserve sua estadia agora</h2>
-            <p class="section-lead">Escolha as datas, a acomodação e finalize em poucos passos.</p>
+          <div class="reserve-banner">
+            <img src="assets/logo.webp" alt="Pousada Casa Zanotto" width="72" height="90">
           </div>
 
           <form class="booking-form premium-booking-form compact-booking" data-compact-booking>
@@ -479,10 +443,13 @@
               <button type="button" data-home-tab="payment"><span>5</span> Pagamento</button>
             </div>
 
+            <div class="booking-progress" aria-hidden="true"><span></span></div>
+
             <section class="compact-step-panel" data-home-panel="dates">
               <div class="compact-panel-heading">
                 <p>Etapa 1 de 5</p>
                 <h3>Escolha suas datas</h3>
+                <span>Selecione o dia de chegada e depois o dia de saída.</span>
               </div>
               <div class="home-rangecal" data-home-cal>
                 <div class="home-rangecal-summary">
@@ -522,10 +489,11 @@
               <div class="compact-panel-heading">
                 <p>Etapa 2 de 5</p>
                 <h3>Informe os hóspedes</h3>
+                <span>Isso nos ajuda a mostrar apenas acomodações adequadas para o seu grupo.</span>
               </div>
               <div class="home-guests-grid">
                 <label class="home-counter-field">
-                  <span>Adultos <small>maiores de 13 anos</small></span>
+                  <span>Adultos e Menores de Idade <small>a partir de 6 anos</small></span>
                   <span class="home-stepper" data-home-stepper data-min="1" data-max="9">
                     <button type="button" data-home-dec aria-label="Menos adultos">-</button>
                     <input name="hospedes" type="text" inputmode="numeric" value="2" readonly aria-live="polite" data-home-adults>
@@ -533,7 +501,7 @@
                   </span>
                 </label>
                 <label class="home-counter-field">
-                  <span>Crianças <small>0 a 12 anos</small></span>
+                  <span>Crianças <small>0 a 5 anos</small></span>
                   <span class="home-stepper" data-home-stepper data-min="0" data-max="6">
                     <button type="button" data-home-dec aria-label="Menos crianças">-</button>
                     <input name="kids" type="text" inputmode="numeric" value="0" readonly aria-live="polite" data-home-kids>
@@ -561,6 +529,7 @@
               <div class="compact-panel-heading">
                 <p>Etapa 3 de 5</p>
                 <h3>Escolha a acomodação</h3>
+                <span>Compare as opções disponíveis e selecione a que mais combina com sua estadia.</span>
               </div>
               <div class="home-search-summary">
                 <span data-home-review-in>-</span>
@@ -569,10 +538,19 @@
               </div>
               <div class="home-room-list" data-home-room-list aria-live="polite"></div>
               <p class="home-form-notice" data-home-notice hidden></p>
+              <p class="home-hint">Pode escolher mais de uma acomodação para a mesma reserva.</p>
+              <div class="home-cart-summary" data-home-cart-summary hidden>
+                <span data-home-cart-count>-</span>
+                <strong data-home-cart-total>-</strong>
+              </div>
               <div class="compact-actions two-actions">
                 <button class="button button-ghost" type="button" data-home-prev="guests">
                   <i data-lucide="arrow-left" aria-hidden="true"></i>
                   Alterar
+                </button>
+                <button class="button button-primary" type="button" data-home-next="guest" data-home-rooms-continue disabled>
+                  Continuar
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
                 </button>
               </div>
             </section>
@@ -581,23 +559,19 @@
               <div class="compact-panel-heading">
                 <p>Etapa 4 de 5</p>
                 <h3>Dados do hóspede</h3>
+                <span>Usaremos estes dados para identificar e enviar a confirmação da reserva.</span>
               </div>
               <div class="home-selected-room" data-home-selected-room></div>
               <div class="home-guest-grid">
-                <label><span>Nome*</span><input type="text" autocomplete="given-name" data-home-guest-first></label>
+                <label><span>Nome <b aria-hidden="true">*</b></span><input type="text" autocomplete="given-name" aria-required="true" data-home-guest-first></label>
                 <label><span>Sobrenome</span><input type="text" autocomplete="family-name" data-home-guest-last></label>
-                <label><span>Telefone*</span><input type="tel" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" data-home-guest-phone></label>
-                <label><span>E-mail</span><input type="email" autocomplete="email" data-home-guest-email></label>
+                <label><span>Telefone <b aria-hidden="true">*</b></span><input type="tel" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" aria-required="true" data-home-guest-phone></label>
+                <label><span>E-mail</span><input type="email" autocomplete="email" placeholder="voce@exemplo.com" data-home-guest-email></label>
                 <label>
-                  <span>Documento</span>
-                  <select data-home-guest-doctype>
-                    <option value="">Tipo</option>
-                    <option value="cpf">CPF</option>
-                    <option value="rg">RG</option>
-                    <option value="passport">Passaporte</option>
-                  </select>
+                  <span>CPF</span>
+                  <input type="text" inputmode="numeric" placeholder="000.000.000-00" data-home-guest-doc>
+                  <input type="hidden" value="cpf" data-home-guest-doctype>
                 </label>
-                <label><span>Número</span><input type="text" inputmode="numeric" data-home-guest-doc></label>
               </div>
               <p class="home-form-notice" data-home-guest-notice hidden></p>
               <div class="compact-actions two-actions">
@@ -616,6 +590,7 @@
               <div class="compact-panel-heading">
                 <p>Etapa 5 de 5</p>
                 <h3>Pagamento</h3>
+                <span>Revise sua estadia e escolha como deseja pagar.</span>
               </div>
               <div class="compact-review home-payment-review" aria-live="polite">
                 <div><span>Quarto</span><strong data-home-pay-room>-</strong></div>
@@ -630,7 +605,7 @@
                 </button>
                 <button type="button" data-home-pay-method="card" aria-pressed="false">
                   <i data-lucide="credit-card" aria-hidden="true"></i>
-                  <span><strong>Cartão</strong><small>Em até 6x sem juros</small></span>
+                  <span><strong>Cartão</strong><small>Em até 4x sem juros</small></span>
                 </button>
               </div>
               <div class="home-pay-pane" data-home-pay-pane="pix">
@@ -665,7 +640,7 @@
                   <span>Gerar PIX</span>
                 </button>
               </div>
-              <p class="reserve-fineprint">A reserva é criada após a confirmação do pagamento.</p>
+              <p class="reserve-fineprint"><i data-lucide="shield-check" aria-hidden="true"></i> Ambiente seguro. A reserva é criada após a confirmação do pagamento.</p>
             </section>
 
             <section class="compact-step-panel" data-home-panel="done" hidden>
@@ -676,7 +651,11 @@
               <div class="home-success">
                 <i data-lucide="check-circle-2" aria-hidden="true"></i>
                 <strong data-home-success-id>Reserva confirmada.</strong>
-                <p>Você receberá os detalhes da hospedagem pelos canais informados.</p>
+                <p>Você receberá os detalhes da sua hospedagem no e-mail informado durante a reserva.<br>Em caso de dúvidas, fale com nossa equipe pelo WhatsApp: (64) 98439-8408.<br>Estamos ansiosos para receber você!</p>
+                <a class="button button-primary" href="https://wa.me/5564984398408?text=Ol%C3%A1!%20Acabei%20de%20concluir%20uma%20reserva%20pelo%20site%20oficial%20e%20gostaria%20de%20confirmar%20se%20est%C3%A1%20tudo%20certo.%20%F0%9F%98%8A" target="_blank" rel="noreferrer">
+                  <i data-lucide="message-circle" aria-hidden="true"></i>
+                  Nosso WhatsApp
+                </a>
               </div>
             </section>
           </form>

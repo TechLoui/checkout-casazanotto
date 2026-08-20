@@ -10,7 +10,7 @@ A pousada opera hoje um motor de reservas próprio, embutido direto na home do s
 
 | Componente | Solução |
 |---|---|
-| Frontend | Site estático — hospedado na Hostinger, domínio `pousadacasazanotto.com.br` |
+| Frontend | Site estático — hospedado na Hostinger, domínio `pousadacasazanotto.com` |
  cn| Backend | Node.js / Express (Railway) |
 | PMS | ArtaxNet |
 | Pagamento · cartão | e.Rede API v2 — pré-autorização + captura |
@@ -20,7 +20,7 @@ A pousada opera hoje um motor de reservas próprio, embutido direto na home do s
 ## Arquitetura
 
 ```
-Frontend (Hostinger — pousadacasazanotto.com.br)
+Frontend (Hostinger — pousadacasazanotto.com)
   │  motor de reservas embutido na home, seção #reservar
   │  HTTPS / JSON — disponibilidade · checkout · PIX
   ▼
@@ -33,7 +33,7 @@ Backend (Node/Express · Railway)
   └── Resend             — e-mail de confirmação (só após pagamento aprovado)
 ```
 
-- **Frontend**: busca, seleção de quarto, dados do hóspede e pagamento acontecem todos na home (`pousadacasazanotto.com.br`, seção `#reservar`), em etapas — não há uma página de checkout separada.
+- **Frontend**: busca, seleção de acomodação(ões), dados do hóspede e pagamento acontecem todos na home (`pousadacasazanotto.com`, seção `#reservar`), em etapas — não há uma página de checkout separada. O hóspede pode selecionar mais de uma acomodação (tipos diferentes) na mesma reserva; o pagamento é único, pelo total combinado.
 - **Backend**: nunca confia no preço vindo do navegador; reconfere no PMS no momento da compra.
 
 ## Como uma reserva acontece
@@ -70,7 +70,7 @@ Criação/confirmação de reserva e pagamento continuam exclusivas do nosso mot
 
 O motor de reservas na home já aceita parâmetros de busca na URL. Quando o link já traz check-in e check-out, ele pula direto pra etapa de disponibilidade — sem exigir nenhum clique do viajante.
 
-**URL base:** `https://pousadacasazanotto.com.br/`
+**URL base:** `https://pousadacasazanotto.com/`
 
 | Parâmetro | Obrigatório | Formato | Exemplo |
 |---|---|---|---|
@@ -82,7 +82,7 @@ O motor de reservas na home já aceita parâmetros de busca na URL. Quando o lin
 
 Exemplo completo:
 ```
-https://pousadacasazanotto.com.br/?arrival_date=2026-08-10&departure_date=2026-08-12&adults=2&kids=1&ages[0]=8#reservar
+https://pousadacasazanotto.com/?arrival_date=2026-08-10&departure_date=2026-08-12&adults=2&kids=1&ages[0]=8#reservar
 ```
 
 Ao abrir esse link, a página já rola até a seção de reservas e mostra a lista de quartos disponíveis para essas datas.
@@ -120,15 +120,16 @@ window.dataLayer.push({
   ecommerce: {
     currencyCode: "BRL",
     purchase: {
-      actionField: { id: "1365372", revenue: "600.00" },
+      actionField: { id: "1365372", revenue: "2306.00" },
       products: [
-        { id: "301", name: "Suíte Standard", price: "600.00", quantity: 1 }
+        { id: "4700", name: "Suíte Standard", price: "1062.00", quantity: 1 },
+        { id: "4703", name: "Suíte Gold", price: "1244.00", quantity: 1 }
       ]
     }
   }
 });
 ```
-Com controle de duplicidade (não dispara de novo em recarregamento/voltar) e sem quebrar a reserva do hóspede se algo falhar.
+Com controle de duplicidade (não dispara de novo em recarregamento/voltar) e sem quebrar a reserva do hóspede se algo falhar. `products[]` já suporta mais de um item — o motor de reservas passou a aceitar mais de uma acomodação na mesma reserva, então uma compra pode gerar 1 ou vários itens.
 
 **O que ainda não está confirmado:** a documentação do Pixel não menciona nenhum ID de propriedade/conta pra identificar a Casa Zanotto — só o script genérico acima. Precisamos que vocês confirmem se a identificação da conta é automática (pelo domínio) ou se falta algum passo de configuração do lado de vocês pra reconhecer os eventos como sendo da nossa propriedade.
 
@@ -149,12 +150,12 @@ Com controle de duplicidade (não dispara de novo em recarregamento/voltar) e se
 | Snippet do Pixel | 🔶 código pronto, falta publicar na Hostinger — é o único bloqueio restante |
 | ID de propriedade/conta da Casa Zanotto | ✅ resolvido — automático: a Asksuite vincula a reserva à empresa assim que o script estiver no ar |
 | Ambiente de homologação separado de produção | ✅ resolvido — não existe; validação é feita com reserva de teste em produção mesmo |
-| Validação do evento | ✅ resolvido — via reserva de teste (cupom de 99% ou o próprio Luiz reserva), depois de publicar o script |
+| Validação do evento | ✅ resolvido — via reserva de teste feita pelo próprio Luiz, depois de publicar o script |
 | Cancelamento/alteração de reserva (não temos esse fluxo pelo site) | ✅ resolvido — não é bloqueante pra Asksuite |
-| Reserva com múltiplos quartos (hoje só suportamos 1 por vez) | ✅ resolvido — aceitável ficar só com 1 item em `products[]` |
+| Reserva com múltiplas acomodações | ✅ resolvido — o motor agora aceita mais de um tipo de quarto na mesma reserva; `products[]` reflete cada acomodação com seu próprio preço |
 | Pixel exige consentimento de cookies (site não tem banner hoje) | 🔶 pendente — ainda não respondido |
 
 *Webhook de reserva confirmada já está implementado no backend (payload documentado numa versão anterior deste doc) e pode ser reaproveitado se, no futuro, fizer mais sentido pra vocês do que o Pixel.*
 
 ---
-*Contato técnico: Luiz — Pousada Casa Zanotto. Documento atualizado em 14/07/2026.*
+*Contato técnico: Luiz — Pousada Casa Zanotto. Documento atualizado em 21/07/2026.*

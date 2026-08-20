@@ -33,7 +33,9 @@ export const isEmailEnabled = () => Boolean(config.email.apiKey && config.email.
 export const renderHtml = (d) => {
   const brand = esc(config.email.brandName);
   const color = config.email.brandColor || "#c8991f";
-  const room = esc(cleanRoom(d.roomName));
+  const roomsList = d.rooms || [];
+  const roomLabel = roomsList.map((r) => cleanRoom(r.name)).join(", ") || "—";
+  const room = esc(roomLabel);
   const logo = config.email.logoUrl
     ? `<img src="${esc(config.email.logoUrl)}" alt="${brand}" height="80" style="height:80px;width:auto;max-width:300px;display:block;margin:0 auto;border:0;outline:none;">`
     : `<div style="font:700 22px/1.2 Georgia,serif;color:#1e1a17;text-align:center;">${brand}</div>`;
@@ -72,7 +74,9 @@ export const renderHtml = (d) => {
             ${row("Check-in", esc(fmtDate(d.checkIn)))}
             ${row("Check-out", esc(fmtDate(d.checkOut)))}
             ${row("Noites", esc(d.nights))}
-            ${row("Acomodação", room)}
+            ${roomsList.length > 1
+              ? roomsList.map((r) => row("Acomodação", `${esc(cleanRoom(r.name))} <small style="color:#9a9a9a;">(${esc(brl(r.price))})</small>`)).join("")
+              : row("Acomodação", room)}
             ${row("Hóspedes", esc(guestsLabel(d.adults, d.kids)))}
             ${row("Pagamento", esc(methodLabel(d.method)))}
             ${row("Total pago", `<span style="color:${color};">${esc(brl(d.totalPrice))}</span>`, true)}
@@ -100,7 +104,11 @@ const renderText = (d) =>
     `Check-in:   ${fmtDate(d.checkIn)}`,
     `Check-out:  ${fmtDate(d.checkOut)}`,
     `Noites:     ${d.nights}`,
-    `Acomodação: ${cleanRoom(d.roomName)}`,
+    ...(d.rooms || []).map((r, i) =>
+      d.rooms.length > 1
+        ? `Acomodação ${i + 1}: ${cleanRoom(r.name)} (${brl(r.price)})`
+        : `Acomodação: ${cleanRoom(r.name)}`
+    ),
     `Hóspedes:   ${guestsLabel(d.adults, d.kids)}`,
     `Pagamento:  ${methodLabel(d.method)}`,
     `Total pago: ${brl(d.totalPrice)}`,

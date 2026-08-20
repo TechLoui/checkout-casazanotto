@@ -48,12 +48,26 @@ export const validateAvailability = (q) => {
 export const validateStayGuest = (body) => {
   const base = validateAvailability(body);
 
-  const roomId = String(body.room_id || "").trim();
-  const rateplanId = Number(body.rateplan_id);
-  if (!roomId) throw new ValidationError("Categoria de quarto não informada.");
-  if (!Number.isInteger(rateplanId) || rateplanId <= 0) {
-    throw new ValidationError("Plano tarifário inválido.");
-  }
+  // Aceita o formato atual (rooms[]) e o legado (room_id/rateplan_id) para que
+  // frontend e backend possam ser publicados sem uma janela de incompatibilidade.
+  const rawRooms = Array.isArray(body.rooms) && body.rooms.length
+    ? body.rooms
+    : (body.room_id ? [{ room_id: body.room_id, rateplan_id: body.rateplan_id }] : []);
+  if (!rawRooms.length) throw new ValidationError("Selecione ao menos uma acomodação.");
+  const seenRoomIds = new Set();
+  const rooms = rawRooms.map((r) => {
+    const roomId = String(r?.room_id || "").trim();
+    const rateplanId = Number(r?.rateplan_id);
+    if (!roomId) throw new ValidationError("Categoria de quarto não informada.");
+    if (!Number.isInteger(rateplanId) || rateplanId <= 0) {
+      throw new ValidationError("Plano tarifário inválido.");
+    }
+    if (seenRoomIds.has(roomId)) {
+      throw new ValidationError("Cada acomodação só pode ser selecionada uma vez.");
+    }
+    seenRoomIds.add(roomId);
+    return { roomId, rateplanId };
+  });
 
   const guest = body.guest || {};
   const firstName = String(guest.first_name || "").trim();
@@ -66,12 +80,16 @@ export const validateStayGuest = (body) => {
     throw new ValidationError("E-mail do hóspede inválido.");
   }
 
+  // Identificador de sessão da Asksuite (_askSI), quando a reserva veio do
+  // link direto que a IA deles gera — usado pra vincular a compra ao
+  // atendimento no rastreio de conversão deles.
+  const askSi = String(body.ask_si || "").trim().slice(0, 200) || undefined;
+
   return {
     ...base,
-    roomId,
-    rateplanId,
+    rooms,
+    askSi,
     comment: String(body.comment || "").slice(0, 500),
-    coupon: String(body.coupon || "").trim().toUpperCase().slice(0, 30) || undefined,
     guest: {
       first_name: firstName,
       last_name: String(guest.last_name || "").trim() || undefined,

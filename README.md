@@ -54,7 +54,7 @@ Adicione uma a uma (NÃO precisa de `PORT`, o Railway injeta):
 | `MAX_INSTALLMENTS` | `4` |
 | `REDE_WEBHOOK_TOKEN` | *(token forte; o webhook PIX da Rede envia como `Bearer`)* |
 | **Outros** | |
-| `ALLOWED_ORIGINS` | `https://pousadacasazanotto.com.br,https://www.pousadacasazanotto.com.br` |
+| `ALLOWED_ORIGINS` | `https://pousadacasazanotto.com,https://www.pousadacasazanotto.com` |
 | `ARTAX_WEBHOOK_TOKEN` | *(opcional — só se for usar webhooks do Artax)* |
 | `PAYMENT_SIMULATE` | *(só teste local: `true` simula pagamento aprovado sem chamar a Rede)* |
 
@@ -65,14 +65,14 @@ Depois do deploy, o Railway te dá uma URL pública, ex.:
 `https://sitecasazanotto-production.up.railway.app`
 
 ## 🌐 Deploy do FRONTEND na Hostinger
-- Site estático hospedado na Hostinger, no domínio **pousadacasazanotto.com.br**
+- Site estático hospedado na Hostinger, no domínio **pousadacasazanotto.com**
   (upload dos arquivos da raiz — `index.html`, `styles.css`, `script.js`,
   `hero.js`, `assets/` — via o painel/gerenciador de arquivos da Hostinger).
 - `script.js` já aponta por padrão para a URL de produção do backend no
   Railway (`HOME_API_BASE`). Só precisa sobrescrever definindo
   `window.CZ_CHECKOUT_API` antes de carregar o `script.js` se a URL do
   Railway mudar.
-- Garanta que `https://pousadacasazanotto.com.br` (e a variante `www`, se
+- Garanta que `https://pousadacasazanotto.com` (e a variante `www`, se
   usada) esteja em `ALLOWED_ORIGINS` no Railway (CORS) — senão o site fica
   no ar, mas a busca de disponibilidade e o pagamento param de funcionar.
 
