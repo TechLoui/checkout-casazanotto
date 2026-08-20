@@ -9,16 +9,34 @@ const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET"];
 // e-mail de confirmação.
 const SITE_URL = (process.env.SITE_URL || "https://pousadacasazanotto.com").replace(/\/$/, "");
 
+// Domínio atual (.com) e o antigo (.com.br) — o .com.br continua no ar e
+// ainda recebe hóspedes por link salvo/busca/favorito, então precisa seguir
+// liberado no CORS mesmo depois da migração. Perdemos isso uma vez (20/08/2026:
+// ALLOWED_ORIGINS foi trocada só pro .com e quebrou o checkout pra quem
+// chegava pelo .com.br) — por isso esses domínios ficam garantidos aqui no
+// código, não só na variável de ambiente.
+const defaultAllowedOrigins = [
+  "https://pousadacasazanotto.com",
+  "https://www.pousadacasazanotto.com",
+  "https://pousadacasazanotto.com.br",
+  "https://www.pousadacasazanotto.com.br"
+];
+
 export const config = {
   port: Number(process.env.PORT) || 8080,
   nodeEnv: process.env.NODE_ENV || "development",
   isProduction: process.env.NODE_ENV === "production",
   siteUrl: SITE_URL,
 
-  allowedOrigins: (process.env.ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  // Os domínios padrão acima sempre ficam liberados; ALLOWED_ORIGINS só
+  // acrescenta origens extras (ex.: ambiente de teste), nunca remove essas.
+  allowedOrigins: [...new Set([
+    ...defaultAllowedOrigins,
+    ...(process.env.ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  ])],
 
   // Chaves de API de parceiros (chamadas servidor-a-servidor à API de
   // disponibilidade/cotação — ex.: Asksuite). Enviadas no header X-Api-Key.
