@@ -28,6 +28,13 @@ output/
 output-*.txt
 *.log
 
+# Config local do Claude Code
+.claude/
+
+# Capturas de tela soltas na raiz (sem uso no site)
+retorno-zanotto*.png
+assets/icon.jpg
+
 # Zips brutos das fotos (pesados — não publicar; as fotos já estão em assets/rooms)
 *.zip
 assets/_rooms_raw/
