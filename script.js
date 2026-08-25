@@ -839,7 +839,11 @@ const initCompactBookingFlow = () => {
     initIcons();
     if (shouldScroll && step !== "done") {
       requestAnimationFrame(() => {
-        form.scrollIntoView({ behavior: "smooth", block: "center" });
+        // "nearest" só rola a página se o formulário realmente saiu da tela.
+        // Com "center" ele recentralizava a CADA troca de etapa, inclusive
+        // ao clicar em "Voltar" — em idas e vindas entre etapas (comum ao
+        // corrigir um dado) isso rolava a tela repetidamente sem necessidade.
+        form.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
     }
   };
@@ -861,6 +865,12 @@ const initCompactBookingFlow = () => {
   const buildInstallments = (price) => {
     const select = form.querySelector("[data-home-card-installments]");
     if (!select) return;
+    // Preserva a parcela já escolhida: essa função roda de novo toda vez que
+    // o hóspede reentra na etapa "guest" (ex.: voltou pra corrigir um dado),
+    // e reconstruir o <select> sem isso reseta a escolha pra 1x (à vista)
+    // silenciosamente — o hóspede podia ter selecionado 4x, voltar uma etapa
+    // e a reserva sair cobrada à vista sem ele perceber.
+    const previous = Number(select.value) || 1;
     select.innerHTML = "";
     for (let n = 1; n <= HOME_INSTALLMENTS_MAX; n += 1) {
       const option = document.createElement("option");
@@ -868,6 +878,7 @@ const initCompactBookingFlow = () => {
       option.textContent = n === 1 ? `À vista - ${homeBrl(price)}` : `${n}x de ${homeBrl(price / n)} sem juros`;
       select.appendChild(option);
     }
+    select.value = String(Math.min(Math.max(previous, 1), HOME_INSTALLMENTS_MAX));
   };
 
   const renderRooms = (rooms) => {
@@ -2048,6 +2059,23 @@ const initDeepLinkBooking = () => {
   window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages });
 };
 
+/* Links "Reservar" do cabeçalho/CTAs (href="#reservar") usam salto nativo do
+   navegador, que sempre alinha pelo topo — sem isso, ficava inconsistente
+   com o resto do fluxo, que centraliza o formulário na tela. */
+const initReserveLinks = () => {
+  const links = document.querySelectorAll('a[href="#reservar"]');
+  if (!links.length) return;
+  links.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const target = document.querySelector("[data-compact-booking]") || document.querySelector("#reservar");
+      if (!target) return;
+      event.preventDefault();
+      if (history.pushState) history.pushState(null, "", "#reservar");
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  });
+};
+
 window.addEventListener("DOMContentLoaded", () => {
   initIcons();
   initRooms();
@@ -2059,6 +2087,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initBookingForm();
   initCompactBookingFlow();
   initDeepLinkBooking();
+  initReserveLinks();
   initHeroSlider();
   initGalleryCarousel();
   initScrollAnimations();

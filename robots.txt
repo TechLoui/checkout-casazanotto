@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# O motor de reservas embutido na home gera a mesma página com parâmetros
+# diferentes na URL (datas, hóspedes, links de rastreio de parceiros como a
+# Asksuite). Bloquear essas variações evita indexação duplicada e mantém o
+# rastreio de sessão (_askSI) fora de resultados de busca.
+Disallow: /*?*arrival_date=
+Disallow: /*?*departure_date=
+Disallow: /*?*utm_source=
+Disallow: /*?*_askSI=
+
+Sitemap: https://pousadacasazanotto.com/sitemap.xml
