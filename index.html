@@ -11,19 +11,19 @@
     <meta name="theme-color" content="#1c1714">
     <meta property="og:title" content="Pousada Casa Zanotto">
     <meta property="og:description" content="Centro Histórico de Pirenópolis com piscina aquecida, hidromassagem e deck beira rio.">
-    <meta property="og:image" content="assets/hidden-bg.webp">
+    <meta property="og:image" content="https://pousadacasazanotto.com/assets/gallery/60-Foto-18-scaled.webp">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/webp" href="assets/logo.webp">
     <link rel="preload" as="image" href="assets/pool.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260722-1">
+    <link rel="stylesheet" href="styles.css?v=20260831-2">
     <link rel="preload" as="image" href="assets/suite.webp">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20260722-1" defer></script>
+    <script src="script.js?v=20260831-2" defer></script>
     <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
@@ -34,7 +34,7 @@
         "@type": "Hotel",
         "name": "Pousada Casa Zanotto",
         "description": "Centro Histórico de Pirenópolis com piscina aquecida, hidromassagem e deck beira rio. Café da manhã incluso, localização privilegiada, estacionamento gratuito, Wi-Fi de alta velocidade e atendimento rápido no WhatsApp.",
-        "image": "assets/hidden-bg.webp",
+        "image": "https://pousadacasazanotto.com/assets/gallery/60-Foto-18-scaled.webp",
         "telephone": "+55 62 9989-0139",
         "email": "reservas@grupozanottohotelaria.com.br",
         "address": {
@@ -567,11 +567,27 @@
                 <label><span>Sobrenome</span><input type="text" autocomplete="family-name" data-home-guest-last></label>
                 <label><span>Telefone <b aria-hidden="true">*</b></span><input type="tel" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" aria-required="true" data-home-guest-phone></label>
                 <label><span>E-mail</span><input type="email" autocomplete="email" placeholder="voce@exemplo.com" data-home-guest-email></label>
-                <label>
-                  <span>CPF</span>
-                  <input type="text" inputmode="numeric" placeholder="000.000.000-00" data-home-guest-doc>
-                  <input type="hidden" value="cpf" data-home-guest-doctype>
-                </label>
+                <div class="home-doc-field">
+                  <span class="home-doc-legend">Documento *</span>
+                  <div class="home-pay-choice home-doc-choice" role="radiogroup" aria-label="Tipo de documento">
+                    <button type="button" data-home-doctype="cpf" role="radio" aria-checked="false">
+                      <i data-lucide="id-card" aria-hidden="true"></i>
+                      <span><strong>CPF</strong></span>
+                    </button>
+                    <button type="button" data-home-doctype="passport" role="radio" aria-checked="false">
+                      <i data-lucide="plane" aria-hidden="true"></i>
+                      <span><strong>Passaporte</strong></span>
+                    </button>
+                  </div>
+                  <label>
+                    <span>Número do documento *</span>
+                    <!-- Começa desabilitado: só libera depois de escolher o
+                         tipo acima, e o placeholder diz qual está escolhido. -->
+                    <input type="text" inputmode="numeric" disabled
+                           placeholder="Selecione o documento acima" data-home-guest-doc>
+                    <input type="hidden" value="" data-home-guest-doctype>
+                  </label>
+                </div>
               </div>
               <p class="home-form-notice" data-home-guest-notice hidden></p>
               <div class="compact-actions two-actions">

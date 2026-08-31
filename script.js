@@ -469,6 +469,20 @@ const homeBrl = (value) =>
 
 const homeOnlyDigits = (value) => String(value || "").replace(/\D/g, "");
 
+/* CPF: 11 dígitos + dígitos verificadores. Evita que um número digitado errado
+   só apareça como problema lá na frente, no PMS. */
+const homeCpfValid = (raw) => {
+  const d = homeOnlyDigits(raw);
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const check = (len) => {
+    let sum = 0;
+    for (let i = 0; i < len; i += 1) sum += Number(d[i]) * (len + 1 - i);
+    const mod = (sum * 10) % 11;
+    return (mod === 10 ? 0 : mod) === Number(d[len]);
+  };
+  return check(9) && check(10);
+};
+
 /* Evento de compra no formato Enhanced Ecommerce esperado pelo Pixel da
    Asksuite (dataLayer.ecommerce.purchase — ver integrations-docs.asksuite.com/pixel).
    Dedup por reserva (sessionStorage) evita duplicar em recarregamento ou
@@ -984,6 +998,24 @@ const initCompactBookingFlow = () => {
       if (show) showNotice(targetNotice, "Informe um e-mail válido.");
       return false;
     }
+    // Documento passou a ser obrigatório.
+    const docValue = (guest.document || "").trim();
+    if (!guest.document_type) {
+      if (show) showNotice(targetNotice, "Escolha o tipo de documento: CPF ou Passaporte.");
+      return false;
+    }
+    if (!docValue) {
+      if (show) showNotice(targetNotice, "Informe o número do documento.");
+      return false;
+    }
+    if (guest.document_type === "cpf" && !homeCpfValid(docValue)) {
+      if (show) showNotice(targetNotice, "CPF inválido. Confira os números.");
+      return false;
+    }
+    if (guest.document_type === "passport" && docValue.replace(/[^A-Za-z0-9]/g, "").length < 6) {
+      if (show) showNotice(targetNotice, "Passaporte inválido. Informe ao menos 6 caracteres.");
+      return false;
+    }
     clearNotice(guestNotice);
     clearNotice(payNotice);
     return true;
@@ -1270,6 +1302,48 @@ const initCompactBookingFlow = () => {
     event.target.value = value;
   });
 
+  // Tipo de documento em cards (CPF / Passaporte). O <input> oculto
+  // [data-home-guest-doctype] segue sendo a fonte da verdade — o payload, a
+  // máscara e a validação continuam lendo dele.
+  const docHidden = form.querySelector("[data-home-guest-doctype]");
+  const docInput = form.querySelector("[data-home-guest-doc]");
+  // O placeholder repete o tipo escolhido, para o hóspede não perder de vista
+  // qual documento está digitando enquanto olha só para o campo. Sem tipo, o
+  // campo fica bloqueado — digitar antes de escolher só levaria a apagar tudo
+  // depois, já que os formatos são incompatíveis.
+  const syncDocMode = () => {
+    if (!docInput) return;
+    const type = docHidden?.value || "";
+    if (!type) {
+      docInput.value = "";
+      docInput.disabled = true;
+      docInput.placeholder = "Selecione o documento acima";
+      return;
+    }
+    const passport = type === "passport";
+    docInput.disabled = false;
+    docInput.inputMode = passport ? "text" : "numeric";
+    docInput.autocapitalize = passport ? "characters" : "off";
+    docInput.placeholder = passport ? "Passaporte · AB123456" : "CPF · 000.000.000-00";
+  };
+  form.querySelectorAll("[data-home-doctype]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const type = card.dataset.homeDoctype;
+      if (!docHidden) return;
+      const changed = docHidden.value !== type;
+      docHidden.value = type;
+      form.querySelectorAll("[data-home-doctype]").forEach((other) => {
+        const on = other.dataset.homeDoctype === type;
+        other.classList.toggle("is-active", on);
+        other.setAttribute("aria-checked", String(on));
+      });
+      // Formatos incompatíveis: trocar de tipo limpa o que já estava digitado.
+      if (changed && docInput) docInput.value = "";
+      syncDocMode();
+    });
+  });
+  syncDocMode();
+
   form.querySelector("[data-home-guest-doc]")?.addEventListener("input", (event) => {
     const type = form.querySelector("[data-home-guest-doctype]")?.value;
     if (type === "passport") {
@@ -1313,6 +1387,18 @@ const initCompactBookingFlow = () => {
     }
     if (!validateGuest(true)) {
       goToStep("guest");
+      return;
+    }
+    // O formulário é único para as 5 etapas, então Enter em qualquer input das
+    // etapas anteriores dispara a submissão implícita do browser e caía direto
+    // aqui: a cobrança PIX era criada silenciosamente (o showPix revela o
+    // resultado dentro do painel de pagamento, que ainda estava oculto) e o QR
+    // já aparecia pronto quando o hóspede enfim abria a etapa — gastando uma
+    // cobrança real, com expiração correndo antes da hora. Pagamento só é
+    // disparado a partir da própria etapa de pagamento; nas outras, Enter
+    // apenas avança, como o botão "Continuar".
+    if (activeStep !== "payment") {
+      handleNavigation("payment");
       return;
     }
     if (state.payMethod === "pix") submitPix();

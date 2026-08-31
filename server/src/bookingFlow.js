@@ -58,7 +58,7 @@ const fireAsksuiteNotification = ({ input, rooms, totalPrice, bookingId, method,
  * Payload ainda não confirmado por eles como definitivo — ajustar quando
  * o endpoint real estiver pronto.
  */
-const fireAsksuitePurchaseTracking = ({ input, rooms, bookingId }) => {
+const fireAsksuitePurchaseTracking = ({ input, rooms, totalPrice, bookingId }) => {
   const askSi = input.askSi;
   if (!askSi) return;
   notifyAsksuitePurchase({
@@ -68,7 +68,11 @@ const fireAsksuitePurchaseTracking = ({ input, rooms, bookingId }) => {
     dataLayer: {
       ecommerce: {
         purchase: {
-          actionField: { id: String(bookingId), currency: "BRL" },
+          // `revenue` é o valor total da reserva. Sem ele a Asksuite recebe os
+          // preços item a item mas não o total da compra — e o painel de
+          // "Reservas realizadas (R$)" fica zerado. O Pixel do front já enviava
+          // esse campo; aqui faltava.
+          actionField: { id: String(bookingId), revenue: Number(totalPrice || 0).toFixed(2), currency: "BRL" },
           products: rooms.map((r) => ({
             name: r.option.roomName,
             price: r.totalPrice,
@@ -283,7 +287,7 @@ export const processCheckout = async (input) => {
   if (captured) {
     fireConfirmationEmail({ input, rooms, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
     fireAsksuiteNotification({ input, rooms, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
-    fireAsksuitePurchaseTracking({ input, rooms, bookingId: booked.booking_id });
+    fireAsksuitePurchaseTracking({ input, rooms, totalPrice, bookingId: booked.booking_id });
   }
 
   return {
@@ -408,7 +412,7 @@ export const confirmPix = async (tid) => {
       // E-mail de confirmação e webhook da Asksuite — dentro do bookingPromise (roda uma vez por cobrança).
       fireConfirmationEmail({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
       fireAsksuiteNotification({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
-      fireAsksuitePurchaseTracking({ input: entry.input, rooms: entry.rooms, bookingId: booked.booking_id });
+      fireAsksuitePurchaseTracking({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id });
       return booked;
     })().catch((err) => {
       entry.bookingPromise = null; // libera p/ nova tentativa se falhou

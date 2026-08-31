@@ -4745,3 +4745,35 @@ svg {
   .hero-progress button { width: 22px; height: 3px; }
   .hero-progress button.is-active { width: 38px; }
 }
+
+/* ==================================================================
+   Tipo de documento em cards (CPF / Passaporte) — etapa de dados
+   Reaproveita o visual de .home-pay-choice da escolha de pagamento.
+   ================================================================== */
+.home-doc-field {
+  display: grid;
+  gap: 8px;
+}
+
+.home-doc-legend {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.home-doc-choice {
+  margin-bottom: 4px;
+}
+
+/* Campo do documento antes de escolher o tipo: bloqueado de propósito,
+   não quebrado — cursor de "indisponível" e placeholder ainda legível. */
+[data-home-guest-doc]:disabled {
+  cursor: not-allowed;
+  background: rgba(28, 23, 20, 0.05);
+}
+
+[data-home-guest-doc]:disabled::placeholder {
+  opacity: 0.8;
+}

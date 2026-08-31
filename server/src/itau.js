@@ -1,5 +1,6 @@
 import https from "node:https";
 import fs from "node:fs";
+import tls from "node:tls";
 import { config } from "./config.js";
 
 /**
@@ -34,7 +35,20 @@ const loadCerts = () => {
   // do Itaú (prazo 15/09/2026 para secure.api.itau). Opcional: sem
   // ITAU_CA_B64/ITAU_CA_PATH configurado, o Node usa o truststore padrão do
   // sistema (suficiente se a nova CA for pública). Ver server/.env.example.
-  CA = caB64 ? Buffer.from(caB64, "base64") : caPath && fs.existsSync(caPath) ? fs.readFileSync(caPath) : undefined;
+  //
+  // ATENÇÃO: o Node SUBSTITUI as raízes padrão quando `ca` é informado, não
+  // soma. Passar só o bundle novo derrubava as duas pontas, porque elas ainda
+  // servem as cadeias antigas: sts.itau.com.br (OAuth) manda a raiz
+  // GlobalSign Root CA dentro do chain -> SELF_SIGNED_CERT_IN_CHAIN, e
+  // secure.api.itau usa a EV SHA256 G3 -> UNABLE_TO_GET_ISSUER_CERT_LOCALLY.
+  // Somando à lista pública, o bundle novo fica inócuo enquanto a migração não
+  // acontece e passa a valer sozinho quando o Itaú virar a chave.
+  const extraCa = caB64
+    ? Buffer.from(caB64, "base64")
+    : caPath && fs.existsSync(caPath)
+      ? fs.readFileSync(caPath)
+      : null;
+  CA = extraCa ? [...tls.rootCertificates, extraCa.toString("utf8")] : undefined;
   caLoaded = true;
   return { cert: CERT, key: KEY, ca: CA };
 };
