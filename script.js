@@ -520,6 +520,23 @@ const pushPurchaseEvent = (data, selectedRooms) => {
         }
       }
     });
+
+    // Meta Pixel: mesma reserva, mesmo momento e mesma trava de duplicidade do
+    // evento acima — sozinho, o snippet só registra PageView e não mede venda.
+    // `eventID` é o número da reserva: se um dia ligarmos a Conversions API,
+    // a Meta usa esse id para deduplicar o evento do navegador com o do servidor.
+    if (typeof window.fbq === "function") {
+      window.fbq("track", "Purchase", {
+        value: Number(value.toFixed(2)),
+        currency: "BRL",
+        content_type: "hotel",
+        contents: rooms.map((r) => ({
+          id: String(r.id ?? ""),
+          quantity: 1,
+          item_price: Number(r.price || 0)
+        }))
+      }, { eventID: String(bookingId) });
+    }
   } catch (error) {
     console.error("[pixel] falha ao registrar evento de compra:", error);
   }
