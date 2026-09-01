@@ -526,6 +526,19 @@ const pushPurchaseEvent = (data, selectedRooms) => {
     // `eventID` é o número da reserva: se um dia ligarmos a Conversions API,
     // a Meta usa esse id para deduplicar o evento do navegador com o do servidor.
     if (typeof window.fbq === "function") {
+      // Correspondência avançada manual, pedida pelo Gerenciador de Anúncios.
+      // Só dá pra informar aqui: no <head> o hóspede ainda não preencheu nada.
+      // Reinicializar o mesmo pixel com os dados atualiza a correspondência
+      // antes do evento sair; o próprio Pixel aplica SHA-256 antes de
+      // transmitir, então os valores em texto não saem do navegador.
+      const match = {};
+      const email = (document.querySelector("[data-home-guest-email]")?.value || "")
+        .trim().toLowerCase();
+      if (email.includes("@")) match.em = email;
+      const phone = homeOnlyDigits(document.querySelector("[data-home-guest-phone]")?.value);
+      if (phone.length >= 10) match.ph = phone.startsWith("55") ? phone : `55${phone}`;
+      if (match.em || match.ph) window.fbq("init", "1883895762271305", match);
+
       window.fbq("track", "Purchase", {
         value: Number(value.toFixed(2)),
         currency: "BRL",
