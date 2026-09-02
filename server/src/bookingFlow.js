@@ -561,7 +561,10 @@ const finishCardCheckout = async ({ input, rooms, totalPrice, amountCents, refer
       amount: totalPrice,
       captured,
       registered: paymentRegistered,
-      split,
+      // Derivado das autorizações, não de fora: `split` vivia em
+      // processCheckout e, ao extrair esta função, virava ReferenceError —
+      // a reserva era criada e cobrada, mas o hóspede recebia erro 500.
+      split: auths.length > 1,
       // Status de cada cobrança, para o site mostrar as duas ao hóspede.
       charges
     }
