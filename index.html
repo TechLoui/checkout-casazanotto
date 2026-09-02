@@ -18,12 +18,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260902-1">
+    <link rel="stylesheet" href="styles.css?v=20260902-2">
     <link rel="preload" as="image" href="assets/suite.webp">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20260902-3" defer></script>
+    <script src="script.js?v=20260902-4" defer></script>
     <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
@@ -557,19 +557,23 @@
               <div class="home-room-list" data-home-room-list aria-live="polite"></div>
               <p class="home-form-notice" data-home-notice hidden></p>
               <p class="home-hint">Pode escolher mais de uma acomodação para a mesma reserva.</p>
-              <div class="home-cart-summary" data-home-cart-summary hidden>
-                <span data-home-cart-count>-</span>
-                <strong data-home-cart-total>-</strong>
-              </div>
-              <div class="compact-actions two-actions">
-                <button class="button button-ghost" type="button" data-home-prev="guests">
-                  <i data-lucide="arrow-left" aria-hidden="true"></i>
-                  Alterar
-                </button>
-                <button class="button button-primary" type="button" data-home-next="guest" data-home-rooms-continue disabled>
-                  Continuar
-                  <i data-lucide="arrow-right" aria-hidden="true"></i>
-                </button>
+              <!-- Resumo + ações agrupados para flutuarem juntos no rodapé
+                   enquanto o hóspede rola a lista de acomodações. -->
+              <div class="home-rooms-footer">
+                <div class="home-cart-summary" data-home-cart-summary hidden>
+                  <span data-home-cart-count>-</span>
+                  <strong data-home-cart-total>-</strong>
+                </div>
+                <div class="compact-actions two-actions">
+                  <button class="button button-ghost" type="button" data-home-prev="guests">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    Alterar
+                  </button>
+                  <button class="button button-primary" type="button" data-home-next="guest" data-home-rooms-continue disabled>
+                    Continuar
+                    <i data-lucide="arrow-right" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </section>
 

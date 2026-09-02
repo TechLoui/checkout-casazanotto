@@ -4945,3 +4945,39 @@ svg {
 @media (max-width: 560px) {
   .home-cardsteps li { font-size: 0.7rem; }
 }
+
+/* ==================================================================
+   Rodapé flutuante da escolha de acomodações (mobile)
+   ------------------------------------------------------------------
+   O resumo e os botões ficavam no fim da lista: com várias acomodações,
+   o hóspede rolava até o fim para ver o total ou continuar. Agora eles
+   acompanham a rolagem, colados na base da tela.
+
+   `sticky` e não `fixed`: assim a barra existe só enquanto a etapa de
+   acomodações está visível e não fica sobrando nas outras etapas.
+   ================================================================== */
+@media (max-width: 760px) {
+  .home-rooms-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    /* Estende até as bordas: o formulário tem `padding: 18px 14px 14px` no
+       mobile (.booking-form.compact-booking), então a margem negativa espelha
+       esses 14px laterais e os 14px de baixo. */
+    margin: 12px -14px -14px;
+    padding: 12px 14px max(14px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(28, 23, 20, 0.12);
+    background: rgba(255, 248, 241, 0.97);
+    backdrop-filter: blur(10px);
+  }
+
+  .home-rooms-footer .home-cart-summary {
+    margin-bottom: 10px;
+  }
+
+  /* A bolha do chat mora no canto inferior direito; sem esta folga a
+     barra encostaria nela. */
+  .home-rooms-footer .compact-actions {
+    padding-right: 4px;
+  }
+}
