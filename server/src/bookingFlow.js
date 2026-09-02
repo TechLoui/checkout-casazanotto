@@ -431,6 +431,16 @@ export const processCheckout = async (input) => {
     ? cards.map((c) => c.amountCents)
     : [amountCents];
   if (split) {
+    // Piso por cartão: abaixo dele a operadora recusa (código 108). Barrar aqui
+    // evita autorizar o primeiro cartão para depois o segundo cair — o que
+    // deixaria o limite dele preso numa sessão parcial sem necessidade.
+    const minCents = Math.round(config.rede.minCardAmount * 100);
+    if (parts.some((v) => v < minCents)) {
+      throw new ValidationError(
+        `Cada cartão precisa ter pelo menos R$ ${config.rede.minCardAmount.toFixed(2)}. `
+        + "Ajuste a divisão ou pague em um cartão só."
+      );
+    }
     const sum = parts.reduce((t, v) => t + v, 0);
     if (sum !== amountCents) {
       const diff = (Math.abs(sum - amountCents) / 100).toFixed(2);

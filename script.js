@@ -5,6 +5,12 @@ const HOME_API_BASE = (
     : "https://checkout-casazanotto-production.up.railway.app/api")
 ).replace(/\/$/, "");
 const HOME_INSTALLMENTS_MAX = 4;
+
+/* Valor mínimo por cartão no pagamento dividido. Abaixo disso a Rede recusa com
+   o código 108 ("Value not allowed for this type of card") — visto em produção
+   com R$ 1,00. O piso real do contrato ainda será confirmado com a operadora;
+   até lá vale este, espelhado no servidor (MIN_CARD_AMOUNT). */
+const HOME_MIN_CARD_AMOUNT = 5;
 const HOME_FALLBACK_ROOM_IMAGES = [
   "assets/rooms/standard/01.webp",
   "assets/rooms/bangalo/01.webp",
@@ -991,9 +997,18 @@ const initCompactBookingFlow = () => {
 
     const msg = form.querySelector("[data-home-split-msg]");
     const diffCents = toCents(sum) - toCents(total);
+    // Abaixo do mínimo a operadora recusa com "Value not allowed for this type
+    // of card" (código 108). Barrar aqui evita queimar uma autorização — e, no
+    // segundo cartão, evita deixar o primeiro preso numa sessão parcial.
+    const belowMin = parts.some((v) => Number.isFinite(v) && v > 0 && toCents(v) < toCents(HOME_MIN_CARD_AMOUNT));
     let ok = false;
     if (!filled) {
       if (msg) { msg.textContent = "Informe o valor de cada cartão."; msg.className = ""; }
+    } else if (belowMin) {
+      if (msg) {
+        msg.textContent = `Cada cartão precisa ter pelo menos ${homeBrl(HOME_MIN_CARD_AMOUNT)}. Ajuste a divisão ou pague em um cartão só.`;
+        msg.className = "is-error";
+      }
     } else if (diffCents === 0) {
       ok = true;
       if (msg) { msg.textContent = "Valores conferem com o total da reserva."; msg.className = "is-ok"; }
