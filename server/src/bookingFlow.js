@@ -3,7 +3,7 @@ import { config } from "./config.js";
 import { checkAvailability, createBooking, addBookingPayment, ArtaxError } from "./artaxnet.js";
 import { authorize, capture, refund, createPix, getPixTransaction, pixStatusOf, pixData } from "./rede.js";
 import { itauTxid, createCob, getCob, cobPaid, cobCanceled } from "./itau.js";
-import { ValidationError } from "./validation.js";
+import { ValidationError, validateOneCard } from "./validation.js";
 import { sendBookingConfirmation } from "./email.js";
 import { notifyAsksuiteBooking, notifyAsksuitePurchase } from "./partners.js";
 
@@ -152,7 +152,7 @@ const resolveStay = async (input) => {
  * IMPORTANTE: validar com uma reserva de teste real de 2 quartos antes de
  * confiar 100% nisso em produção.
  */
-const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "card" }) => {
+const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "card", releaseAll, tids }) => {
   const roomNames = rooms.map((r) => r.option.roomName).join(", ");
   const guestEntry = [
     {
@@ -182,7 +182,13 @@ const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "c
     departure_date: input.departure_date,
     rateplan_id: rooms[0].option.rateplanId,
     status: config.artax.bookingStatus, // 2 = Confirmado (criada só após pagamento)
-    comment: [input.comment, `Acomodações: ${roomNames}`, `Pagamento Rede TID ${tid} ref ${reference}`].filter(Boolean).join(" | "),
+    // Com pagamento dividido, os dois TIDs vão no comentário — é por eles que a
+    // recepção concilia a reserva com as transações no painel da Rede.
+    comment: [
+      input.comment,
+      `Acomodações: ${roomNames}`,
+      `Pagamento Rede TID ${(tids && tids.length ? tids.join(" + ") : tid)} ref ${reference}`
+    ].filter(Boolean).join(" | "),
     guest: input.guest,
     room_units
   };
@@ -197,19 +203,24 @@ const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "c
     console.error("[checkout] Reserva falhou após pagamento.", { method, tid, reference },
       error instanceof ArtaxError ? error.payload : error.message);
 
-    // CARTÃO: cancela a pré-autorização (libera o limite; cliente não é cobrado).
+    // CARTÃO: cancela a(s) pré-autorização(ões) — libera o limite, cliente não
+    // é cobrado. Com pagamento dividido, `releaseAll` estorna os dois cartões.
     if (method === "card") {
-      let refunded = false;
-      try {
-        await refund(tid, amountCents);
-        refunded = true;
-      } catch (refundError) {
-        console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.", { tid, reference, amountCents });
+      let stuck = [];
+      if (typeof releaseAll === "function") {
+        stuck = await releaseAll();
+      } else {
+        try {
+          await refund(tid, amountCents);
+        } catch (refundError) {
+          console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.", { tid, reference, amountCents });
+          stuck = [tid];
+        }
       }
-      if (refunded) {
+      if (!stuck.length) {
         throw new Error("Não foi possível concluir a reserva. O pagamento foi cancelado (você não foi cobrado). Tente novamente.");
       }
-      const fatal = new Error(`Pagamento autorizado mas a reserva e o cancelamento falharam. Guarde o comprovante (TID ${tid}) e contate a pousada.`);
+      const fatal = new Error(`Pagamento autorizado mas a reserva e o cancelamento falharam. Guarde o comprovante (TID ${stuck.join(", ")}) e contate a pousada.`);
       fatal.status = 500;
       throw fatal;
     }
@@ -227,60 +238,308 @@ const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "c
  * Não derruba a reserva se falhar: a reserva já existe e o dinheiro foi
  * processado na Rede — apenas alerta para lançamento manual.
  */
-const registerArtaxPayment = async (bookingId, { method, totalPrice, installments = 1, confirmed = true }) => {
+const buildArtaxPayment = ({ method, totalPrice, installments = 1, confirmed = true }, index, total) => {
   const payment = {
     payment_method_id: method === "pix" ? config.artax.paymentMethodPix : config.artax.paymentMethodCard,
     gross_amount: Number(Number(totalPrice).toFixed(2)),
     installments: Math.max(1, Number(installments) || 1),
     due_date: new Date().toISOString().slice(0, 10),
     confirmed,
-    obs: `Pagamento via site (Rede)`
+    obs: total > 1 ? `Pagamento via site (Rede) — cartão ${index + 1} de ${total}` : `Pagamento via site (Rede)`
   };
   if (config.artax.costCenterId) payment.cost_center_id = config.artax.costCenterId;
+  return payment;
+};
 
+/* Lança um ou mais pagamentos na reserva. Vão TODOS na mesma chamada: a API do
+   Artax já recebe uma lista, e mandar de uma vez evita ficar com metade do
+   pagamento lançado se a segunda chamada falhasse. */
+const registerArtaxPayments = async (bookingId, entries) => {
+  const payments = entries.map((e, i) => buildArtaxPayment(e, i, entries.length));
   try {
-    const res = await addBookingPayment(bookingId, [payment]);
-    console.log("[checkout] Pagamento lançado no Artax:", { bookingId, confirmed, bills: res.bills?.map((b) => b.bill_id) });
+    const res = await addBookingPayment(bookingId, payments);
+    console.log("[checkout] Pagamento(s) lançado(s) no Artax:", {
+      bookingId, qtd: payments.length, bills: res.bills?.map((b) => b.bill_id)
+    });
     return true;
   } catch (err) {
     console.error("[checkout] FALHA ao lançar pagamento no Artax (lançar manualmente).",
-      { bookingId, method, installments }, err instanceof ArtaxError ? err.payload : err.message);
+      { bookingId, qtd: payments.length }, err instanceof ArtaxError ? err.payload : err.message);
     return false;
   }
 };
 
-/* ============ CARTÃO: pré-autoriza → cria reserva → captura ============ */
+const registerArtaxPayment = (bookingId, entry) => registerArtaxPayments(bookingId, [entry]);
+
+/* Estorna todas as pré-autorizações já feitas. Usado quando uma etapa posterior
+   falha: melhor liberar o limite de quem já passou do que deixar o hóspede com
+   um cartão preso numa reserva que não existe. Devolve o que NÃO deu para
+   estornar, para o chamador avisar que precisa de intervenção manual. */
+const releaseAuthorizations = async (auths) => {
+  const stuck = [];
+  for (const a of auths) {
+    try {
+      await refund(a.tid, a.amountCents);
+    } catch (err) {
+      console.error("[checkout] FALHA NO ESTORNO — intervenção manual necessária.",
+        { tid: a.tid, amountCents: a.amountCents }, err.message);
+      stuck.push(a.tid);
+    }
+  }
+  return stuck;
+};
+
+/* ---------- pagamento dividido com um cartão recusado ----------
+   Quando um cartão aprova e o outro não, a autorização aprovada fica RETIDA e
+   a sessão é guardada aqui, para o hóspede tentar outro cartão sem redigitar o
+   que já passou. Nada é capturado nesse meio-tempo: é reserva de limite, não
+   cobrança.
+
+   ATENÇÃO OPERACIONAL: enquanto a sessão vive, o limite do cartão aprovado
+   segue preso. Por isso o TTL é curto e existe cancelSplitSession() — a opção
+   "desistir e pedir estorno" do site. Se o hóspede simplesmente fechar a aba,
+   a limpeza por TTL libera automaticamente. */
+const pendingSplits = new Map();
+const SPLIT_TTL_MS = 30 * 60 * 1000; // 30 min
+
+const cleanupSplits = () => {
+  const now = Date.now();
+  for (const [id, s] of pendingSplits) {
+    if (now - s.createdAt > SPLIT_TTL_MS) {
+      pendingSplits.delete(id);
+      // Libera o limite de quem ficou preso numa sessão abandonada.
+      releaseAuthorizations(s.auths).catch(() => {});
+      console.warn("[checkout] Sessão de pagamento dividido expirada — autorizações liberadas.", { id });
+    }
+  }
+};
+
+const partialPaymentError = ({ input, rooms, totalPrice, amountCents, reference, auths, failedIndex, failedAmountCents, reason }) => {
+  cleanupSplits();
+  const sessionId = randomUUID();
+  pendingSplits.set(sessionId, {
+    createdAt: Date.now(),
+    input, rooms, totalPrice, amountCents, reference,
+    auths: [...auths],
+    failedIndex, failedAmountCents
+  });
+  const err = new Error(`O cartão ${failedIndex + 1} não foi aprovado.`);
+  err.status = 402;
+  err.partial = {
+    sessionId,
+    reason,
+    failedCard: failedIndex + 1,
+    pendingAmount: Number((failedAmountCents / 100).toFixed(2)),
+    approved: auths.map((a, i) => ({
+      card: i + 1,
+      amount: Number((a.amountCents / 100).toFixed(2)),
+      installments: a.installments,
+      status: "authorized"
+    })),
+    expiresInMin: Math.round(SPLIT_TTL_MS / 60000)
+  };
+  console.warn("[checkout] Pagamento dividido parcial — aguardando troca de cartão.",
+    { sessionId, failedCard: failedIndex + 1, pendingAmount: err.partial.pendingAmount });
+  return err;
+};
+
+/** Troca o cartão recusado e conclui a reserva. */
+export const retrySplitCard = async (sessionId, rawCard, maxInstallments) => {
+  cleanupSplits();
+  const s = pendingSplits.get(sessionId);
+  if (!s) {
+    const e = new Error("Esta tentativa de pagamento expirou. Refaça a reserva — nenhum valor foi cobrado.");
+    e.status = 410;
+    throw e;
+  }
+  // Mesma validação do checkout normal: formato, validade e CVV são conferidos
+  // aqui antes de mandar para a Rede.
+  const card = validateOneCard(rawCard, maxInstallments);
+  const installments = card.installments;
+
+  let auth;
+  try {
+    auth = await authorize({
+      amountCents: s.failedAmountCents,
+      reference: `${s.reference}-r${Date.now().toString(36)}`,
+      installments,
+      card
+    });
+  } catch (err) {
+    // Continua parcial: a sessão segue viva para nova tentativa.
+    const e = new Error(`Cartão recusado: ${err.message}`);
+    e.status = err.status || 402;
+    e.partial = {
+      sessionId,
+      retry: true,
+      reason: err.message,
+      failedCard: s.failedIndex + 1,
+      pendingAmount: Number((s.failedAmountCents / 100).toFixed(2)),
+      approved: s.auths.map((a, i) => ({
+        card: i + 1,
+        amount: Number((a.amountCents / 100).toFixed(2)),
+        installments: a.installments,
+        status: "authorized"
+      }))
+    };
+    throw e;
+  }
+  if (auth.needs3DS) {
+    const e = new Error("Este cartão exige autenticação 3DS, ainda não habilitada nesta versão. Tente outro cartão.");
+    e.status = 402;
+    e.partial = { sessionId, retry: true, pendingAmount: Number((s.failedAmountCents / 100).toFixed(2)) };
+    throw e;
+  }
+
+  pendingSplits.delete(sessionId);
+  const auths = [...s.auths, { tid: auth.tid, amountCents: s.failedAmountCents, installments, auth }];
+  return finishCardCheckout({
+    input: s.input, rooms: s.rooms, totalPrice: s.totalPrice,
+    amountCents: s.amountCents, reference: s.reference, auths
+  });
+};
+
+/** Desiste da tentativa e libera o limite do cartão que havia sido aprovado. */
+export const cancelSplitSession = async (sessionId) => {
+  const s = pendingSplits.get(sessionId);
+  if (!s) return { released: true, alreadyGone: true };
+  pendingSplits.delete(sessionId);
+  const stuck = await releaseAuthorizations(s.auths);
+  if (stuck.length) {
+    console.error("[checkout] Cancelamento de sessão dividida: estorno falhou.", { sessionId, stuck });
+    return { released: false, tids: stuck };
+  }
+  console.log("[checkout] Sessão de pagamento dividido cancelada e autorizações liberadas.", { sessionId });
+  return { released: true };
+};
+
+/* ============ CARTÃO: pré-autoriza → cria reserva → captura ============
+   Aceita até dois cartões, cada um com seu valor e seu parcelamento. A soma é
+   conferida contra o preço AUTORITATIVO do Artax — nunca contra o total que o
+   site enviou — e nada é cobrado se não bater exatamente. */
 export const processCheckout = async (input) => {
   const { rooms, totalPrice, amountCents } = await resolveStay(input);
   const reference = `CZ-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
-  // 1) Pré-autorização (NÃO cobra ainda — só reserva o limite).
-  const auth = await authorize({ amountCents, reference, installments: input.installments, card: input.card });
-  if (auth.needs3DS) {
-    const e = new Error("Este cartão exige autenticação 3DS (ainda não habilitada nesta versão). Use PIX ou outro cartão.");
-    e.status = 402;
-    throw e;
+  const cards = input.cards?.length ? input.cards : [{ ...input.card, installments: input.installments, amountCents: null }];
+  const split = cards.length > 1;
+
+  // Cartão único cobra o total; com divisão, a soma tem que fechar na casa dos
+  // centavos. Isso roda ANTES de qualquer autorização: se não bater, ninguém é
+  // cobrado — só recebe o aviso.
+  const parts = split
+    ? cards.map((c) => c.amountCents)
+    : [amountCents];
+  if (split) {
+    const sum = parts.reduce((t, v) => t + v, 0);
+    if (sum !== amountCents) {
+      const diff = (Math.abs(sum - amountCents) / 100).toFixed(2);
+      throw new ValidationError(
+        sum > amountCents
+          ? `A soma dos dois cartões passa R$ ${diff} do total da reserva. Ajuste os valores para somar exatamente ${totalPrice.toFixed(2)}.`
+          : `Faltam R$ ${diff} para fechar o total da reserva. Ajuste os valores para somar exatamente ${totalPrice.toFixed(2)}.`
+      );
+    }
   }
 
-  // 2) Cria a reserva no Artax (se falhar, bookStay cancela a pré-autorização → cliente não é cobrado).
-  const booked = await bookStay({ input, rooms, reference, tid: auth.tid, amountCents });
-
-  // 3) Reserva garantida → captura (só agora cobra de fato).
-  let captured = true;
-  try {
-    await capture({ tid: auth.tid, amountCents });
-  } catch (capErr) {
-    captured = false;
-    console.error("[checkout] Reserva criada, mas a CAPTURA falhou — capturar manualmente (TID " + auth.tid + ").", capErr.message);
+  // 1) Pré-autorizações (NÃO cobram ainda — só reservam o limite). Em série:
+  // se a segunda recusar, a primeira é estornada antes de devolver o erro.
+  const auths = [];
+  for (let i = 0; i < cards.length; i += 1) {
+    const c = cards[i];
+    const partCents = parts[i];
+    const partRef = split ? `${reference}-${i + 1}` : reference;
+    let auth;
+    try {
+      auth = await authorize({
+        amountCents: partCents,
+        reference: partRef,
+        installments: c.installments,
+        card: c
+      });
+    } catch (err) {
+      // Se algum cartão anterior já foi aprovado, a autorização dele NÃO é
+      // estornada aqui: fica retida enquanto o hóspede troca o cartão recusado.
+      // Sem isso ele teria que digitar os dois de novo do zero.
+      if (auths.length) {
+        throw partialPaymentError({
+          input, rooms, totalPrice, amountCents, reference, auths,
+          failedIndex: i, failedAmountCents: partCents,
+          reason: err.message
+        });
+      }
+      const e = new Error(`Cartão ${i + 1} recusado: ${err.message} Nenhum valor foi cobrado.`);
+      e.status = err.status || 402;
+      throw e;
+    }
+    if (auth.needs3DS) {
+      if (auths.length) {
+        throw partialPaymentError({
+          input, rooms, totalPrice, amountCents, reference, auths,
+          failedIndex: i, failedAmountCents: partCents,
+          reason: "Este cartão exige autenticação 3DS, ainda não habilitada nesta versão."
+        });
+      }
+      const e = new Error(`O cartão ${i + 1} exige autenticação 3DS (ainda não habilitada nesta versão). Use PIX ou outro cartão. Nenhum valor foi cobrado.`);
+      e.status = 402;
+      throw e;
+    }
+    auths.push({ tid: auth.tid, amountCents: partCents, installments: c.installments, auth });
   }
 
-  // 4) Lança o pagamento na reserva do Artax (confirmado apenas se capturado).
-  const paymentRegistered = await registerArtaxPayment(booked.booking_id, {
-    method: "card",
-    totalPrice,
-    installments: input.installments,
-    confirmed: captured
+  return finishCardCheckout({ input, rooms, totalPrice, amountCents, reference, auths });
+};
+
+/* Conclui a compra com todas as autorizações já aprovadas: cria a reserva,
+   captura cada cartão e lança os pagamentos. Extraído para ser reaproveitado
+   pela troca de cartão (retrySplitCard), que chega aqui com uma autorização
+   antiga e uma nova. */
+const finishCardCheckout = async ({ input, rooms, totalPrice, amountCents, reference, auths }) => {
+  const auth = auths[0].auth;
+
+  // 2) Cria a reserva no Artax (se falhar, cancela TODAS as pré-autorizações).
+  const booked = await bookStay({
+    input, rooms, reference, tid: auth.tid, amountCents,
+    releaseAll: () => releaseAuthorizations(auths),
+    tids: auths.map((a) => a.tid)
   });
+
+  // 3) Reserva garantida → captura cada cartão (só agora cobra de fato).
+  // A reserva já existe, então uma captura que falhe NÃO desfaz nada: fica
+  // registrada como pendente para captura manual, e o pagamento entra no Artax
+  // como não confirmado. Desfazer aqui seria pior — cancelaria uma reserva
+  // válida por um problema que a pousada resolve pelo painel da Rede.
+  const charges = [];
+  for (let i = 0; i < auths.length; i += 1) {
+    const a = auths[i];
+    let ok = true;
+    try {
+      await capture({ tid: a.tid, amountCents: a.amountCents });
+    } catch (capErr) {
+      ok = false;
+      console.error(`[checkout] Reserva criada, mas a CAPTURA do cartão ${i + 1} falhou — capturar manualmente (TID ${a.tid}).`, capErr.message);
+    }
+    charges.push({
+      card: i + 1,
+      tid: a.tid,
+      amount: Number((a.amountCents / 100).toFixed(2)),
+      installments: a.installments,
+      status: ok ? "captured" : "pending_capture",
+      authorizationCode: a.auth.authorizationCode
+    });
+  }
+  const captured = charges.every((c) => c.status === "captured");
+
+  // 4) Lança um pagamento por cartão na reserva do Artax (a API já aceita lista).
+  const paymentRegistered = await registerArtaxPayments(
+    booked.booking_id,
+    charges.map((c) => ({
+      method: "card",
+      totalPrice: c.amount,
+      installments: c.installments,
+      confirmed: c.status === "captured"
+    }))
+  );
 
   // E-mail de confirmação — SÓ após o pagamento (cartão efetivamente capturado).
   // Não bloqueia a resposta ao cliente.
@@ -298,10 +557,13 @@ export const processCheckout = async (input) => {
       tid: auth.tid,
       authorizationCode: auth.authorizationCode,
       reference,
-      installments: input.installments,
+      installments: auths[0].installments,
       amount: totalPrice,
       captured,
-      registered: paymentRegistered
+      registered: paymentRegistered,
+      split,
+      // Status de cada cobrança, para o site mostrar as duas ao hóspede.
+      charges
     }
   };
 };

@@ -18,12 +18,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260831-2">
+    <link rel="stylesheet" href="styles.css?v=20260902-1">
     <link rel="preload" as="image" href="assets/suite.webp">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20260901-1" defer></script>
+    <script src="script.js?v=20260902-1" defer></script>
     <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
@@ -655,12 +655,100 @@
                 </div>
               </div>
               <div class="home-pay-pane" data-home-pay-pane="card" hidden>
-                <div class="home-card-grid">
-                  <label class="wide"><span>Número do cartão*</span><input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" data-home-card-number></label>
-                  <label class="wide"><span>Nome impresso*</span><input type="text" autocomplete="cc-name" data-home-card-name></label>
-                  <label><span>Validade*</span><input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" data-home-card-exp></label>
-                  <label><span>CVV*</span><input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" data-home-card-cvv></label>
-                  <label class="wide"><span>Parcelas</span><select data-home-card-installments></select></label>
+                <div class="home-pay-choice home-split-choice" role="radiogroup" aria-label="Quantidade de cartões">
+                  <button class="is-active" type="button" data-home-cards="1" role="radio" aria-checked="true">
+                    <i data-lucide="credit-card" aria-hidden="true"></i>
+                    <span><strong>Um cartão</strong></span>
+                  </button>
+                  <button type="button" data-home-cards="2" role="radio" aria-checked="false">
+                    <i data-lucide="layers" aria-hidden="true"></i>
+                    <span><strong>Dois cartões</strong><small>Dividir o valor</small></span>
+                  </button>
+                </div>
+
+                <!-- Com dois cartões o preenchimento vira etapas: valores,
+                     depois um cartão de cada vez. Dez campos numa tela só
+                     assustam e aumentam a chance de erro. -->
+                <ol class="home-cardsteps" data-home-cardsteps hidden aria-label="Etapas do pagamento dividido">
+                  <li data-home-cardstep-dot="amounts" class="is-active"><span>1</span> Valores</li>
+                  <li data-home-cardstep-dot="1"><span>2</span> Cartão 1</li>
+                  <li data-home-cardstep-dot="2"><span>3</span> Cartão 2</li>
+                </ol>
+
+                <!-- Etapa de valores (só existe no modo dois cartões) -->
+                <div class="home-cardstep" data-home-cardstep="amounts" hidden>
+                  <div class="home-card-grid">
+                    <label><span>Valor no cartão 1*</span><input type="text" inputmode="decimal" placeholder="0,00" data-home-split-amount="1"></label>
+                    <label><span>Valor no cartão 2*</span><input type="text" inputmode="decimal" placeholder="0,00" data-home-split-amount="2"></label>
+                  </div>
+                </div>
+
+                <div class="home-card-block home-cardstep" data-home-card-block="1" data-home-cardstep="1">
+                  <p class="home-card-legend" data-home-card-title hidden>Cartão 1</p>
+                  <div class="home-card-grid">
+                    <label class="wide"><span>Número do cartão*</span><input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" data-home-card-number></label>
+                    <label class="wide"><span>Nome impresso*</span><input type="text" autocomplete="cc-name" data-home-card-name></label>
+                    <label><span>Validade*</span><input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" data-home-card-exp></label>
+                    <label><span>CVV*</span><input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" data-home-card-cvv></label>
+                    <label class="wide"><span>Parcelas</span><select data-home-card-installments></select></label>
+                  </div>
+                </div>
+
+                <div class="home-card-block home-cardstep" data-home-card-block="2" data-home-cardstep="2" hidden>
+                  <p class="home-card-legend">Cartão 2</p>
+                  <div class="home-card-grid">
+                    <label class="wide"><span>Número do cartão*</span><input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" data-home-card-number></label>
+                    <label class="wide"><span>Nome impresso*</span><input type="text" autocomplete="cc-name" data-home-card-name></label>
+                    <label><span>Validade*</span><input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" data-home-card-exp></label>
+                    <label><span>CVV*</span><input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" data-home-card-cvv></label>
+                    <label class="wide"><span>Parcelas</span><select data-home-card-installments></select></label>
+                  </div>
+                </div>
+
+                <!-- Conferência da divisão: mostra a soma e a diferença em tempo
+                     real, e bloqueia o pagamento enquanto não fechar o total. -->
+                <div class="home-split-summary" data-home-split-summary hidden aria-live="polite">
+                  <div><span>Soma dos cartões</span><strong data-home-split-sum>R$ 0,00</strong></div>
+                  <div><span>Total da reserva</span><strong data-home-split-total>R$ 0,00</strong></div>
+                  <p data-home-split-msg></p>
+                </div>
+
+                <!-- Um cartão passou e o outro não: o aprovado fica reservado
+                     (ainda não cobrado) enquanto o hóspede tenta outro. -->
+                <div class="home-partial" data-home-partial hidden aria-live="polite">
+                  <p class="home-partial-title">
+                    <i data-lucide="alert-triangle" aria-hidden="true"></i>
+                    <span data-home-partial-head>Um dos cartões não foi aprovado</span>
+                  </p>
+                  <p class="home-partial-reason" data-home-partial-reason></p>
+                  <div class="home-partial-status" data-home-partial-status></div>
+                  <p class="home-partial-hint">
+                    O valor do cartão aprovado está <strong>reservado, ainda não cobrado</strong>.
+                    Informe outro cartão para o valor restante e concluímos a reserva.
+                  </p>
+
+                  <div class="home-card-grid" data-home-retry-card>
+                    <label class="wide"><span>Número do cartão*</span><input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" data-home-card-number></label>
+                    <label class="wide"><span>Nome impresso*</span><input type="text" autocomplete="cc-name" data-home-card-name></label>
+                    <label><span>Validade*</span><input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" data-home-card-exp></label>
+                    <label><span>CVV*</span><input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" data-home-card-cvv></label>
+                    <label class="wide"><span>Parcelas</span><select data-home-retry-installments></select></label>
+                  </div>
+
+                  <div class="home-partial-actions">
+                    <button class="button button-primary" type="button" data-home-retry-submit>
+                      <i data-lucide="credit-card" aria-hidden="true"></i>
+                      Pagar restante e concluir
+                    </button>
+                    <a class="button button-ghost" data-home-partial-support target="_blank" rel="noreferrer"
+                       href="https://wa.me/5564984398408">
+                      <i data-lucide="message-circle" aria-hidden="true"></i>
+                      Falar com o suporte
+                    </a>
+                  </div>
+                  <button class="home-partial-give-up" type="button" data-home-partial-cancel>
+                    Desistir e liberar o valor reservado
+                  </button>
                 </div>
               </div>
               <p class="home-form-notice" data-home-pay-notice hidden></p>
@@ -685,6 +773,7 @@
               <div class="home-success">
                 <i data-lucide="check-circle-2" aria-hidden="true"></i>
                 <strong data-home-success-id>Reserva confirmada.</strong>
+                <div class="home-success-charges" data-home-success-charges hidden></div>
                 <p>Você receberá os detalhes da sua hospedagem no e-mail informado durante a reserva.<br>Em caso de dúvidas, fale com nossa equipe pelo WhatsApp: (64) 98439-8408.<br>Estamos ansiosos para receber você!</p>
                 <a class="button button-primary" href="https://wa.me/5564984398408?text=Ol%C3%A1!%20Acabei%20de%20concluir%20uma%20reserva%20pelo%20site%20oficial%20e%20gostaria%20de%20confirmar%20se%20est%C3%A1%20tudo%20certo.%20%F0%9F%98%8A" target="_blank" rel="noreferrer">
                   <i data-lucide="message-circle" aria-hidden="true"></i>

@@ -672,7 +672,12 @@ const homeReadApiJson = async (res, fallbackMessage) => {
     data = null;
   }
   if (!res.ok) {
-    throw new Error(data?.error || fallbackMessage);
+    const err = new Error(data?.error || fallbackMessage);
+    // Pagamento dividido com um cartão recusado: o outro segue autorizado e o
+    // site precisa desses dados para oferecer a troca em vez de recomeçar.
+    if (data?.partial) err.partial = data.partial;
+    err.status = res.status;
+    throw err;
   }
   return data || {};
 };
@@ -906,9 +911,147 @@ const initCompactBookingFlow = () => {
     updateReview();
   };
 
+  /* ---------- pagamento em até dois cartões ---------- */
+  const payMethodIsCard = () => state.payMethod === "card";
+  let cardCount = 1;
+  const cardBlocks = () => Array.from(form.querySelectorAll("[data-home-card-block]"));
+  const activeBlocks = () => cardBlocks().slice(0, cardCount);
+
+  // "1.500,00" / "1500.00" / "1500" -> 1500. Em pt-BR a vírgula é o decimal e o
+  // ponto é separador de milhar; tratar ao contrário faria R$ 1.500 virar 1,50.
+  const parseBRL = (raw) => {
+    const s = String(raw || "").replace(/[^\d.,]/g, "");
+    if (!s) return NaN;
+    const normalized = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+    return Number(normalized);
+  };
+  const toCents = (v) => Math.round(v * 100);
+
+  const amountInput = (n) => form.querySelector(`[data-home-split-amount="${n}"]`);
+  const splitParts = () => [1, 2].map((n) => parseBRL(amountInput(n)?.value));
+
+  /* Etapas do modo dois cartões: valores -> cartão 1 -> cartão 2. Um cartão só
+     não tem etapas; é a mesma tela única de sempre. */
+  const CARD_STEPS = ["amounts", "1", "2"];
+  let cardStep = "amounts";
+
+  const goToCardStep = (name) => {
+    cardStep = name;
+    form.querySelectorAll("[data-home-cardstep]").forEach((el) => {
+      el.hidden = el.dataset.homeCardstep !== name;
+    });
+    const cur = CARD_STEPS.indexOf(name);
+    form.querySelectorAll("[data-home-cardstep-dot]").forEach((d) => {
+      const i = CARD_STEPS.indexOf(d.dataset.homeCardstepDot);
+      d.classList.toggle("is-active", i === cur);
+      d.classList.toggle("is-done", i < cur);
+    });
+    // O resumo da divisão só interessa na etapa de valores.
+    const box = form.querySelector("[data-home-split-summary]");
+    if (box) box.hidden = name !== "amounts";
+    updateSplitSummary();
+    if (paySubmitLabel) {
+      paySubmitLabel.textContent = name === "2" ? "Pagar e reservar" : "Continuar";
+    }
+    initIcons();
+  };
+
+  /* Base de cálculo das parcelas de cada cartão: o valor daquele cartão quando
+     dividido, ou o total da reserva quando é um só. */
+  const blockBase = (block) => {
+    if (cardCount === 1) return cartTotal();
+    const v = parseBRL(amountInput(block.dataset.homeCardBlock)?.value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+
+  const updateSplitSummary = () => {
+    const box = form.querySelector("[data-home-split-summary]");
+    const paySubmitBtn = paySubmit;
+    if (cardCount === 1) {
+      if (box) box.hidden = true;
+      if (paySubmitBtn && !state.paymentBusy) paySubmitBtn.disabled = false;
+      return;
+    }
+    // Fora da etapa de valores o botão não depende da soma — ela já foi
+    // validada para sair dali.
+    if (cardStep !== "amounts") {
+      if (box) box.hidden = true;
+      if (paySubmitBtn && !state.paymentBusy) paySubmitBtn.disabled = false;
+      return true;
+    }
+    if (box) box.hidden = false;
+    const total = cartTotal();
+    const parts = splitParts();
+    const filled = parts.every((v) => Number.isFinite(v) && v > 0);
+    const sum = parts.reduce((t, v) => t + (Number.isFinite(v) ? v : 0), 0);
+
+    const setT = (sel, txt) => { const el = form.querySelector(sel); if (el) el.textContent = txt; };
+    setT("[data-home-split-sum]", homeBrl(sum));
+    setT("[data-home-split-total]", homeBrl(total));
+
+    const msg = form.querySelector("[data-home-split-msg]");
+    const diffCents = toCents(sum) - toCents(total);
+    let ok = false;
+    if (!filled) {
+      if (msg) { msg.textContent = "Informe o valor de cada cartão."; msg.className = ""; }
+    } else if (diffCents === 0) {
+      ok = true;
+      if (msg) { msg.textContent = "Valores conferem com o total da reserva."; msg.className = "is-ok"; }
+    } else if (diffCents > 0) {
+      if (msg) { msg.textContent = `A soma passa ${homeBrl(diffCents / 100)} do total. Ajuste os valores.`; msg.className = "is-error"; }
+    } else {
+      if (msg) { msg.textContent = `Faltam ${homeBrl(Math.abs(diffCents) / 100)} para fechar o total. Ajuste os valores.`; msg.className = "is-error"; }
+    }
+    // Sem soma exata o pagamento nem é tentado — nada é cobrado.
+    if (paySubmitBtn && !state.paymentBusy) paySubmitBtn.disabled = !ok;
+    return ok;
+  };
+
+  const setCardCount = (n) => {
+    cardCount = n === 2 ? 2 : 1;
+    form.querySelectorAll("[data-home-cards]").forEach((b) => {
+      const on = Number(b.dataset.homeCards) === cardCount;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-checked", String(on));
+    });
+    cardBlocks().forEach((block) => {
+      const title = block.querySelector("[data-home-card-title]");
+      if (title) title.hidden = cardCount === 1;
+    });
+    const steps = form.querySelector("[data-home-cardsteps]");
+    if (steps) steps.hidden = cardCount === 1;
+
+    if (cardCount === 2) {
+      // Sugere metade em cada um — o hóspede ajusta como quiser.
+      const total = cartTotal();
+      const inputs = [amountInput(1), amountInput(2)];
+      if (inputs.every((i) => i && !i.value)) {
+        const half = Math.floor(toCents(total) / 2);
+        inputs[0].value = (half / 100).toFixed(2).replace(".", ",");
+        inputs[1].value = ((toCents(total) - half) / 100).toFixed(2).replace(".", ",");
+      }
+      goToCardStep("amounts");
+    } else {
+      // Um cartão: sem etapas, tudo numa tela.
+      form.querySelectorAll("[data-home-cardstep]").forEach((el) => {
+        el.hidden = el.dataset.homeCardstep !== "1";
+      });
+      cardStep = "1";
+      if (paySubmitLabel) paySubmitLabel.textContent = "Pagar e reservar";
+    }
+    buildInstallments(cartTotal());
+    updateSplitSummary();
+    initIcons();
+  };
+
   const buildInstallments = (price) => {
-    const select = form.querySelector("[data-home-card-installments]");
+    cardBlocks().forEach((block) => buildInstallmentsFor(block, price));
+  };
+
+  const buildInstallmentsFor = (block, price) => {
+    const select = block.querySelector("[data-home-card-installments]");
     if (!select) return;
+    const base = cardCount === 1 ? price : blockBase(block);
     // Preserva a parcela já escolhida: essa função roda de novo toda vez que
     // o hóspede reentra na etapa "guest" (ex.: voltou pra corrigir um dado),
     // e reconstruir o <select> sem isso reseta a escolha pra 1x (à vista)
@@ -919,7 +1062,7 @@ const initCompactBookingFlow = () => {
     for (let n = 1; n <= HOME_INSTALLMENTS_MAX; n += 1) {
       const option = document.createElement("option");
       option.value = String(n);
-      option.textContent = n === 1 ? `À vista - ${homeBrl(price)}` : `${n}x de ${homeBrl(price / n)} sem juros`;
+      option.textContent = n === 1 ? `À vista - ${homeBrl(base)}` : `${n}x de ${homeBrl(base / n)} sem juros`;
       select.appendChild(option);
     }
     select.value = String(Math.min(Math.max(previous, 1), HOME_INSTALLMENTS_MAX));
@@ -1081,6 +1224,26 @@ const initCompactBookingFlow = () => {
     initIcons();
   };
 
+  /* Status de cada cobrança na confirmação. Com dois cartões o hóspede precisa
+     ver as duas — inclusive se uma ficou pendente de captura, caso em que a
+     reserva está garantida mas a pousada ainda vai concluir aquele lançamento. */
+  const renderCharges = (payment) => {
+    const box = form.querySelector("[data-home-success-charges]");
+    if (!box) return;
+    const charges = Array.isArray(payment?.charges) ? payment.charges : [];
+    if (charges.length < 2) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = `
+      <p class="home-charges-title">Pagamento dividido em ${charges.length} cartões</p>
+      ${charges.map((c) => `
+        <div class="home-charge${c.status === "captured" ? "" : " is-pending"}">
+          <span>Cartão ${c.card} · ${c.installments > 1 ? `${c.installments}x` : "à vista"}</span>
+          <strong>${homeBrl(c.amount)}</strong>
+          <small>${c.status === "captured" ? "Cobrança confirmada" : "Aguardando confirmação da operadora"}</small>
+        </div>`).join("")}`;
+    initIcons();
+  };
+
   const renderSuccess = (data) => {
     stopPixPolling();
     setPayBusy(false, state.payMethod === "pix" ? "Gerar PIX" : "Pagar e reservar");
@@ -1088,6 +1251,7 @@ const initCompactBookingFlow = () => {
     if (successId) {
       successId.textContent = data?.booking_id ? `Reserva nº ${data.booking_id}` : "Reserva confirmada.";
     }
+    renderCharges(data?.payment);
     pushPurchaseEvent(data, state.selectedRooms);
     goToStep("done");
   };
@@ -1159,14 +1323,198 @@ const initCompactBookingFlow = () => {
     }
   };
 
-  const submitCard = async () => {
-    const number = form.querySelector("[data-home-card-number]")?.value || "";
-    const holderName = form.querySelector("[data-home-card-name]")?.value.trim() || "";
-    const exp = form.querySelector("[data-home-card-exp]")?.value || "";
-    const cvv = form.querySelector("[data-home-card-cvv]")?.value || "";
+  /* Lê um bloco de cartão. Devolve null e avisa qual campo falta — com dois
+     cartões na tela, dizer "cartão 2" evita o hóspede procurar o erro no lugar
+     errado. */
+  const readCardBlock = (block, index) => {
+    const where = cardCount > 1 ? ` do cartão ${index + 1}` : "";
+    const number = block.querySelector("[data-home-card-number]")?.value || "";
+    const holderName = block.querySelector("[data-home-card-name]")?.value.trim() || "";
+    const exp = block.querySelector("[data-home-card-exp]")?.value || "";
+    const cvv = block.querySelector("[data-home-card-cvv]")?.value || "";
     const [mm, yy] = exp.split("/");
     if (homeOnlyDigits(number).length < 13 || !holderName || !mm || !yy || homeOnlyDigits(cvv).length < 3) {
-      showNotice(payNotice, "Preencha os dados do cartão para continuar.");
+      showNotice(payNotice, `Preencha os dados${where} para continuar.`);
+      return null;
+    }
+    const card = {
+      number: homeOnlyDigits(number),
+      holderName,
+      expirationMonth: Number(mm),
+      expirationYear: Number(yy),
+      securityCode: homeOnlyDigits(cvv),
+      installments: Number(block.querySelector("[data-home-card-installments]")?.value || 1)
+    };
+    if (cardCount > 1) {
+      const amount = parseBRL(amountInput(index + 1)?.value);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showNotice(payNotice, `Informe o valor a cobrar no cartão ${index + 1}.`);
+        return null;
+      }
+      card.amount = amount;
+    }
+    return card;
+  };
+
+  /* ---------- pagamento parcial: um cartão passou, o outro não ---------- */
+  let partialSession = null;
+
+  const showPartial = (partial) => {
+    partialSession = partial;
+    const box = form.querySelector("[data-home-partial]");
+    if (!box) return;
+    box.hidden = false;
+    // Esconde os formulários originais: a partir daqui só falta o valor pendente.
+    cardBlocks().forEach((b) => { b.hidden = true; });
+    const splitBox = form.querySelector("[data-home-split-summary]");
+    if (splitBox) splitBox.hidden = true;
+    const choice = form.querySelector(".home-split-choice");
+    if (choice) choice.hidden = true;
+
+    const setT = (sel, txt) => { const el = form.querySelector(sel); if (el) el.textContent = txt; };
+    setT("[data-home-partial-head]", `O cartão ${partial.failedCard} não foi aprovado`);
+    setT("[data-home-partial-reason]", partial.reason || "A operadora não autorizou a transação.");
+
+    const status = form.querySelector("[data-home-partial-status]");
+    if (status) {
+      status.innerHTML = `
+        ${(partial.approved || []).map((a) => `
+          <div class="home-charge"><span>Cartão ${a.card} · ${a.installments > 1 ? `${a.installments}x` : "à vista"}</span>
+          <strong>${homeBrl(a.amount)}</strong><small>Reservado, aguardando o restante</small></div>`).join("")}
+        <div class="home-charge is-pending"><span>Falta pagar</span>
+        <strong>${homeBrl(partial.pendingAmount)}</strong><small>Informe outro cartão abaixo</small></div>`;
+    }
+
+    // Parcelas recalculadas sobre o valor que ficou pendente.
+    const select = form.querySelector("[data-home-retry-installments]");
+    if (select) {
+      select.innerHTML = "";
+      for (let n = 1; n <= HOME_INSTALLMENTS_MAX; n += 1) {
+        const o = document.createElement("option");
+        o.value = String(n);
+        o.textContent = n === 1
+          ? `À vista - ${homeBrl(partial.pendingAmount)}`
+          : `${n}x de ${homeBrl(partial.pendingAmount / n)} sem juros`;
+        select.appendChild(o);
+      }
+    }
+
+    const support = form.querySelector("[data-home-partial-support]");
+    if (support) {
+      const msg = `Olá! Tentei uma reserva no site e o cartão ${partial.failedCard} não foi aprovado. `
+        + `Ficou um valor de ${homeBrl(partial.approved?.[0]?.amount || 0)} reservado no outro cartão `
+        + `e gostaria de ajuda para concluir ou solicitar o estorno.`;
+      support.href = `https://wa.me/5564984398408?text=${encodeURIComponent(msg)}`;
+    }
+
+    setPayBusy(false, "Pagar e reservar");
+    initIcons();
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+
+  const hidePartial = () => {
+    partialSession = null;
+    const box = form.querySelector("[data-home-partial]");
+    if (box) box.hidden = true;
+    const choice = form.querySelector(".home-split-choice");
+    if (choice) choice.hidden = false;
+    setCardCount(cardCount);
+  };
+
+  const submitRetryCard = async () => {
+    if (!partialSession) return;
+    const block = form.querySelector("[data-home-retry-card]");
+    const number = block.querySelector("[data-home-card-number]")?.value || "";
+    const holderName = block.querySelector("[data-home-card-name]")?.value.trim() || "";
+    const exp = block.querySelector("[data-home-card-exp]")?.value || "";
+    const cvv = block.querySelector("[data-home-card-cvv]")?.value || "";
+    const [mm, yy] = exp.split("/");
+    if (homeOnlyDigits(number).length < 13 || !holderName || !mm || !yy || homeOnlyDigits(cvv).length < 3) {
+      showNotice(payNotice, "Preencha os dados do novo cartão.");
+      return;
+    }
+    setPayBusy(true, "Processando...");
+    clearNotice(payNotice);
+    try {
+      const res = await fetch(`${HOME_API_BASE}/checkout/retry-card`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: partialSession.sessionId,
+          card: {
+            number: homeOnlyDigits(number),
+            holderName,
+            expirationMonth: Number(mm),
+            expirationYear: Number(yy),
+            securityCode: homeOnlyDigits(cvv),
+            installments: Number(form.querySelector("[data-home-retry-installments]")?.value || 1)
+          }
+        })
+      });
+      const data = await homeReadApiJson(res, "Não foi possível concluir o pagamento.");
+      hidePartial();
+      renderSuccess(data);
+    } catch (error) {
+      setPayBusy(false, "Pagar e reservar");
+      // Recusou de novo: a sessão continua viva, então mantém o painel aberto.
+      showNotice(payNotice, error.message || "Não foi possível concluir o pagamento.");
+      if (error.status === 410) hidePartial(); // sessão expirou — recomeçar
+    }
+  };
+
+  const cancelPartial = async () => {
+    if (!partialSession) return;
+    setPayBusy(true, "Liberando...");
+    try {
+      const res = await fetch(`${HOME_API_BASE}/checkout/cancel-split`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: partialSession.sessionId })
+      });
+      const data = await homeReadApiJson(res, "Não foi possível liberar o valor.");
+      showNotice(payNotice, data.released
+        ? "Valor liberado. Nenhuma cobrança foi feita — você pode tentar novamente."
+        : "Não conseguimos liberar automaticamente. Fale com o suporte pelo WhatsApp para regularizar.");
+    } catch (error) {
+      showNotice(payNotice, error.message || "Não foi possível liberar o valor. Fale com o suporte.");
+    } finally {
+      setPayBusy(false, "Pagar e reservar");
+      hidePartial();
+    }
+  };
+
+  const submitCard = async () => {
+    // Com dois cartões, o botão avança as etapas e só paga na última.
+    if (cardCount === 2 && cardStep !== "2") {
+      if (cardStep === "amounts") {
+        if (updateSplitSummary() !== true) {
+          showNotice(payNotice, "Ajuste os valores para somar exatamente o total da reserva.");
+          return;
+        }
+        clearNotice(payNotice);
+        buildInstallments(cartTotal()); // parcelas recalculadas sobre cada valor
+        goToCardStep("1");
+        return;
+      }
+      if (cardStep === "1") {
+        if (!readCardBlock(cardBlocks()[0], 0)) return;
+        clearNotice(payNotice);
+        goToCardStep("2");
+        return;
+      }
+    }
+
+    const blocks = activeBlocks();
+    const cards = [];
+    for (let i = 0; i < blocks.length; i += 1) {
+      const card = readCardBlock(blocks[i], i);
+      if (!card) return;
+      cards.push(card);
+    }
+    // Trava final da divisão. O servidor confere de novo contra o preço
+    // autoritativo do Artax — esta aqui só evita a viagem à toa.
+    if (cardCount > 1 && updateSplitSummary() !== true) {
+      showNotice(payNotice, "Ajuste os valores dos cartões para somar exatamente o total da reserva.");
       return;
     }
     setPayBusy(true, "Processando...");
@@ -1177,20 +1525,20 @@ const initCompactBookingFlow = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...baseReservationPayload(),
-          installments: Number(form.querySelector("[data-home-card-installments]")?.value || 1),
-          card: {
-            number: homeOnlyDigits(number),
-            holderName,
-            expirationMonth: Number(mm),
-            expirationYear: Number(yy),
-            securityCode: homeOnlyDigits(cvv)
-          }
+          installments: cards[0].installments,
+          cards
         })
       });
       const data = await homeReadApiJson(res, "Não foi possível concluir o pagamento.");
       renderSuccess(data);
     } catch (error) {
       setPayBusy(false, "Pagar e reservar");
+      // Um cartão passou e o outro não: abre a troca em vez de perder tudo.
+      if (error.partial?.sessionId) {
+        showNotice(payNotice, error.message || "Um dos cartões não foi aprovado.");
+        showPartial(error.partial);
+        return;
+      }
       showNotice(payNotice, error.message || "Não foi possível concluir o pagamento.");
     }
   };
@@ -1303,6 +1651,13 @@ const initCompactBookingFlow = () => {
   form.querySelectorAll("[data-home-next], [data-home-prev], [data-home-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       const target = button.dataset.homeNext || button.dataset.homePrev || button.dataset.homeTab;
+      // Dentro do pagamento dividido, "Voltar" recua uma etapa do cartão antes
+      // de sair para a etapa de dados — senão o hóspede perderia o que digitou.
+      if (target === "guest" && payMethodIsCard() && cardCount === 2 && cardStep !== "amounts") {
+        clearNotice(payNotice);
+        goToCardStep(cardStep === "2" ? "1" : "amounts");
+        return;
+      }
       handleNavigation(target);
     });
   });
@@ -1310,6 +1665,37 @@ const initCompactBookingFlow = () => {
   form.querySelectorAll("[data-home-pay-method]").forEach((button) => {
     button.addEventListener("click", () => setPayMethod(button.dataset.homePayMethod));
   });
+
+  // Um ou dois cartões
+  form.querySelectorAll("[data-home-cards]").forEach((button) => {
+    button.addEventListener("click", () => setCardCount(Number(button.dataset.homeCards)));
+  });
+  // Digitou o valor de um cartão, o outro completa o restante sozinho. Vale nos
+  // dois sentidos: dá na mesma começar pelo cartão 1 ou pelo 2.
+  // `syncingAmounts` evita o laço infinito — preencher o outro campo dispara o
+  // "input" dele, que tentaria preencher este de volta.
+  let syncingAmounts = false;
+  form.querySelectorAll("[data-home-split-amount]").forEach((input) => {
+    input.addEventListener("input", () => {
+      if (!syncingAmounts && cardCount === 2) {
+        const other = [amountInput(1), amountInput(2)].find((el) => el && el !== input);
+        const typed = parseBRL(input.value);
+        if (other && Number.isFinite(typed)) {
+          // Passou do total: zera o outro em vez de mostrar valor negativo — o
+          // aviso de "a soma passa R$ X" explica o que corrigir.
+          const restCents = Math.max(0, toCents(cartTotal()) - toCents(typed));
+          syncingAmounts = true;
+          other.value = (restCents / 100).toFixed(2).replace(".", ",");
+          syncingAmounts = false;
+        }
+      }
+      updateSplitSummary();
+      cardBlocks().forEach((b) => buildInstallmentsFor(b, cartTotal()));
+    });
+  });
+  // Pagamento parcial: trocar o cartão recusado ou desistir.
+  form.querySelector("[data-home-retry-submit]")?.addEventListener("click", submitRetryCard);
+  form.querySelector("[data-home-partial-cancel]")?.addEventListener("click", cancelPartial);
 
   form.querySelector("[data-home-pix-copy]")?.addEventListener("click", async () => {
     const code = form.querySelector("[data-home-pix-code]")?.value || "";
@@ -1391,18 +1777,20 @@ const initCompactBookingFlow = () => {
     event.target.value = homeOnlyDigits(event.target.value).slice(0, 14);
   });
 
-  form.querySelector("[data-home-card-number]")?.addEventListener("input", (event) => {
+  // querySelectorAll: com dois blocos de cartão na tela, o singular deixaria o
+  // segundo sem máscara nenhuma.
+  form.querySelectorAll("[data-home-card-number]").forEach((el) => el.addEventListener("input", (event) => {
     const value = homeOnlyDigits(event.target.value).slice(0, 19);
     event.target.value = value.replace(/(.{4})/g, "$1 ").trim();
-  });
-  form.querySelector("[data-home-card-exp]")?.addEventListener("input", (event) => {
+  }));
+  form.querySelectorAll("[data-home-card-exp]").forEach((el) => el.addEventListener("input", (event) => {
     let value = homeOnlyDigits(event.target.value).slice(0, 4);
     if (value.length >= 3) value = `${value.slice(0, 2)}/${value.slice(2)}`;
     event.target.value = value;
-  });
-  form.querySelector("[data-home-card-cvv]")?.addEventListener("input", (event) => {
+  }));
+  form.querySelectorAll("[data-home-card-cvv]").forEach((el) => el.addEventListener("input", (event) => {
     event.target.value = homeOnlyDigits(event.target.value).slice(0, 4);
-  });
+  }));
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();

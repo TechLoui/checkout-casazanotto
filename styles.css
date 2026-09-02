@@ -4777,3 +4777,171 @@ svg {
 [data-home-guest-doc]:disabled::placeholder {
   opacity: 0.8;
 }
+
+/* ==================================================================
+   Pagamento em até dois cartões
+   ================================================================== */
+.home-split-choice { margin-bottom: 14px; }
+
+.home-card-block + .home-card-block { margin-top: 18px; }
+
+.home-card-legend {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Conferência da soma dos dois cartões. */
+.home-split-summary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(28, 23, 20, 0.14);
+  border-radius: 14px;
+  background: rgba(28, 23, 20, 0.03);
+}
+
+.home-split-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.92rem;
+}
+
+.home-split-summary > div + div { margin-top: 4px; }
+
+.home-split-summary p {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.home-split-summary p.is-ok { color: #1f7a4d; opacity: 1; }
+.home-split-summary p.is-error { color: #b23b2e; opacity: 1; }
+
+/* Um cartão aprovado e o outro recusado. */
+.home-partial {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1.5px solid #e0a100;
+  border-radius: 16px;
+  background: rgba(240, 179, 0, 0.07);
+}
+
+.home-partial-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-weight: 800;
+}
+
+.home-partial-reason {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.home-partial-hint {
+  margin: 12px 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.home-partial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.home-partial-give-up {
+  display: block;
+  margin: 12px auto 0;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.84rem;
+  text-decoration: underline;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* Status de cada cobrança (parcial e confirmação). */
+.home-charge {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(28, 23, 20, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+}
+
+.home-charge + .home-charge { margin-top: 8px; }
+.home-charge strong { grid-row: 1; }
+.home-charge small { grid-column: 1 / -1; font-size: 0.78rem; opacity: 0.7; }
+.home-charge.is-pending { border-color: #e0a100; }
+
+.home-success-charges { margin: 12px 0; width: 100%; }
+
+.home-charges-title {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Etapas do pagamento dividido: valores -> cartão 1 -> cartão 2. */
+.home-cardsteps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.home-cardsteps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.45;
+}
+
+.home-cardsteps li span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 0.72rem;
+}
+
+.home-cardsteps li.is-active { opacity: 1; }
+
+.home-cardsteps li.is-done {
+  opacity: 0.85;
+}
+
+.home-cardsteps li.is-done span,
+.home-cardsteps li.is-active span {
+  border-color: transparent;
+  background: #1c1714;
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .home-cardsteps li { font-size: 0.7rem; }
+}

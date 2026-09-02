@@ -7,7 +7,7 @@ import { config, assertConfig } from "./config.js";
 import { validateAvailability, validateCheckout, validatePix, ValidationError } from "./validation.js";
 import { checkAvailability, listCostCenters, ArtaxError } from "./artaxnet.js";
 import { RedeError } from "./rede.js";
-import { processCheckout, createPixCharge, confirmPix, reconcilePendingPix } from "./bookingFlow.js";
+import { processCheckout, retrySplitCard, cancelSplitSession, createPixCharge, confirmPix, reconcilePendingPix } from "./bookingFlow.js";
 import { verifyArtaxWebhook, handleArtaxEvent } from "./webhooks.js";
 
 assertConfig();
@@ -116,6 +116,31 @@ app.post("/api/checkout", async (req, res, next) => {
   }
 });
 
+// Pagamento dividido: substitui o cartão recusado e conclui a reserva.
+// A autorização do cartão que passou segue retida do lado do servidor, então
+// aqui só chegam os dados do cartão novo — o hóspede não redigita o outro.
+app.post("/api/checkout/retry-card", async (req, res, next) => {
+  try {
+    const sessionId = String(req.body?.sessionId || "").trim();
+    if (!sessionId) throw new ValidationError("Sessão de pagamento não informada.");
+    const result = await retrySplitCard(sessionId, req.body?.card || {}, config.rede.maxInstallments);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Pagamento dividido: hóspede desiste — libera o limite do cartão aprovado.
+app.post("/api/checkout/cancel-split", async (req, res, next) => {
+  try {
+    const sessionId = String(req.body?.sessionId || "").trim();
+    if (!sessionId) throw new ValidationError("Sessão de pagamento não informada.");
+    res.json(await cancelSplitSession(sessionId));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // PIX: gera o QR Code da cobrança (a reserva só é criada após o pagamento).
 app.post("/api/pix/create", async (req, res, next) => {
   try {
@@ -204,7 +229,10 @@ app.use((error, req, res, _next) => {
   }
   console.error("[server] Erro não tratado:", error);
   return res.status(error.status || 500).json({
-    error: error.status ? error.message : "Erro interno. Tente novamente em instantes."
+    error: error.status ? error.message : "Erro interno. Tente novamente em instantes.",
+    // Pagamento dividido com um cartão recusado: o site precisa desses dados
+    // para oferecer a troca do cartão em vez de recomeçar a reserva.
+    ...(error.partial ? { partial: error.partial } : {})
   });
 });
 
