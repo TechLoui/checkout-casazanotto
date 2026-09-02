@@ -765,6 +765,13 @@ button {
   }
 }
 
+/* O avatar/CTA flutuante da Asksuite é um elemento separado do painel do
+   chat. Durante a reserva, remove somente esse lançador para não cobrir o
+   resumo e os botões; fora da seção, o estilo original volta a valer. */
+body.is-reservation-in-view #chatbotmobile {
+  display: none !important;
+}
+
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -4947,37 +4954,49 @@ svg {
 }
 
 /* ==================================================================
-   Rodapé flutuante da escolha de acomodações (mobile)
+   Barra flutuante da escolha de acomodações (mobile)
    ------------------------------------------------------------------
-   O resumo e os botões ficavam no fim da lista: com várias acomodações,
-   o hóspede rolava até o fim para ver o total ou continuar. Agora eles
-   acompanham a rolagem, colados na base da tela.
+   `overflow: hidden` criava um contêiner de rolagem sem rolagem própria e
+   fazia o sticky se prender à caixa da reserva. `clip` preserva os cantos
+   arredondados sem roubar da página a referência de rolagem.
 
-   `sticky` e não `fixed`: assim a barra existe só enquanto a etapa de
-   acomodações está visível e não fica sobrando nas outras etapas.
+   A barra só flutua depois que o resumo deixa de estar oculto, ou seja,
+   quando existe ao menos uma acomodação selecionada.
    ================================================================== */
 @media (max-width: 760px) {
-  .home-rooms-footer {
-    position: sticky;
-    bottom: 0;
-    z-index: 6;
-    /* Estende até as bordas: o formulário tem `padding: 18px 14px 14px` no
-       mobile (.booking-form.compact-booking), então a margem negativa espelha
-       esses 14px laterais e os 14px de baixo. */
-    margin: 12px -14px -14px;
-    padding: 12px 14px max(14px, env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(28, 23, 20, 0.12);
-    background: rgba(255, 248, 241, 0.97);
-    backdrop-filter: blur(10px);
+  .reserve-shell {
+    overflow: clip;
   }
 
-  .home-rooms-footer .home-cart-summary {
+  .home-rooms-footer:has(.home-cart-summary:not([hidden])) {
+    position: sticky;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 56;
+    margin: 12px -4px 0;
+    padding: 10px;
+    border: 1px solid rgba(255, 107, 0, 0.2);
+    border-radius: 18px;
+    background: rgba(255, 250, 245, 0.97);
+    box-shadow: 0 22px 54px rgba(73, 43, 25, 0.2), 0 10px 30px rgba(255, 107, 0, 0.14);
+    backdrop-filter: blur(14px) saturate(1.05);
+  }
+
+  .home-rooms-footer:has(.home-cart-summary:not([hidden])) .home-cart-summary {
+    position: static;
     margin-bottom: 10px;
   }
 
-  /* A bolha do chat mora no canto inferior direito; sem esta folga a
-     barra encostaria nela. */
-  .home-rooms-footer .compact-actions {
-    padding-right: 4px;
+  .home-rooms-footer:has(.home-cart-summary:not([hidden])) .compact-actions {
+    padding-right: 0;
+  }
+
+  /* Mantém as duas ações lado a lado mesmo nas telas mais estreitas, para a
+     barra não ocupar altura demais sobre a foto da acomodação. */
+  .home-rooms-footer:has(.home-cart-summary:not([hidden])) .compact-actions.two-actions {
+    grid-template-columns: minmax(100px, 0.72fr) minmax(0, 1.45fr);
+  }
+
+  .home-rooms-footer:has(.home-cart-summary:not([hidden])) .compact-actions.two-actions .button {
+    grid-row: auto;
   }
 }

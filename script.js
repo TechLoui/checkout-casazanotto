@@ -960,6 +960,13 @@ const initCompactBookingFlow = () => {
       paySubmitLabel.textContent = name === "2" ? "Pagar e reservar" : "Continuar";
     }
     initIcons();
+    // Mesma régua do goToStep: "nearest" só rola se os campos que acabaram de
+    // aparecer estiverem fora da tela. Sem isso, num formulário alto, o hóspede
+    // clicava em "Continuar" e não via nada mudar.
+    requestAnimationFrame(() => {
+      form.querySelector(`[data-home-cardstep="${name}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
   };
 
   /* Base de cálculo das parcelas de cada cartão: o valor daquele cartão quando
@@ -2004,6 +2011,42 @@ const initMobileFloatingControls = () => {
   window.addEventListener("resize", updateReveal, { passive: true });
 };
 
+/* A Asksuite injeta o lançador (avatar, aviso e contador) em
+   `#chatbotmobile`, separado da janela de conversa `#chatbot`. Oculta somente
+   esse lançador enquanto a área de reserva ocupa a região útil da tela. A
+   classe no body também funciona quando o widget é carregado depois da página. */
+const initAsksuiteLauncherVisibility = () => {
+  const reserveSection = document.querySelector("#reservar");
+  if (!reserveSection) return;
+
+  const setReserveInView = (inView) => {
+    document.body.classList.toggle("is-reservation-in-view", inView);
+  };
+
+  const isReserveInView = () => {
+    const rect = reserveSection.getBoundingClientRect();
+    return rect.top < window.innerHeight * 0.82 && rect.bottom > window.innerHeight * 0.2;
+  };
+
+  // Evita um lampejo do avatar quando a página já abre ancorada em #reservar.
+  setReserveInView(isReserveInView());
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      ([entry]) => setReserveInView(entry.isIntersecting),
+      { rootMargin: "-20% 0px -18% 0px", threshold: 0 }
+    );
+    observer.observe(reserveSection);
+    return;
+  }
+
+  const update = () => {
+    setReserveInView(isReserveInView());
+  };
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update, { passive: true });
+};
+
 const initHeroSlider = () => {
   const slides = Array.from(document.querySelectorAll("[data-hero-slider] .hero-slide"));
   const eyebrow = document.querySelector("[data-hero-eyebrow]");
@@ -2648,6 +2691,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initHeaderState();
   initMenu();
   initMobileFloatingControls();
+  initAsksuiteLauncherVisibility();
   initBookingForm();
   initCompactBookingFlow();
   initDeepLinkBooking();
