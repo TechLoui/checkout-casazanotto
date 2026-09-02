@@ -1023,6 +1023,14 @@ const initCompactBookingFlow = () => {
   };
 
   const setCardCount = (n) => {
+    // Não dá para dividir respeitando o mínimo dos dois lados: mantém um cartão
+    // e explica, em vez de deixar o hóspede tentando fechar uma conta impossível.
+    if (n === 2 && toCents(cartTotal()) < toCents(HOME_MIN_CARD_AMOUNT) * 2) {
+      showNotice(payNotice,
+        `Para dividir, a reserva precisa ter pelo menos ${homeBrl(HOME_MIN_CARD_AMOUNT * 2)} `
+        + `(mínimo de ${homeBrl(HOME_MIN_CARD_AMOUNT)} por cartão). Siga com um cartão só.`);
+      return;
+    }
     cardCount = n === 2 ? 2 : 1;
     form.querySelectorAll("[data-home-cards]").forEach((b) => {
       const on = Number(b.dataset.homeCards) === cardCount;
@@ -1708,6 +1716,43 @@ const initCompactBookingFlow = () => {
       cardBlocks().forEach((b) => buildInstallmentsFor(b, cartTotal()));
     });
   });
+  /* Se a divisão deixou um dos cartões abaixo do mínimo, remaneja sozinho: sobe
+     o menor para o mínimo e tira a diferença do outro. Roda no blur, não a cada
+     tecla — corrigir durante a digitação mudaria o número embaixo do dedo de
+     quem ainda está escrevendo. */
+  const fixBelowMinimum = () => {
+    if (cardCount !== 2 || cardStep !== "amounts") return;
+    const inputs = [amountInput(1), amountInput(2)];
+    const vals = inputs.map((el) => parseBRL(el?.value));
+    if (vals.some((v) => !Number.isFinite(v))) return;
+
+    const totalCents = toCents(cartTotal());
+    const minCents = toCents(HOME_MIN_CARD_AMOUNT);
+    // Reserva pequena demais para dividir respeitando o mínimo nos dois.
+    if (totalCents < minCents * 2) return;
+
+    const cents = vals.map(toCents);
+    const lowIdx = cents.findIndex((c) => c < minCents);
+    if (lowIdx === -1) return;
+
+    const otherIdx = lowIdx === 0 ? 1 : 0;
+    syncingAmounts = true;
+    inputs[lowIdx].value = (minCents / 100).toFixed(2).replace(".", ",");
+    inputs[otherIdx].value = ((totalCents - minCents) / 100).toFixed(2).replace(".", ",");
+    syncingAmounts = false;
+
+    showNotice(payNotice,
+      `O cartão ${lowIdx + 1} ficaria abaixo do mínimo de ${homeBrl(HOME_MIN_CARD_AMOUNT)}. `
+      + `Ajustamos para ${homeBrl(HOME_MIN_CARD_AMOUNT)} nele e ${homeBrl((totalCents - minCents) / 100)} no cartão ${otherIdx + 1}.`);
+
+    updateSplitSummary();
+    cardBlocks().forEach((b) => buildInstallmentsFor(b, cartTotal()));
+  };
+
+  form.querySelectorAll("[data-home-split-amount]").forEach((input) => {
+    input.addEventListener("blur", fixBelowMinimum);
+  });
+
   // Pagamento parcial: trocar o cartão recusado ou desistir.
   form.querySelector("[data-home-retry-submit]")?.addEventListener("click", submitRetryCard);
   form.querySelector("[data-home-partial-cancel]")?.addEventListener("click", cancelPartial);
