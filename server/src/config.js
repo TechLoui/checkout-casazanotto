@@ -8,6 +8,10 @@ const required = ["ARTAX_CLIENT_ID", "ARTAX_CLIENT_SECRET"];
 // imagens dos quartos na API (parceiros como a Asksuite) e no rodapé do
 // e-mail de confirmação.
 const SITE_URL = (process.env.SITE_URL || "https://pousadacasazanotto.com").replace(/\/$/, "");
+const emailBrandName = process.env.BRAND_NAME || "Pousada Casa Zanotto";
+const emailSiteUrl = process.env.BRAND_SITE_URL || SITE_URL;
+const isCasaZanottoEmail = /^(?:pousada )?casa zanotto$/i.test(emailBrandName.trim())
+  && /^https?:\/\/(?:www\.)?pousadacasazanotto\.com(?:\.br)?\/?$/i.test(emailSiteUrl);
 
 // Domínio atual (.com) e o antigo (.com.br) — o .com.br continua no ar e
 // ainda recebe hóspedes por link salvo/busca/favorito, então precisa seguir
@@ -133,11 +137,12 @@ export const config = {
     from: process.env.RESEND_FROM || "", // ex.: "Pousada Casa Zanotto <reservas@seudominio.com>"
     replyTo: process.env.RESEND_REPLY_TO || "",
     bcc: process.env.RESEND_BCC || "", // cópia para a pousada (opcional)
-    brandName: process.env.BRAND_NAME || "Pousada Casa Zanotto",
+    brandName: emailBrandName,
     brandColor: process.env.BRAND_COLOR || "#ff6b00",
     logoUrl: process.env.BRAND_LOGO_URL || `${SITE_URL}/assets/logo.webp`,
-    siteUrl: process.env.BRAND_SITE_URL || SITE_URL,
-    phone: process.env.BRAND_PHONE || "",
+    siteUrl: emailSiteUrl,
+    phone: isCasaZanottoEmail ? "(64) 98439-8408" : process.env.BRAND_PHONE || "",
+    whatsapp: isCasaZanottoEmail ? "(62) 99989-0139" : "",
     address: process.env.BRAND_ADDRESS || ""
   }
 };

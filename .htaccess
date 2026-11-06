@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.pousadacasazanotto\.com(?::[0-9]+)?$ [NC]
+  # Usa o caminho original para preservar a codificação. O Apache mantém a query.
+  RewriteCond %{THE_REQUEST} "\s(/[^?\s]*)"
+  RewriteRule ^ https://pousadacasazanotto.com%1 [R=301,L,NE]
+</IfModule>

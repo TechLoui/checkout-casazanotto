@@ -47,7 +47,8 @@ export const renderHtml = (d) => {
     </tr>`;
 
   const contactBits = [
-    config.email.phone ? `Telefone/WhatsApp: ${esc(config.email.phone)}` : "",
+    config.email.phone ? `${config.email.whatsapp ? "Telefone" : "Telefone/WhatsApp"}: ${esc(config.email.phone)}` : "",
+    config.email.whatsapp ? `WhatsApp: ${esc(config.email.whatsapp)}` : "",
     config.email.address ? esc(config.email.address) : "",
     config.email.siteUrl ? `<a href="${esc(config.email.siteUrl)}" style="color:${color};text-decoration:none;">${esc(config.email.siteUrl.replace(/^https?:\/\//, ""))}</a>` : ""
   ].filter(Boolean).join(" &nbsp;·&nbsp; ");
@@ -113,7 +114,8 @@ const renderText = (d) =>
     `Pagamento:  ${methodLabel(d.method)}`,
     `Total pago: ${brl(d.totalPrice)}`,
     ``,
-    config.email.phone ? `Contato: ${config.email.phone}` : "",
+    config.email.phone ? `${config.email.whatsapp ? "Telefone" : "Contato"}: ${config.email.phone}` : "",
+    config.email.whatsapp ? `WhatsApp: ${config.email.whatsapp}` : undefined,
     config.email.siteUrl || ""
   ].filter((l) => l !== undefined).join("\n");
 

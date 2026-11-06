@@ -137,6 +137,21 @@ const resolveStay = async (input) => {
   return { rooms, totalPrice: grandTotal, amountCents: Math.round(grandTotal * 100) };
 };
 
+const appendOrigemToComment = (comment, origem) => {
+  if (!origem) return comment;
+  const { canal, ...params } = origem;
+  const maxLength = 500;
+  let annotated = `${comment} | Origem: ${canal}`;
+  if (annotated.length > maxLength) return comment;
+
+  // Preserva o comentário da reserva e só acrescenta campos inteiros que cabem.
+  for (const [key, value] of Object.entries(params)) {
+    const detail = ` | ${key}=${value}`;
+    if (annotated.length + detail.length <= maxLength) annotated += detail;
+  }
+  return annotated;
+};
+
 /**
  * Cria a reserva no Artax após o pagamento confirmado. Se a criação falhar,
  * faz a compensação conforme o método:
@@ -177,18 +192,20 @@ const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "c
     };
   }
 
+  // Com pagamento dividido, os dois TIDs vão no comentário — é por eles que a
+  // recepção concilia a reserva com as transações no painel da Rede.
+  const comment = [
+    input.comment,
+    `Acomodações: ${roomNames}`,
+    `Pagamento Rede TID ${(tids && tids.length ? tids.join(" + ") : tid)} ref ${reference}`
+  ].filter(Boolean).join(" | ");
+
   const bookingPayload = {
     arrival_date: input.arrival_date,
     departure_date: input.departure_date,
     rateplan_id: rooms[0].option.rateplanId,
     status: config.artax.bookingStatus, // 2 = Confirmado (criada só após pagamento)
-    // Com pagamento dividido, os dois TIDs vão no comentário — é por eles que a
-    // recepção concilia a reserva com as transações no painel da Rede.
-    comment: [
-      input.comment,
-      `Acomodações: ${roomNames}`,
-      `Pagamento Rede TID ${(tids && tids.length ? tids.join(" + ") : tid)} ref ${reference}`
-    ].filter(Boolean).join(" | "),
+    comment: appendOrigemToComment(comment, input.origem),
     guest: input.guest,
     room_units
   };

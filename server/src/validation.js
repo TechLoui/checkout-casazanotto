@@ -14,6 +14,20 @@ const toDateOnly = (value) => new Date(`${value}T00:00:00Z`);
 
 const onlyDigits = (value) => String(value || "").replace(/\D/g, "");
 
+const origemFields = ["canal", "utm_source", "utm_medium", "utm_campaign", "utm_content", "gclid", "fbclid", "data"];
+
+const readOrigem = (raw) => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const origem = {};
+  for (const field of origemFields) {
+    if (typeof raw[field] !== "string") continue;
+    // Parâmetros da URL vão para uma observação de texto no Artax.
+    const value = raw[field].replace(/[<>&|\p{C}\u{10000}-\u{10FFFF}]/gu, " ").trim().slice(0, 256);
+    if (value) origem[field] = value;
+  }
+  return origem.canal ? origem : undefined;
+};
+
 /** Valida os parâmetros de uma consulta de disponibilidade. */
 export const validateAvailability = (q) => {
   const arrival_date = String(q.arrival_date || "");
@@ -89,6 +103,7 @@ export const validateStayGuest = (body) => {
     ...base,
     rooms,
     askSi,
+    origem: readOrigem(body.origem),
     comment: String(body.comment || "").slice(0, 500),
     guest: {
       first_name: firstName,

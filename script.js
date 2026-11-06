@@ -527,6 +527,20 @@ const pushPurchaseEvent = (data, selectedRooms) => {
       }
     });
 
+    // O checkout pode confirmar a reserva com a captura do cartão pendente.
+    if (data.payment?.captured !== false && typeof window.gtag === "function") {
+      try {
+        window.gtag("event", "conversion", {
+          send_to: "AW-17215811126/vorKCLTXragbELbckZFA",
+          value,
+          currency: "BRL",
+          transaction_id: String(bookingId)
+        });
+      } catch (error) {
+        console.error("[google ads] falha ao registrar conversão:", error);
+      }
+    }
+
     // Meta Pixel: mesma reserva, mesmo momento e mesma trava de duplicidade do
     // evento acima — sozinho, o snippet só registra PageView e não mede venda.
     // `eventID` é o número da reserva: se um dia ligarmos a Conversions API,
@@ -1235,6 +1249,7 @@ const initCompactBookingFlow = () => {
       room_id: primaryRoom?.room_id,
       rateplan_id: primaryRoom?.rateplan_id,
       ask_si: getAskSi() || undefined,
+      origem: getOrigem() || undefined,
       guest: guestPayload()
     };
   };
@@ -1434,7 +1449,7 @@ const initCompactBookingFlow = () => {
       const msg = `Olá! Tentei uma reserva no site e o cartão ${partial.failedCard} não foi aprovado. `
         + `Ficou um valor de ${homeBrl(partial.approved?.[0]?.amount || 0)} reservado no outro cartão `
         + `e gostaria de ajuda para concluir ou solicitar o estorno.`;
-      support.href = `https://wa.me/5564984398408?text=${encodeURIComponent(msg)}`;
+      support.href = `https://wa.me/556299890139?text=${encodeURIComponent(msg)}`;
     }
 
     setPayBusy(false, "Pagar e reservar");
@@ -2627,14 +2642,14 @@ const initReserveEmbed = () => {
    permitindo à Asksuite vincular a compra ao atendimento (pedido do
    Felippe, 17/08/2026). */
 const CZ_ASK_SI_KEY = "cz_ask_si";
-const captureAskSi = () => {
+const captureAskSi = (params) => {
+  const askSi = params.get("_askSI") || params.get("_askSi") || params.get("askSI");
   try {
-    const p = new URLSearchParams(location.search);
-    const askSi = p.get("_askSI") || p.get("_askSi") || p.get("askSI");
     if (askSi) sessionStorage.setItem(CZ_ASK_SI_KEY, askSi);
   } catch (_) {
     /* sessionStorage indisponível (modo privado etc.) — segue sem rastreio */
   }
+  return askSi;
 };
 const getAskSi = () => {
   try {
@@ -2644,12 +2659,52 @@ const getAskSi = () => {
   }
 };
 
+const CZ_ORIGEM_KEY = "cz_origem";
+const captureOrigem = (params, askSi) => {
+  const readParam = (name) => (params.get(name) || "").trim().slice(0, 256);
+  const gclid = readParam("gclid");
+  const fbclid = readParam("fbclid");
+  const utmSource = readParam("utm_source");
+  const fonte = utmSource.toLowerCase();
+  let canal = fonte;
+  if (askSi || fonte === "asksuite") canal = "asksuite";
+  else if (gclid || fonte === "google") canal = "google_ads";
+  else if (fbclid || ["meta", "facebook", "instagram"].includes(fonte)) canal = "meta_ads";
+  if (!canal) return;
+
+  const origem = {
+    canal,
+    utm_source: utmSource,
+    utm_medium: readParam("utm_medium"),
+    utm_campaign: readParam("utm_campaign"),
+    utm_content: readParam("utm_content"),
+    gclid,
+    fbclid,
+    data: new Date().toISOString()
+  };
+  try {
+    localStorage.setItem(CZ_ORIGEM_KEY, JSON.stringify(origem));
+  } catch (_) {
+    /* A reserva segue mesmo se o navegador bloquear o armazenamento. */
+  }
+};
+
+const getOrigem = () => {
+  try {
+    const origem = JSON.parse(localStorage.getItem(CZ_ORIGEM_KEY) || "null");
+    return typeof origem?.canal === "string" ? origem : null;
+  } catch (_) {
+    return null;
+  }
+};
+
 /* Deep-link (ex.: parceiros como a Asksuite): se a URL trouxer check-in/
    check-out, prefila o motor de reservas da home e já busca a disponibilidade.
    Mesmos nomes de parâmetro aceitos pelo site (arrival_date/entrada, etc.). */
 const initDeepLinkBooking = () => {
-  captureAskSi();
   const p = new URLSearchParams(location.search);
+  const askSi = captureAskSi(p);
+  captureOrigem(p, askSi);
   const arrival = p.get("arrival_date") || p.get("entrada");
   const departure = p.get("departure_date") || p.get("saida");
   if (!arrival || !departure) return;
