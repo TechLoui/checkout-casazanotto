@@ -68,9 +68,10 @@ Depois do deploy, o Railway te dá uma URL pública, ex.:
 - Site estático hospedado na Hostinger, no domínio **pousadacasazanotto.com**
   (upload dos arquivos da raiz — `index.html`, `styles.css`, `script.js`,
   `hero.js`, `assets/` e `.htaccess` — via o painel/gerenciador de arquivos da Hostinger).
-- Se o `public_html` já tiver um `.htaccess`, acrescente a regra de `www` deste
-  projeto antes dos demais redirecionamentos. Ela preserva o caminho e os
-  parâmetros da URL ao redirecionar para `https://pousadacasazanotto.com`.
+- O `.htaccess` redireciona o `www` e o antigo `.com.br` para
+  `https://pousadacasazanotto.com`, preservando o caminho e os parâmetros.
+  Se o `public_html` de um desses domínios já tiver um `.htaccess`, acrescente
+  esse bloco antes dos redirecionamentos existentes.
 - `script.js` já aponta por padrão para a URL de produção do backend no
   Railway (`HOME_API_BASE`). Só precisa sobrescrever definindo
   `window.CZ_CHECKOUT_API` antes de carregar o `script.js` se a URL do

@@ -3,10 +3,11 @@
   <head>
     <meta charset="utf-8">
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17215811126"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17215811126&amp;l=czGoogleDataLayer"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() { window.dataLayer.push(arguments); }
+      window.czGoogleDataLayer = window.czGoogleDataLayer || [];
+      function gtag() { window.czGoogleDataLayer.push(arguments); }
       gtag('js', new Date());
       gtag('config', 'AW-17215811126');
     </script>
@@ -31,7 +32,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20261106-1" defer></script>
+    <script src="script.js?v=20261107-1" defer></script>
     <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
@@ -655,7 +656,7 @@
                 </button>
               </div>
               <div class="home-pay-pane" data-home-pay-pane="pix">
-                <p class="home-pay-hint"><i data-lucide="zap" aria-hidden="true"></i> Gere o PIX e pague no app do seu banco.</p>
+                <p class="home-pay-hint"><i data-lucide="zap" aria-hidden="true"></i> Gere o PIX, pague no app do seu banco e volte a esta tela para ver a confirmação.</p>
                 <div class="home-pix-result" data-home-pix-result hidden>
                   <img data-home-pix-img alt="QR Code PIX">
                   <label><span>Pix copia e cola</span><textarea readonly data-home-pix-code aria-label="Código PIX copia e cola"></textarea></label>

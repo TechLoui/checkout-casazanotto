@@ -489,25 +489,31 @@ const homeCpfValid = (raw) => {
   return check(9) && check(10);
 };
 
-/* Evento de compra no formato Enhanced Ecommerce esperado pelo Pixel da
-   Asksuite (dataLayer.ecommerce.purchase — ver integrations-docs.asksuite.com/pixel).
-   Dedup por reserva (sessionStorage) evita duplicar em recarregamento ou
-   botão voltar; nunca deixa o pixel quebrar a confirmação pro hóspede. */
+const sentPurchaseEvents = new Set();
+
+/* Uma compra por reserva. Se o navegador bloquear o armazenamento, a página
+   ainda envia os eventos e deduplica as respostas repetidas em memória. */
 const pushPurchaseEvent = (data, selectedRooms) => {
+  const bookingId = data?.booking_id;
+  if (!bookingId) return;
+  const dedupeKey = `cz-purchase-${bookingId}`;
+  if (sentPurchaseEvents.has(dedupeKey)) return;
   try {
-    const bookingId = data?.booking_id;
-    if (!bookingId) return;
-    const dedupeKey = `cz-purchase-${bookingId}`;
     if (sessionStorage.getItem(dedupeKey)) return;
     sessionStorage.setItem(dedupeKey, "1");
+  } catch (_) {
+    /* O armazenamento do navegador é opcional para o envio. */
+  }
+  sentPurchaseEvents.add(dedupeKey);
 
-    const serverRooms = Array.isArray(data?.rooms) && data.rooms.length ? data.rooms : null;
-    const fallbackRooms = (selectedRooms || []).map((r) => ({ id: r.roomId, name: r.room_name, price: r.price }));
-    const rooms = serverRooms || fallbackRooms;
-    const value = Number(data?.payment?.amount ?? rooms.reduce((sum, r) => sum + Number(r.price || 0), 0));
+  const serverRooms = Array.isArray(data.rooms) && data.rooms.length ? data.rooms : null;
+  const fallbackRooms = (selectedRooms || []).map((r) => ({ id: r.roomId, name: r.room_name, price: r.price }));
+  const rooms = serverRooms || fallbackRooms;
+  const value = Number(data.payment?.amount ?? rooms.reduce((sum, r) => sum + Number(r.price || 0), 0));
 
+  try {
     window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ ecommerce: null }); // limpa o objeto anterior antes de empurrar o novo
+    window.dataLayer.push({ ecommerce: null });
     window.dataLayer.push({
       event: "purchase",
       ecommerce: {
@@ -526,26 +532,27 @@ const pushPurchaseEvent = (data, selectedRooms) => {
         }
       }
     });
+  } catch (error) {
+    console.error("[asksuite] falha ao registrar compra no dataLayer:", error);
+  }
 
-    // O checkout pode confirmar a reserva com a captura do cartão pendente.
-    if (data.payment?.captured !== false && typeof window.gtag === "function") {
-      try {
-        window.gtag("event", "conversion", {
-          send_to: "AW-17215811126/vorKCLTXragbELbckZFA",
-          value,
-          currency: "BRL",
-          transaction_id: String(bookingId)
-        });
-      } catch (error) {
-        console.error("[google ads] falha ao registrar conversão:", error);
-      }
+  // O checkout pode confirmar a reserva com a captura do cartão pendente.
+  if (data.payment?.captured !== false && typeof window.gtag === "function") {
+    try {
+      window.gtag("event", "conversion", {
+        send_to: "AW-17215811126/vorKCLTXragbELbckZFA",
+        value,
+        currency: "BRL",
+        transaction_id: String(bookingId)
+      });
+    } catch (error) {
+      console.error("[google ads] falha ao registrar conversão:", error);
     }
+  }
 
-    // Meta Pixel: mesma reserva, mesmo momento e mesma trava de duplicidade do
-    // evento acima — sozinho, o snippet só registra PageView e não mede venda.
-    // `eventID` é o número da reserva: se um dia ligarmos a Conversions API,
-    // a Meta usa esse id para deduplicar o evento do navegador com o do servidor.
-    if (typeof window.fbq === "function") {
+  // O número da reserva também identifica a compra no Pixel da Meta.
+  if (typeof window.fbq === "function") {
+    try {
       // Correspondência avançada manual, pedida pelo Gerenciador de Anúncios.
       // Só dá pra informar aqui: no <head> o hóspede ainda não preencheu nada.
       // Reinicializar o mesmo pixel com os dados atualiza a correspondência
@@ -557,7 +564,13 @@ const pushPurchaseEvent = (data, selectedRooms) => {
       if (email.includes("@")) match.em = email;
       const phone = homeOnlyDigits(document.querySelector("[data-home-guest-phone]")?.value);
       if (phone.length >= 10) match.ph = phone.startsWith("55") ? phone : `55${phone}`;
-      if (match.em || match.ph) window.fbq("init", "1883895762271305", match);
+      if (match.em || match.ph) {
+        try {
+          window.fbq("init", "1883895762271305", match);
+        } catch (error) {
+          console.error("[meta] falha na correspondência avançada:", error);
+        }
+      }
 
       window.fbq("track", "Purchase", {
         value: Number(value.toFixed(2)),
@@ -569,9 +582,9 @@ const pushPurchaseEvent = (data, selectedRooms) => {
           item_price: Number(r.price || 0)
         }))
       }, { eventID: String(bookingId) });
+    } catch (error) {
+      console.error("[meta] falha ao registrar evento de compra:", error);
     }
-  } catch (error) {
-    console.error("[pixel] falha ao registrar evento de compra:", error);
   }
 };
 
@@ -734,13 +747,14 @@ const initCompactBookingFlow = () => {
   const panels = Array.from(form.querySelectorAll("[data-home-panel]"));
   const tabs = Array.from(form.querySelectorAll("[data-home-tab]"));
   const stepIndex = { dates: 0, guests: 1, rooms: 2, guest: 3, payment: 4, done: 5 };
+  const pixSessionKey = "cz-pending-pix";
   const state = {
     rooms: [],
     selectedRooms: [],
     search: null,
     payMethod: "pix",
     pixPoll: null,
-    pixExpiresAt: 0,
+    pix: null,
     paymentBusy: false
   };
   let arrival = null;
@@ -791,9 +805,10 @@ const initCompactBookingFlow = () => {
   };
 
   const stopPixPolling = () => {
-    if (state.pixPoll) window.clearInterval(state.pixPoll);
+    window.clearTimeout(state.pixPoll);
     state.pixPoll = null;
-    state.pixExpiresAt = 0;
+    state.pix = null;
+    try { sessionStorage.removeItem(pixSessionKey); } catch (_) {}
   };
 
   const setPayBusy = (busy, label) => {
@@ -833,7 +848,7 @@ const initCompactBookingFlow = () => {
       }
     } else {
       setText("[data-home-pay-room]", "-");
-      setText("[data-home-pay-total]", "-");
+      setText("[data-home-pay-total]", Number.isFinite(state.pix?.amount) ? homeBrl(state.pix.amount) : "-");
     }
     updateCartSummary();
   };
@@ -884,7 +899,9 @@ const initCompactBookingFlow = () => {
   };
 
   const goToStep = (step, shouldScroll = true) => {
-    if (step !== "dates" && (!arrivalInput.value || !departureInput.value)) {
+    if (step === "done" || (step === "payment" && state.pix)) {
+      activeStep = step;
+    } else if (step !== "dates" && (!arrivalInput.value || !departureInput.value)) {
       activeStep = "dates";
     } else if ((step === "guest" || step === "payment") && !state.selectedRooms.length) {
       activeStep = "rooms";
@@ -1301,54 +1318,112 @@ const initCompactBookingFlow = () => {
     goToStep("done");
   };
 
+  const expirePix = (message = "PIX expirado. Gere um novo código.") => {
+    stopPixPolling();
+    setPayBusy(false, state.payMethod === "pix" ? "Gerar novo PIX" : "Pagar e reservar");
+    const image = form.querySelector("[data-home-pix-img]");
+    const code = form.querySelector("[data-home-pix-code]");
+    if (image) image.hidden = true;
+    if (code) code.value = "";
+    setText("[data-home-pix-status]", message);
+    if (!state.search && activeStep === "payment") {
+      goToStep("dates");
+      hint.textContent = message;
+    }
+  };
+
+  const checkPix = async () => {
+    const pix = state.pix;
+    if (!pix || pix.checking) return;
+    window.clearTimeout(state.pixPoll);
+    pix.checking = true;
+
+    // Consulta também no vencimento, para um pagamento feito no fim do prazo.
+    const lastCheck = Date.now() >= pix.expiresAt;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+    let status;
+    try {
+      const res = await fetch(`${HOME_API_BASE}/pix/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tid: pix.tid }),
+        signal: controller.signal
+      });
+      const payload = await homeReadApiJson(res, "Não foi possível confirmar o PIX.");
+      if (state.pix !== pix) return;
+      status = payload.status;
+      if (status === "paid" && payload.booking_id) {
+        renderSuccess(payload);
+        return;
+      }
+      if (status === "expired" || status === "canceled") {
+        expirePix();
+        return;
+      }
+    } catch (_) {
+      // A próxima consulta recupera falhas temporárias de rede ou do banco.
+    } finally {
+      window.clearTimeout(timeout);
+      pix.checking = false;
+    }
+
+    if (state.pix !== pix) return;
+    if (lastCheck) {
+      expirePix(status === "pending" ? undefined : "Prazo do PIX encerrado. Se já pagou, fale com a pousada.");
+      return;
+    }
+    const remaining = Math.max(0, pix.expiresAt - Date.now());
+    state.pixPoll = window.setTimeout(checkPix, Math.min(4000, remaining));
+  };
+
   const showPix = (data) => {
+    const tid = String(data.tid || "");
+    if (!tid) throw new Error("Não foi possível identificar a cobrança PIX.");
+    const expiresInSec = Number(data.expiresInSec) || 15 * 60;
+    const pending = {
+      tid,
+      qrCode: data.qrCode || "",
+      amount: data.amount,
+      expiresAt: data.expiresAt ?? Date.now() + expiresInSec * 1000
+    };
+    state.pix = { ...pending, checking: false };
+    try { sessionStorage.setItem(pixSessionKey, JSON.stringify(pending)); } catch (_) {}
+
     const result = form.querySelector("[data-home-pix-result]");
     const image = form.querySelector("[data-home-pix-img]");
     const code = form.querySelector("[data-home-pix-code]");
     const status = form.querySelector("[data-home-pix-status]");
+    const withinDeadline = Date.now() < pending.expiresAt;
     if (image) {
-      if (data.qrImage) {
+      image.hidden = !withinDeadline;
+      if (withinDeadline && data.qrImage) {
         image.src = data.qrImage.startsWith("data:") || /^https?:/.test(data.qrImage)
           ? data.qrImage
           : `data:image/png;base64,${data.qrImage}`;
-      } else if (data.qrCode) {
+      } else if (withinDeadline && data.qrCode) {
         image.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(data.qrCode)}`;
       }
     }
-    if (code) code.value = data.qrCode || "";
+    if (code) code.value = withinDeadline ? pending.qrCode : "";
     if (result) result.hidden = false;
-    if (status) status.textContent = "Aguardando confirmação do pagamento...";
+    if (status) status.textContent = withinDeadline ? "Aguardando confirmação do pagamento..." : "Verificando o pagamento...";
     setPayBusy(true, "Aguardando PIX");
+    checkPix();
+  };
 
-    stopPixPolling();
-    const expiresInSec = Number(data.expiresInSec) || 15 * 60;
-    state.pixExpiresAt = Date.now() + expiresInSec * 1000;
-    const check = async () => {
-      if (Date.now() >= state.pixExpiresAt) {
-        stopPixPolling();
-        setPayBusy(false, "Gerar novo PIX");
-        if (status) status.textContent = "PIX expirado. Gere um novo código.";
+  const restorePix = () => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(pixSessionKey) || "null");
+      if (!saved) return;
+      if (typeof saved.tid !== "string" || !saved.tid || !Number.isFinite(saved.expiresAt) ||
+          Date.now() - saved.expiresAt > 60 * 60_000) {
+        sessionStorage.removeItem(pixSessionKey);
         return;
       }
-      try {
-        const res = await fetch(`${HOME_API_BASE}/pix/status`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tid: data.tid })
-        });
-        const payload = await homeReadApiJson(res, "Não foi possível confirmar o PIX.");
-        if (payload.status === "paid") renderSuccess(payload);
-        if (payload.status === "expired" || payload.status === "canceled") {
-          stopPixPolling();
-          setPayBusy(false, "Gerar novo PIX");
-          if (status) status.textContent = "PIX expirado. Gere um novo código.";
-        }
-      } catch (_) {
-        // Keep polling; transient network errors should not break a pending PIX.
-      }
-    };
-    state.pixPoll = window.setInterval(check, 4000);
-    check();
+      showPix(saved);
+      goToStep("payment");
+    } catch (_) {}
   };
 
   const submitPix = async () => {
@@ -1606,6 +1681,10 @@ const initCompactBookingFlow = () => {
     }
     if (target === "guest") buildInstallments(cartTotal());
     if (target === "payment") {
+      if (state.pix) {
+        goToStep("payment");
+        return;
+      }
       if (!state.selectedRooms.length) {
         goToStep("rooms");
         showNotice(notice, "Selecione ao menos uma acomodação para continuar.");
@@ -1876,6 +1955,7 @@ const initCompactBookingFlow = () => {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (state.paymentBusy) return;
     if (!state.search) {
       fetchAvailability();
       return;
@@ -1910,6 +1990,7 @@ const initCompactBookingFlow = () => {
     // (ex.: Asksuite) — ver initDeepLinkBooking(). Quando check-in e check-out
     // já vêm preenchidos, pula direto pra disponibilidade (etapa "rooms").
     prefill({ arrival: inValue, departure: outValue, adults, kids, ages } = {}) {
+      if (state.pix) return;
       const parsedIn = parseLocalDate(inValue);
       const parsedOut = parseLocalDate(outValue);
       if (parsedIn) arrival = parsedIn;
@@ -1941,6 +2022,14 @@ const initCompactBookingFlow = () => {
   renderCalendar();
   setPayMethod("pix");
   goToStep("dates", false);
+  restorePix();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkPix();
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) checkPix();
+  });
+  window.addEventListener("online", checkPix);
 };
 
 const initMobileFloatingControls = () => {
