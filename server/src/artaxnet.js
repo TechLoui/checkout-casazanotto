@@ -53,19 +53,26 @@ const localRoomImages = (roomName) => {
   return Array.from({ length: count }, (_, i) => `${config.siteUrl}/assets/rooms/${slug}/${String(i + 1).padStart(2, "0")}.webp`);
 };
 
-/** Anexa `image`/`images` (URLs absolutas) em cada quarto/tarifa da disponibilidade. */
-const enrichRoomImages = (data) => {
+/** Mantém as tarifas do site e anexa suas fotos com URLs absolutas. */
+const preparePublicAvailability = (data) => {
   if (!data?.rooms || Array.isArray(data.rooms)) return data;
-  for (const plans of Object.values(data.rooms)) {
-    for (const opt of Object.values(plans)) {
+  const publicRooms = [];
+  for (const [roomId, plans] of Object.entries(data.rooms)) {
+    const publicPlans = [];
+    for (const [planId, opt] of Object.entries(plans || {})) {
+      // O Artax pode retornar tarifas B2B quando a estadia está bloqueada
+      // para as tarifas do site. Essas opções não são reserváveis pelo hóspede.
+      if (!opt || typeof opt !== "object" || /b2b/i.test(opt.rateplan_name || "")) continue;
       const images = localRoomImages(opt.room_name);
       if (images.length) {
         opt.images = images;
         opt.image = images[0];
       }
+      publicPlans.push([planId, opt]);
     }
+    if (publicPlans.length) publicRooms.push([roomId, Object.fromEntries(publicPlans)]);
   }
-  return data;
+  return { ...data, rooms: publicRooms.length ? Object.fromEntries(publicRooms) : [] };
 };
 
 /**
@@ -85,7 +92,7 @@ export const checkAvailability = async ({ arrival_date, departure_date, adults, 
   if (!response.ok) {
     throw new ArtaxError(data.error || "Falha ao consultar disponibilidade.", response.status, data);
   }
-  return enrichRoomImages(data);
+  return preparePublicAvailability(data);
 };
 
 /**

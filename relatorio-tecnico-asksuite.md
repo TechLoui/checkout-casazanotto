@@ -91,6 +91,8 @@ Ao abrir esse link, a página já rola até a seção de reservas e mostra a lis
 
 `GET /api/availability` já cobre o que a Asksuite precisa: dado um período e nº de hóspedes, devolve os quartos e tarifas disponíveis com o preço total já calculado. Uso combinado: **só cotação** — a Asksuite busca a disponibilidade e direciona o viajante pro link acima para concluir a compra no nosso motor de reservas.
 
+A cotação usa as tarifas públicas liberadas pelo Artax para as datas solicitadas. Tarifas B2B são excluídas, assim como acomodações sem nenhuma tarifa pública. Quando não houver opções, a API responde `200` com `{"rooms":[]}`; a Sophia deve tratar isso como indisponibilidade para as datas exatas da consulta. O Artax pode devolver uma lista vazia sem distinguir restrições tarifárias de falta de vagas.
+
 Pendente (opcional, não bloqueia): se fizer sentido pro time de vocês, podemos avaliar incluir a descrição textual dos quartos na resposta (hoje ela traz nome, capacidade, preço e fotos, mas não um texto descritivo).
 
 ## 3. Autenticação da API — ✅ fechado
