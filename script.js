@@ -1136,7 +1136,7 @@ const initCompactBookingFlow = () => {
     if (roomsHint) roomsHint.hidden = !rooms.length;
     if (!roomList) return;
     if (!rooms.length) {
-      roomList.innerHTML = `<p class="home-form-notice">Não encontramos acomodações para estas datas. Pode ser que esteja tudo reservado ou que a estadia mínima neste período seja maior do que a sua pesquisa. Tente outras datas ou fale com a nossa equipe pelo <a href="https://wa.me/556299890139" target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>`;
+      roomList.innerHTML = `<p class="home-form-notice">Não encontramos acomodações para estas datas. Pode ser que esteja tudo reservado ou que a estadia mínima neste período seja maior do que a sua pesquisa. Tente outras datas ou fale com a nossa equipe pelo <a href="https://wa.me/5562999890139" target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>`;
       return;
     }
     const nights = compactNightsBetween(arrivalInput.value, departureInput.value) || 1;
