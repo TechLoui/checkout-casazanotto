@@ -3319,6 +3319,10 @@ h3 {
   display: none !important;
 }
 
+.home-form-notice a {
+  text-decoration: underline;
+}
+
 .home-hint {
   margin: -6px 0 0;
   color: var(--clay);

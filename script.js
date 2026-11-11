@@ -683,7 +683,7 @@ const homeFlattenRooms = (rooms) => {
       image: safeImages[0]
     });
   }
-  return list.sort((a, b) => a.price - b.price);
+  return list.sort((a, b) => b.price - a.price);
 };
 
 const homeBuildAvailabilityParams = (search) => {
@@ -734,6 +734,7 @@ const initCompactBookingFlow = () => {
   const agesWrap = form.querySelector("[data-home-ages-wrap]");
   const agesBox = form.querySelector("[data-home-ages]");
   const roomList = form.querySelector("[data-home-room-list]");
+  const roomsHint = form.querySelector("[data-home-rooms-hint]");
   const notice = form.querySelector("[data-home-notice]");
   const guestNotice = form.querySelector("[data-home-guest-notice]");
   const payNotice = form.querySelector("[data-home-pay-notice]");
@@ -786,6 +787,7 @@ const initCompactBookingFlow = () => {
     state.selectedRooms = [];
     state.search = null;
     if (roomList) roomList.innerHTML = "";
+    if (roomsHint) roomsHint.hidden = true;
     if (selectedRoom) selectedRoom.textContent = "";
     clearNotice(notice);
     clearNotice(guestNotice);
@@ -1131,9 +1133,10 @@ const initCompactBookingFlow = () => {
 
   const renderRooms = (rooms) => {
     state.rooms = rooms;
+    if (roomsHint) roomsHint.hidden = !rooms.length;
     if (!roomList) return;
     if (!rooms.length) {
-      roomList.innerHTML = '<p class="home-form-notice">Não há acomodações disponíveis para estas datas. Tente outro período.</p>';
+      roomList.innerHTML = `<p class="home-form-notice">Não encontramos acomodações para estas datas. Pode ser que esteja tudo reservado ou que a estadia mínima neste período seja maior do que a sua pesquisa. Tente outras datas ou fale com a nossa equipe pelo <a href="https://wa.me/556299890139" target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>`;
       return;
     }
     const nights = compactNightsBetween(arrivalInput.value, departureInput.value) || 1;
@@ -1184,11 +1187,7 @@ const initCompactBookingFlow = () => {
       const data = await homeReadApiJson(res, "Não foi possível consultar disponibilidade.");
       const rooms = homeFlattenRooms(data.rooms);
       renderRooms(rooms);
-      if (!rooms.length) {
-        showNotice(notice, "Não encontramos acomodações disponíveis para esse período.");
-        return false;
-      }
-      return true;
+      return rooms.length > 0;
     } catch (error) {
       if (roomList) roomList.innerHTML = "";
       showNotice(notice, error.message || "Não foi possível consultar disponibilidade.");
