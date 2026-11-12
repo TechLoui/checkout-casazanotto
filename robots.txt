@@ -11,3 +11,6 @@ Disallow: /*?*utm_source=
 Disallow: /*?*_askSI=
 
 Sitemap: https://pousadacasazanotto.com/sitemap.xml
+
+User-agent: OAI-AdsBot
+Allow: /
