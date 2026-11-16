@@ -67,7 +67,8 @@ Depois do deploy, o Railway te dá uma URL pública, ex.:
 ## 🌐 Deploy do FRONTEND na Hostinger
 - Site estático hospedado na Hostinger, no domínio **pousadacasazanotto.com**
   (upload dos arquivos da raiz — `index.html`, `styles.css`, `script.js`,
-  `hero.js`, `assets/` e `.htaccess` — via o painel/gerenciador de arquivos da Hostinger).
+  `hero.js`, `assets/`, `politica-de-privacidade.html` e `.htaccess` — via o
+  painel/gerenciador de arquivos da Hostinger).
 - O `.htaccess` redireciona o `www` e o antigo `.com.br` para
   `https://pousadacasazanotto.com`, preservando o caminho e os parâmetros.
   Se o `public_html` de um desses domínios já tiver um `.htaccess`, acrescente
@@ -79,6 +80,27 @@ Depois do deploy, o Railway te dá uma URL pública, ex.:
 - Garanta que `https://pousadacasazanotto.com` (e a variante `www`, se
   usada) esteja em `ALLOWED_ORIGINS` no Railway (CORS) — senão o site fica
   no ar, mas a busca de disponibilidade e o pagamento param de funcionar.
+
+## Medição de reservas do ChatGPT Ads
+
+1. Publique a página [Política de Privacidade](https://pousadacasazanotto.com/politica-de-privacidade)
+   e a atualização da página inicial na Hostinger. Confira o link no rodapé e
+   o aviso na etapa de dados do hóspede.
+2. Após conferir a publicação, cadastre a chave de Conversões no serviço da
+   Casa no Railway como `OPENAI_CONVERSIONS_API_KEY` e habilite
+   `OPENAI_CONVERSIONS_ENABLED=true`. O backend verifica se a política e o
+   aviso estão acessíveis antes de enviar qualquer evento.
+3. Confira no Fluxo de eventos do Ads Manager se uma reserva confirmada
+   aparece como `order_created` via servidor. O ID é o número da reserva e o
+   valor é o total confirmado em centavos (BRL).
+
+Quando um hóspede pedir que o contato deixe de ser usado na medição do
+ChatGPT Ads, acrescente o hash SHA-256 normalizado do e-mail ou do telefone à
+variável `OPENAI_CONVERSIONS_SUPPRESSED_HASHES` (separe os hashes por vírgula).
+Use e-mail em minúsculas e sem espaços nas pontas ou telefone apenas com
+dígitos, incluindo o código do país. Se um hash corresponder, o evento não é
+enviado. Na opção do checkout que exclui contato e identificador de clique,
+o evento de reserva segue sem esses campos.
 
 ## 💻 Rodar localmente
 ```bash

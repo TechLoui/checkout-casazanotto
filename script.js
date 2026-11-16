@@ -1257,6 +1257,7 @@ const initCompactBookingFlow = () => {
   const baseReservationPayload = () => {
     const rooms = state.selectedRooms.map((r) => ({ room_id: r.roomId, rateplan_id: r.rateplanId }));
     const primaryRoom = rooms[0];
+    const adsOptOut = form.querySelector("[data-cz-chatgpt-ads-opt-out]");
     return {
       ...state.search,
       rooms,
@@ -1266,6 +1267,9 @@ const initCompactBookingFlow = () => {
       rateplan_id: primaryRoom?.rateplan_id,
       ask_si: getAskSi() || undefined,
       origem: getOrigem() || undefined,
+      chatgpt_ads_notice: Boolean(adsOptOut && form.querySelector("[data-cz-privacy-notice]")),
+      chatgpt_ads_opt_out: adsOptOut?.checked === true,
+      oppref: adsOptOut?.checked ? undefined : getOppref(),
       guest: guestPayload()
     };
   };
@@ -2786,6 +2790,34 @@ const getOrigem = () => {
   }
 };
 
+const CZ_OPPREF_KEY = "cz_oppref";
+const CZ_OPPREF_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+const captureOppref = (params) => {
+  const value = params.get("oppref");
+  if (!value || value.length > 2048 || /[\s\p{C}@]/u.test(value)) return;
+  try {
+    localStorage.setItem(CZ_OPPREF_KEY, JSON.stringify({ value, timestamp: Date.now() }));
+  } catch (_) {
+    // A reserva funciona mesmo com o armazenamento bloqueado pelo navegador.
+  }
+};
+
+const getOppref = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CZ_OPPREF_KEY) || "null");
+    if (typeof saved?.value !== "string" || !Number.isFinite(saved.timestamp)) return undefined;
+    const age = Date.now() - saved.timestamp;
+    if (age < 0 || age >= CZ_OPPREF_TTL_MS) {
+      localStorage.removeItem(CZ_OPPREF_KEY);
+      return undefined;
+    }
+    return saved.value;
+  } catch (_) {
+    return undefined;
+  }
+};
+
 /* Deep-link (ex.: parceiros como a Asksuite): se a URL trouxer check-in/
    check-out, prefila o motor de reservas da home e já busca a disponibilidade.
    Mesmos nomes de parâmetro aceitos pelo site (arrival_date/entrada, etc.). */
@@ -2793,6 +2825,7 @@ const initDeepLinkBooking = () => {
   const p = new URLSearchParams(location.search);
   const askSi = captureAskSi(p);
   captureOrigem(p, askSi);
+  captureOppref(p);
   const arrival = p.get("arrival_date") || p.get("entrada");
   const departure = p.get("departure_date") || p.get("saida");
   if (!arrival || !departure) return;

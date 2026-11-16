@@ -85,7 +85,8 @@ export const validateStayGuest = (body) => {
 
   const guest = body.guest || {};
   const firstName = String(guest.first_name || "").trim();
-  const phone = onlyDigits(guest.phone);
+  const guestPhoneInput = String(guest.phone || "").trim();
+  const phone = onlyDigits(guestPhoneInput);
   if (!firstName) throw new ValidationError("Nome do hóspede é obrigatório.");
   if (phone.length < 10) throw new ValidationError("Telefone do hóspede é obrigatório e deve ser válido.");
   const guestType = guest.type === "company" ? "company" : "guest";
@@ -98,12 +99,20 @@ export const validateStayGuest = (body) => {
   // link direto que a IA deles gera — usado pra vincular a compra ao
   // atendimento no rastreio de conversão deles.
   const askSi = String(body.ask_si || "").trim().slice(0, 200) || undefined;
+  const chatgptAdsNotice = body.chatgpt_ads_notice === true;
+  const chatgptAdsOptOut = body.chatgpt_ads_opt_out === true;
+  const oppref = chatgptAdsNotice && !chatgptAdsOptOut && typeof body.oppref === "string"
+    && body.oppref.length <= 2048 && !/[\s\p{C}@]/u.test(body.oppref) ? body.oppref : undefined;
 
   return {
     ...base,
     rooms,
     askSi,
     origem: readOrigem(body.origem),
+    chatgptAdsNotice,
+    chatgptAdsOptOut,
+    chatgptAdsPhone: chatgptAdsNotice && guestPhoneInput.startsWith("+") ? `+${phone}` : phone,
+    oppref,
     comment: String(body.comment || "").slice(0, 500),
     guest: {
       first_name: firstName,

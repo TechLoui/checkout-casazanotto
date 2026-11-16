@@ -6,6 +6,7 @@ import { itauTxid, createCob, getCob, cobPaid, cobCanceled } from "./itau.js";
 import { ValidationError, validateOneCard } from "./validation.js";
 import { sendBookingConfirmation } from "./email.js";
 import { notifyAsksuiteBooking, notifyAsksuitePurchase } from "./partners.js";
+import { sendChatGptAdsConversion } from "./chatgptAds.js";
 
 const nightsBetween = (arrival, departure) =>
   Math.max(1, Math.round((new Date(departure) - new Date(arrival)) / 86_400_000));
@@ -84,6 +85,18 @@ const fireAsksuitePurchaseTracking = ({ input, rooms, totalPrice, bookingId }) =
       }
     }
   }).catch((e) => console.error("[asksuite] falha inesperada (purchase tracking):", e.message));
+};
+
+const fireChatGptAdsConversion = ({ input, amountCents, bookingId }) => {
+  if (!input.chatgptAdsNotice || config.rede.simulate) return;
+  sendChatGptAdsConversion({
+    bookingId,
+    amountCents,
+    oppref: input.oppref,
+    email: input.guest.email,
+    phone: input.chatgptAdsPhone,
+    optOut: input.chatgptAdsOptOut
+  }, config.chatgptAds).catch(() => console.error("[chatgpt ads] falha inesperada no envio"));
 };
 
 /** Encontra a opção (quarto + rateplan) e devolve o PREÇO AUTORITATIVO do Artax. */
@@ -574,6 +587,7 @@ const finishCardCheckout = async ({ input, rooms, totalPrice, amountCents, refer
     fireConfirmationEmail({ input, rooms, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
     fireAsksuiteNotification({ input, rooms, totalPrice, bookingId: booked.booking_id, method: "card", tid: auth.tid });
     fireAsksuitePurchaseTracking({ input, rooms, totalPrice, bookingId: booked.booking_id });
+    fireChatGptAdsConversion({ input, amountCents, bookingId: booked.booking_id });
   }
 
   return {
@@ -705,6 +719,7 @@ export const confirmPix = async (tid) => {
       fireConfirmationEmail({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
       fireAsksuiteNotification({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id, method: "pix", tid });
       fireAsksuitePurchaseTracking({ input: entry.input, rooms: entry.rooms, totalPrice: entry.totalPrice, bookingId: booked.booking_id });
+      fireChatGptAdsConversion({ input: entry.input, amountCents: entry.amountCents, bookingId: booked.booking_id });
       return booked;
     })().catch((err) => {
       entry.bookingPromise = null; // libera p/ nova tentativa se falhou

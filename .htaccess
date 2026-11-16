@@ -4,4 +4,8 @@
   # Usa o caminho original para preservar a codificação. O Apache mantém a query.
   RewriteCond %{THE_REQUEST} "\s(/[^?\s]*)"
   RewriteRule ^ https://pousadacasazanotto.com%1 [R=301,L,NE]
+
+  RewriteCond %{THE_REQUEST} "\s/+politica-de-privacidade(?:\.html|/)(?:[?\s])" [NC]
+  RewriteRule ^politica-de-privacidade(?:\.html|/)$ /politica-de-privacidade [R=301,L]
+  RewriteRule ^politica-de-privacidade$ politica-de-privacidade.html [L]
 </IfModule>

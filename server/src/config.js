@@ -48,6 +48,15 @@ export const config = {
     asksuite: process.env.ASKSUITE_API_KEY || ""
   },
 
+  chatgptAds: {
+    enabled: process.env.NODE_ENV === "production" && process.env.OPENAI_CONVERSIONS_ENABLED === "true",
+    apiKey: process.env.OPENAI_CONVERSIONS_API_KEY || "",
+    suppressedHashes: (process.env.OPENAI_CONVERSIONS_SUPPRESSED_HASHES || "")
+      .split(",")
+      .map((hash) => hash.trim().toLowerCase())
+      .filter((hash) => /^[a-f0-9]{64}$/.test(hash))
+  },
+
   // Webhook de reserva confirmada para a Asksuite (rastreio de conversão).
   // Sem ASKSUITE_WEBHOOK_URL o envio vira no-op (não quebra a reserva).
   asksuite: {
