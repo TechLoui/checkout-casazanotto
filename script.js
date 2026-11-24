@@ -1191,19 +1191,19 @@ const initCompactBookingFlow = () => {
     initIcons();
   };
 
-  const fetchAvailability = async () => {
+  const fetchAvailability = async ({ shouldScroll = true } = {}) => {
     if (state.paymentBusy || state.pix || partialSession) return false;
     clearNotice(notice);
     resetAvailability();
     const requestId = availabilityRequestId;
     const search = buildSearch();
     if (compactNightsBetween(search.arrival_date, search.departure_date) < 1) {
-      goToStep("dates");
+      goToStep("dates", shouldScroll);
       hint.innerHTML = "Selecione check-in e check-out para continuar.";
       return false;
     }
     state.search = search;
-    goToStep("rooms");
+    goToStep("rooms", shouldScroll);
     if (roomList) roomList.innerHTML = '<p class="home-form-notice">Buscando acomodações disponíveis...</p>';
     try {
       const res = await fetch(`${HOME_API_BASE}/availability?${homeBuildAvailabilityParams(search).toString()}`);
@@ -2027,7 +2027,7 @@ const initCompactBookingFlow = () => {
     // Usado tanto por widgets internos quanto pelo deep-link de parceiros
     // (ex.: Asksuite) — ver initDeepLinkBooking(). Quando check-in e check-out
     // já vêm preenchidos, pula direto pra disponibilidade (etapa "rooms").
-    prefill({ arrival: inValue, departure: outValue, adults, kids, ages, coupon } = {}) {
+    prefill({ arrival: inValue, departure: outValue, adults, kids, ages, coupon, scroll = true } = {}) {
       if (state.paymentBusy || state.pix || partialSession) return;
       if (couponInput && coupon !== undefined) couponInput.value = String(coupon).trim();
       const parsedIn = parseLocalDate(inValue);
@@ -2047,12 +2047,15 @@ const initCompactBookingFlow = () => {
       selecting = departure ? "out" : "in";
       view = new Date((arrival || today).getFullYear(), (arrival || today).getMonth(), 1);
       renderCalendar();
-      form.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (scroll) {
+        if (window.CasaNavigation) window.CasaNavigation.go("reservar", { focus: false });
+        else form.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       if (arrival && departure) {
-        fetchAvailability();
+        fetchAvailability({ shouldScroll: scroll && !window.CasaNavigation });
       } else {
         resetAvailability();
-        goToStep("dates");
+        goToStep("dates", scroll && !window.CasaNavigation);
       }
     }
   };
@@ -2561,6 +2564,7 @@ const observeRevealItems = (nodes) => {
 };
 
 const initScrollAnimations = () => {
+  if (document.body.classList.contains("casa-editorial") && window.CasaMotion) return;
   const selectors = [
     ".booking-band",
     ".hero-hook",
@@ -2889,13 +2893,14 @@ const initDeepLinkBooking = () => {
     }))
     .sort((a, b) => a.index - b.index)
     .map((item) => item.value);
-  window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages, coupon });
+  window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages, coupon, scroll: !window.CasaNavigation });
 };
 
 /* Links "Reservar" do cabeçalho/CTAs (href="#reservar") usam salto nativo do
    navegador, que sempre alinha pelo topo — sem isso, ficava inconsistente
    com o resto do fluxo, que centraliza o formulário na tela. */
 const initReserveLinks = () => {
+  if (document.body.classList.contains("casa-editorial") && window.CasaNavigation) return;
   const links = document.querySelectorAll('a[href="#reservar"]');
   if (!links.length) return;
   links.forEach((link) => {

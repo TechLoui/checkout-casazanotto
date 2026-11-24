@@ -71,6 +71,10 @@ body.casa-editorial {
 .casa-editorial .main-nav, .casa-editorial .site-header.is-scrolled .main-nav { position: static; display: flex; justify-content: center; gap: 22px; width: auto; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: none; color: #fff; }
 .casa-editorial .main-nav a { color: #fff; font-size: .875rem; font-weight: 600; padding: 8px 0; }
 .casa-editorial .main-nav a:hover { color: #ffaf72; }
+.casa-editorial .main-nav a[aria-current="location"] { color: #ffaf72; }
+.casa-editorial .main-nav a[aria-current="location"]::after { transform: scaleX(1); opacity: 1; }
+.casa-editorial .mobile-float-menu a[aria-current="location"] { background: #f4dfcc; color: #8f3708; }
+.casa-editorial .casa-footer-grid a[aria-current="location"] { color: #ffbe8f; }
 .casa-editorial .header-actions { display: flex; }
 .casa-editorial .nav-toggle { display: none; }
 

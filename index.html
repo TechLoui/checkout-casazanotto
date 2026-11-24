@@ -29,7 +29,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=20261124-casa2">
-    <link rel="stylesheet" href="casa-design.css?v=20261124-casa3">
+    <link rel="stylesheet" href="casa-design.css?v=20261124-casa4">
+    <link rel="stylesheet" href="casa-motion.css?v=20261124-casa4">
     <style>
       .booking-form .home-privacy-pref p { margin: 0 0 0.5rem; }
       .booking-form .home-privacy-pref label { grid-template-columns: auto 1fr; align-items: start; gap: 0.5rem; cursor: pointer; }
@@ -37,8 +38,10 @@
       .booking-form.premium-booking-form .home-privacy-pref input:focus-visible { outline: 2px solid var(--orange-dark); outline-offset: 2px; }
     </style>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20261124-casa2" defer></script>
+    <script src="script.js?v=20261124-casa4" defer></script>
     <script src="casa-gallery.js?v=20261124-casa2" defer></script>
+    <script src="casa-navigation.js?v=20261124-casa4" defer></script>
+    <script src="casa-motion.js?v=20261124-casa4" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
     <!-- End Asksuite Pixel -->
@@ -176,14 +179,14 @@
         <div class="rooms-grid" data-rooms></div>
       </section>
 
-      <section class="section casa-breakfast">
+      <section class="section casa-breakfast" id="cafe-da-manha" data-section-nav="estrutura">
         <div class="casa-container casa-breakfast-grid">
           <div class="casa-breakfast-copy"><p class="eyebrow">Bom dia, com sabor de casa</p><h2>A melhor parte<br>de <em>acordar aqui.</em></h2><p class="casa-lead">Café da manhã incluso em todas as diárias, para começar a viagem pelo sabor.</p><p>Pães, bolos, frutas e um buffet preparado com variedade e carinho. Sente-se à mesa e deixe o dia começar sem pressa.</p><span class="casa-small-note"><i data-lucide="coffee" aria-hidden="true"></i>Uma manhã para aproveitar.</span></div>
           <div class="casa-breakfast-photo"><img src="assets/cafe/01.webp" alt="Buffet de café da manhã da Pousada Casa Zanotto" loading="lazy"><span>Café da manhã incluso</span></div>
         </div>
       </section>
 
-      <section class="casa-immersion" aria-labelledby="casa-river-title">
+      <section class="casa-immersion" id="beira-rio" data-section-nav="estrutura" aria-labelledby="casa-river-title">
         <img src="assets/gallery/71-Foto-45-scaled.webp" alt="Deck com rede à beira do Rio das Almas" loading="lazy">
         <div class="casa-container"><p class="eyebrow eyebrow-light">À beira do Rio das Almas</p><h2 id="casa-river-title">Uma pausa.<br><em>Um lugar só seu.</em></h2><p>O rio, o verde e o tempo passando mais devagar.</p></div>
       </section>
@@ -212,7 +215,7 @@
         </button>
       </div>
 
-      <section class="section reviews-section">
+      <section class="section reviews-section" id="avaliacoes">
         <div class="section-heading centered">
           <p class="eyebrow">Avaliações de hóspedes</p>
           <h2>Quem fica, leva<br><em>boas lembranças.</em></h2>

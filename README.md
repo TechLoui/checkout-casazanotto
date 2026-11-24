@@ -7,6 +7,26 @@ O motor de reservas (busca → quartos → dados do hóspede → pagamento) é
 embutido direto na home, na seção `#reservar` — não há mais uma página de
 checkout separada.
 
+## Navegação por seções e animações
+
+Os links públicos incluem `#experiencia`, `#estrutura`, `#acomodacoes`,
+`#cafe-da-manha`, `#beira-rio`, `#galeria`, `#avaliacoes`, `#reservar`,
+`#faq`, `#localizacao` e `#contato`. `#reservar` alinha diretamente o
+formulário abaixo do cabeçalho fixo. Links antigos `#conheca`, `#duvidas`
+e `#contatos` continuam apontando às seções correspondentes.
+
+`casa-navigation.js` centraliza entrada por URL, cliques, Voltar/Avançar e
+seção ativa durante a rolagem. Cliques criam uma entrada de histórico;
+rolagem manual atualiza a entrada atual. A navegação altera somente o
+fragmento, preservando parâmetros de datas, cupom e origem da visita.
+Trocar de seção não reinicia nem preenche novamente a reserva.
+
+`casa-motion.js` e `casa-motion.css` animam os blocos editoriais e as fotos
+novas da galeria uma vez ao entrar na tela. A preferência por movimento
+reduzido é respeitada e os campos do formulário permanecem visíveis.
+`CasaMotion.revealSection(element)` torna o destino de um link visível
+sem esperar uma animação.
+
 ## 📁 Estrutura do projeto
 
 ```
@@ -14,7 +34,10 @@ checkout separada.
 ├── index.html            # site (home) — inclui o motor de reservas embutido
 ├── styles.css            # estilos do site
 ├── script.js             # JS do site + motor de reservas (#reservar)
-├── hero.js               # animação da seção "A casa em imagens"
+├── casa-design.css       # composição visual e identidade da Casa
+├── casa-gallery.js       # mosaico, filtros e ampliação das fotos
+├── casa-motion.js/css    # entradas animadas ao rolar, com movimento reduzido
+├── casa-navigation.js    # links de seção, histórico e menu ativo
 ├── assets/               # imagens (logo, galeria, quartos, café, hidro, vídeos)
 └── server/               # ⬅️ BACKEND (é ISTO que o Railway puxa)
     ├── package.json      # start: node src/server.js

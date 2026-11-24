@@ -1,0 +1,90 @@
+/* Content remains visible until an entrance animation actually starts. */
+.casa-editorial .reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.casa-editorial [data-casa-motion] {
+  --casa-motion-x: 0px;
+  --casa-motion-y: 28px;
+  --casa-motion-scale: 1;
+  --casa-motion-duration: 780ms;
+  opacity: 1;
+}
+
+.casa-editorial [data-casa-motion="left"] {
+  --casa-motion-x: -32px;
+  --casa-motion-y: 0px;
+}
+
+.casa-editorial [data-casa-motion="right"] {
+  --casa-motion-x: 32px;
+  --casa-motion-y: 0px;
+}
+
+.casa-editorial [data-casa-motion="scale"] {
+  --casa-motion-y: 12px;
+  --casa-motion-scale: 0.97;
+}
+
+.casa-editorial [data-casa-motion].is-casa-motion-entering {
+  animation: casa-motion-enter var(--casa-motion-duration) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--casa-motion-delay, 0ms) both;
+}
+
+/* Only the booking frame's outline animates, leaving its form fully visible. */
+.casa-editorial [data-casa-motion="frame"] {
+  outline: 1px solid transparent;
+  outline-offset: 5px;
+}
+
+.casa-editorial [data-casa-motion="frame"].is-casa-motion-entering {
+  animation-name: casa-motion-frame;
+}
+
+@keyframes casa-motion-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--casa-motion-x), var(--casa-motion-y), 0)
+      scale(var(--casa-motion-scale));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes casa-motion-frame {
+  from, to { outline-color: transparent; }
+  45% { outline-color: rgba(198, 79, 12, 0.48); }
+}
+
+@media (max-width: 760px) {
+  .casa-editorial [data-casa-motion] {
+    --casa-motion-y: 16px;
+    --casa-motion-duration: 620ms;
+  }
+  .casa-editorial [data-casa-motion="left"] {
+    --casa-motion-x: -16px;
+    --casa-motion-y: 0px;
+  }
+  .casa-editorial [data-casa-motion="right"] {
+    --casa-motion-x: 16px;
+    --casa-motion-y: 0px;
+  }
+  .casa-editorial [data-casa-motion="scale"] {
+    --casa-motion-y: 8px;
+    --casa-motion-scale: 0.985;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .casa-editorial [data-casa-motion],
+  .casa-editorial [data-casa-motion].is-casa-motion-entering {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
