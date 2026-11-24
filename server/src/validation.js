@@ -100,6 +100,10 @@ export const validateStayGuest = (body) => {
   if (phone.length < 10) throw new ValidationError("Telefone do hóspede é obrigatório e deve ser válido.");
   const guestType = guest.type === "company" ? "company" : "guest";
   const documentType = ["cpf", "rg", "passport"].includes(guest.document_type) ? guest.document_type : undefined;
+  const rawDocument = String(guest.document || "").trim();
+  const document = documentType === "passport"
+    ? rawDocument.toUpperCase().replace(/[^A-Z0-9]/g, "")
+    : onlyDigits(rawDocument);
   if (guest.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guest.email)) {
     throw new ValidationError("E-mail do hóspede inválido.");
   }
@@ -131,7 +135,7 @@ export const validateStayGuest = (body) => {
     guest: {
       first_name: firstName,
       last_name: String(guest.last_name || "").trim() || undefined,
-      document: onlyDigits(guest.document) || undefined,
+      document: document || undefined,
       document_type: documentType,
       phone,
       email: String(guest.email || "").trim() || undefined,

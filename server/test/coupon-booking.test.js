@@ -21,7 +21,7 @@ Object.assign(process.env, {
 const { config } = await import("../src/config.js");
 const { checkAvailability } = await import("../src/artaxnet.js");
 const { validateAvailability, validateCheckout, validatePix } = await import("../src/validation.js");
-const { processCheckout, createPixCharge, confirmPix } = await import("../src/bookingFlow.js");
+const { processCheckout, createPixCharge, confirmPix, retrySplitCard } = await import("../src/bookingFlow.js");
 
 test("o cupom mantém o mesmo valor na cotação, cartão, Pix e reserva", async (t) => {
   let offeredCoupons = [{ code: "VERAO10", discount_type: "percentage", discount_value: 10, room_types: [], rateplans: [] }];
@@ -31,6 +31,8 @@ test("o cupom mantém o mesmo valor na cotação, cartão, Pix e reserva", async
   const payments = [];
   const authorizations = [];
   const couponQueries = [];
+  const captures = [];
+  let declinedCardNumber;
   t.mock.method(globalThis, "fetch", async (rawUrl, options = {}) => {
     const url = new URL(rawUrl);
     if (url.origin === "https://artax-coupons.test") {
@@ -57,9 +59,13 @@ test("o cupom mantém o mesmo valor na cotação, cartão, Pix e reserva", async
       if (url.pathname === "/transactions" && options.method === "POST") {
         const data = JSON.parse(options.body);
         authorizations.push(data);
+        if (declinedCardNumber && data.cardNumber === declinedCardNumber) {
+          return Response.json({ returnCode: "05", returnMessage: "Recusa simulada do segundo cartão" });
+        }
         return Response.json({ returnCode: "00", tid: `TEST${nextPayment++}`, authorizationCode: "TEST", qrCodeResponse: { qrCodeData: "test-pix" } });
       }
       if (url.pathname.startsWith("/transactions/")) {
+        if (options.method === "PUT") captures.push(JSON.parse(options.body));
         return Response.json({ returnCode: "00", status: "Approved" });
       }
     }
@@ -109,4 +115,50 @@ test("o cupom mantém o mesmo valor na cotação, cartão, Pix e reserva", async
   assert.throws(() => validateAvailability({ ...input, coupon: ["VERAO10"] }), /cupom/i);
   assert.throws(() => validateCheckout({ ...input, quoted_amount_cents: undefined }, 4), /confirma|busca/i);
   assert.equal(config.artax.priceMode, "total");
+
+  await t.test("a troca do cartão recusado preserva o cupom e o total já autorizado", async () => {
+    offeredCoupons = [{ code: "VERAO10", discount_type: "percentage", discount_value: 10, room_types: [], rateplans: [] }];
+    const splitInput = {
+      ...input,
+      cards: [
+        { ...input.card, amount: 400, installments: 1 },
+        { ...input.card, number: "4485136489083106", amount: 500, installments: 1 }
+      ]
+    };
+    const initialBookings = bookings.length;
+    const initialPayments = payments.length;
+    const initialAuthorizations = authorizations.length;
+    const initialCaptures = captures.length;
+    declinedCardNumber = splitInput.cards[1].number;
+    let partial;
+    await assert.rejects(processCheckout(validateCheckout(splitInput, 4)), (error) => {
+      assert.equal(error.status, 402);
+      assert.equal(error.partial.failedCard, 2);
+      assert.equal(error.partial.pendingAmount, 500);
+      assert.equal(error.partial.approved[0].amount, 400);
+      partial = error.partial;
+      return true;
+    });
+    assert.equal(bookings.length, initialBookings);
+    assert.equal(payments.length, initialPayments);
+    assert.equal(captures.length, initialCaptures);
+
+    // O primeiro cartão já foi autorizado pelo total aceito com o cupom.
+    // Uma alteração posterior não pode aumentar a cobrança na troca do segundo.
+    offeredCoupons = [];
+    const queriesBeforeRetry = couponQueries.length;
+    const retried = await retrySplitCard(partial.sessionId, { ...input.card, installments: 1 }, 4);
+    assert.equal(couponQueries.length, queriesBeforeRetry);
+    assert.equal(retried.payment.amount, 900);
+    assert.equal(retried.payment.split, true);
+    assert.equal(retried.payment.captured, true);
+    assert.deepEqual(retried.payment.charges.map((charge) => charge.amount), [400, 500]);
+    assert.deepEqual(authorizations.slice(initialAuthorizations).map((authorization) => authorization.amount), [40000, 50000, 50000]);
+    assert.deepEqual(captures.slice(initialCaptures).map((capture) => capture.amount), [40000, 50000]);
+    assert.equal(bookings.length, initialBookings + 1);
+    assert.equal(bookings.at(-1).get("room_units[4700][price]"), "900");
+    assert.match(bookings.at(-1).get("comment"), /Cupom aplicado no site: VERAO10/);
+    assert.equal(payments.length, initialPayments + 1);
+    assert.deepEqual(payments.at(-1).map((payment) => payment.gross_amount), [400, 500]);
+  });
 });
