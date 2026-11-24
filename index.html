@@ -24,23 +24,21 @@
     <meta property="og:image" content="https://pousadacasazanotto.com/assets/gallery/60-Foto-18-scaled.webp">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/webp" href="assets/logo.webp">
-    <link rel="preload" as="image" href="assets/pool.webp">
+    <link rel="preload" as="image" href="assets/hidden-bg.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261124-1">
+    <link rel="stylesheet" href="styles.css?v=20261124-casa2">
+    <link rel="stylesheet" href="casa-design.css?v=20261124-casa2">
     <style>
       .booking-form .home-privacy-pref p { margin: 0 0 0.5rem; }
       .booking-form .home-privacy-pref label { grid-template-columns: auto 1fr; align-items: start; gap: 0.5rem; cursor: pointer; }
       .booking-form.premium-booking-form .home-privacy-pref input { width: 1.125rem; height: 1.125rem; margin: 0.1rem 0 0; accent-color: var(--orange-dark); }
       .booking-form.premium-booking-form .home-privacy-pref input:focus-visible { outline: 2px solid var(--orange-dark); outline-offset: 2px; }
     </style>
-    <link rel="preload" as="image" href="assets/suite.webp">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20261124-1" defer></script>
-    <script src="hero.js?v=20260722-1" defer></script>
+    <script src="script.js?v=20261124-casa2" defer></script>
+    <script src="casa-gallery.js?v=20261124-casa2" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
     <!-- End Asksuite Pixel -->
@@ -89,250 +87,115 @@
       }
     </script>
   </head>
-  <body>
+  <body class="casa-editorial">
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
     <header class="site-header" data-header>
       <a class="brand" href="#topo" aria-label="Página inicial da Pousada Casa Zanotto">
-        <img src="assets/logo.webp" alt="Pousada Casa Zanotto" width="58" height="74">
-        <span class="brand-text">
-          <strong>Pousada</strong>
-          <small>Casa Zanotto</small>
-        </span>
+        <img src="assets/logo.webp" alt="" width="58" height="74">
+        <span class="brand-text"><strong>Casa Zanotto</strong><small>Pousada · Pirenópolis</small></span>
       </a>
-
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu-principal" aria-label="Abrir menu">
-        <i data-lucide="menu" aria-hidden="true"></i>
-        <span>Menu</span>
+        <i data-lucide="menu" aria-hidden="true"></i><span>Menu</span>
       </button>
-
       <nav class="main-nav" id="menu-principal" aria-label="Navegação principal">
-        <a href="#experiencia">Experiência</a>
-        <a href="#acomodacoes">Acomodações</a>
-        <a href="#galeria">Galeria</a>
-        <a href="#faq">Dúvidas</a>
-        <a href="#contato">Contato</a>
-        <a href="#reservar">Reservar</a>
+        <a href="#experiencia">A Casa</a><a href="#acomodacoes">Acomodações</a><a href="#estrutura">Experiências</a><a href="#galeria">Galeria</a><a href="#localizacao">Localização</a><a href="#faq">Dúvidas</a>
       </nav>
-
-      <div class="header-actions">
-        <a class="icon-link" href="#reservar" aria-label="Buscar disponibilidade">
-          <i data-lucide="search" aria-hidden="true"></i>
-        </a>
-        <a class="button button-primary" href="#reservar">
-          <i data-lucide="calendar-check" aria-hidden="true"></i>
-          Reservar
-        </a>
-      </div>
+      <div class="header-actions"><a class="button button-primary" href="#reservar"><i data-lucide="calendar-check" aria-hidden="true"></i>Reservar</a></div>
     </header>
 
     <main id="conteudo">
-      <section class="hero hero-premium" id="topo" aria-label="Pousada Casa Zanotto">
+      <section class="hero casa-hero" id="topo" aria-labelledby="casa-hero-title">
         <div class="hero-slider" data-hero-slider aria-hidden="true">
-          <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="" data-eyebrow="Centro Histórico" data-title="Pirenópolis começa aqui." data-copy="Hospede-se a poucos passos dos principais restaurantes, cafés e atrações da cidade.">
-          <img class="hero-slide" data-src="assets/hero.webp" alt="" data-eyebrow="Experiência completa" data-title="Não é só hospedagem. É tempo bem vivido." data-copy="Conforto, cuidado e tranquilidade reunidos para você aproveitar cada momento da viagem.">
-          <img class="hero-slide" data-src="assets/gallery/61-Foto-20-scaled.webp" alt="" data-eyebrow="Água aquecida" data-title="Mergulhe. Relaxe. Esqueça do relógio." data-copy="Piscina aquecida e hidromassagem para desacelerar em qualquer época do ano.">
-          <img class="hero-slide" data-src="assets/brand.webp" alt="" data-eyebrow="Café da manhã" data-title="Manhãs que começam com sabor." data-copy="Um café da manhã completo, preparado com carinho e já incluso na sua estadia.">
-          <img class="hero-slide" data-src="assets/gallery/66-Foto-31-scaled.webp" alt="" data-eyebrow="Beira rio" data-title="Deixe a natureza mudar o seu ritmo." data-copy="Deck à beira do Rio das Almas, redes e cantinhos feitos para descansar de verdade.">
-          <img class="hero-slide" data-src="assets/lounge.webp" alt="" data-eyebrow="Casa Zanotto" data-title="Espaços que convidam a ficar." data-copy="Ambientes acolhedores para conversar, contemplar e criar boas memórias.">
-          <img class="hero-slide" data-src="assets/suite.webp" alt="" data-eyebrow="Acomodações" data-title="Conforto em cada detalhe." data-copy="Suítes aconchegantes, cuidadosamente preparadas para noites tranquilas em Pirenópolis.">
+          <img class="hero-slide is-active" src="assets/hidden-bg.webp" alt="" width="2560" height="1920" fetchpriority="high">
+          <img class="hero-slide" data-src="assets/hero.webp" alt="" width="2048" height="1365" decoding="async">
+          <img class="hero-slide" data-src="assets/gallery/71-Foto-45-scaled.webp" alt="" decoding="async">
         </div>
-        <div class="hero-overlay"></div>
-
-        <div class="hero-content">
-          <div class="hero-text">
-            <p class="hero-eyebrow"><i data-lucide="sparkles" aria-hidden="true"></i> <span data-hero-eyebrow>Centro Histórico</span></p>
-            <h1 data-hero-title>Pirenópolis começa aqui.</h1>
-            <p class="hero-copy" data-hero-copy>Hospede-se a poucos passos dos principais restaurantes, cafés e atrações da cidade.</p>
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-content casa-container">
+          <div class="casa-hero-copy">
+            <p class="eyebrow eyebrow-light"><i data-lucide="map-pin" aria-hidden="true"></i>Centro Histórico · Pirenópolis</p>
+            <h1 id="casa-hero-title">Piri lá fora.<br><em>Sua casa aqui.</em></h1>
+            <p class="casa-hero-lead">O charme do Centro Histórico, a calma do Rio das Almas e o acolhimento de se sentir em casa.</p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#reservar">
-                <i data-lucide="calendar-check" aria-hidden="true"></i>
-                Ver disponibilidade
-              </a>
-              <a class="button button-light" href="https://wa.me/556299890139" target="_blank" rel="noreferrer" aria-label="Conversar pelo WhatsApp">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.297.3-.495.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.9 6.99c-.003 5.45-4.437 9.884-9.888 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.3-1.654a11.882 11.882 0 0 0 5.69 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                WhatsApp
-              </a>
-            </div>
-            <div class="hero-progress" data-hero-progress aria-label="Slides da apresentação"></div>
-          </div>
-
-          <div class="hero-logo-wrap" aria-hidden="true">
-            <div class="hero-logo-disc">
-              <img src="assets/logo.webp" alt="Pousada Casa Zanotto">
+              <a class="button button-primary" href="#reservar"><i data-lucide="calendar-search" aria-hidden="true"></i>Consultar disponibilidade</a>
+              <a class="casa-text-link" href="https://wa.me/5562999890139" target="_blank" rel="noreferrer"><i data-lucide="message-circle" aria-hidden="true"></i>Fale com a Casa</a>
             </div>
           </div>
+          <div class="casa-hero-note"><span>Um convite para ficar.</span><p>Dias de cidade.<br>Momentos de sossego.</p></div>
         </div>
-
-        <a class="hero-scroll" href="#conheca" aria-label="Rolar para baixo">
-          <span></span>
-        </a>
-      </section>
-
-      <section class="showcase-section" id="conheca" aria-label="A casa em imagens">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="images" aria-hidden="true"></i> O que você vai encontrar aqui</p>
-          <h2>Venha para a Pousada Casa Zanotto</h2>
-          <p class="section-lead">Café da manhã incluso, localização privilegiada, piscina aquecida, deck beira rio, estacionamento gratuito, Wi-Fi de alta velocidade e atendimento rápido no WhatsApp. Aqui você descansa de verdade.</p>
-        </div>
-        <div class="hero-cards" id="heroCards" aria-hidden="true">
-          <figure class="hero-card hc-1" data-rot="-9" data-depth="14"><img src="assets/suite.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-2" data-rot="-5" data-depth="10"><img src="assets/pool.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-3" data-rot="-2" data-depth="8"><img src="assets/garden.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-4" data-rot="3" data-depth="12"><img src="assets/breakfast.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-5" data-rot="0" data-depth="6"><img src="assets/river.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-6" data-rot="4" data-depth="11"><img src="assets/lounge.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-7" data-rot="7" data-depth="9"><img src="assets/gallery/75-Foto-67-scaled.webp" alt="" loading="lazy"></figure>
-          <figure class="hero-card hc-8" data-rot="-4" data-depth="13"><img src="assets/hidden-bg.webp" alt="" loading="lazy"></figure>
+        <div class="casa-hero-bottom casa-container">
+          <ul class="casa-hero-facts" aria-label="Destaques da Casa"><li><i data-lucide="landmark" aria-hidden="true"></i>No Centro Histórico</li><li><i data-lucide="coffee" aria-hidden="true"></i>Café da manhã incluso</li><li><i data-lucide="waves" aria-hidden="true"></i>Piscina e hidro aquecidas</li></ul>
+          <div class="hero-progress" data-hero-progress aria-label="Imagens da Casa"></div>
         </div>
       </section>
 
-      <section class="section opening-section" id="experiencia">
-        <div class="section-heading centered">
-          <p class="eyebrow">Por que a Pousada Casa Zanotto é a Escolha Perfeita?</p>
-          <h2>O que você vai encontrar aqui</h2>
-        </div>
-
-        <div class="promise-row">
-          <article class="promise-card">
-            <span class="icon-badge icon-badge-custom" aria-hidden="true">
-              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
-                <path d="M32 56s18-16.7 18-34a18 18 0 0 0-36 0c0 17.3 18 34 18 34Z"/>
-                <circle cx="32" cy="23" r="7"/>
-                <path d="M22 42h20"/>
-              </svg>
-            </span>
-            <h3>Centro Histórico</h3>
-            <p>Vá a pé para cafés, restaurantes e pontos turísticos.</p>
-          </article>
-          <article class="promise-card">
-            <span class="icon-badge icon-badge-custom" aria-hidden="true">
-              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
-                <path d="M11 38c7 0 7-6 14-6s7 6 14 6 7-6 14-6"/>
-                <path d="M11 48c7 0 7-6 14-6s7 6 14 6 7-6 14-6"/>
-                <path d="M25 22c0-6 4-7 4-12m10 12c0-6 4-7 4-12"/>
-              </svg>
-            </span>
-            <h3>Descanso de verdade</h3>
-            <p>Piscina aquecida e hidromassagem para relaxar.</p>
-          </article>
-          <article class="promise-card">
-            <span class="icon-badge icon-badge-custom" aria-hidden="true">
-              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
-                <path d="M18 49c0-13 7-23 14-23s14 10 14 23"/>
-                <path d="M32 54V27"/>
-                <path d="M18 36c-4-7-2-15 5-19 6 2 9 7 9 13"/>
-                <path d="M46 36c4-7 2-15-5-19-6 2-9 7-9 13"/>
-              </svg>
-            </span>
-            <h3>Natureza dentro da experiência</h3>
-            <p>Jardins, Paisagismo e Deck Beira Rio.</p>
-          </article>
-          <article class="promise-card">
-            <span class="icon-badge icon-badge-custom" aria-hidden="true">
-              <svg class="topic-icon" viewBox="0 0 64 64" role="img">
-                <path d="M16 31V19l16-9 16 9v12"/>
-                <path d="M22 54V30h20v24"/>
-                <path d="M28 54V40h8v14"/>
-                <path d="M16 31h32"/>
-              </svg>
-            </span>
-            <h3>Conforto no quarto</h3>
-            <p>Enxoval premium, ar, TV Smart e frigobar.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="story-section">
-        <div class="story-media">
-          <img class="story-photo story-photo-large" src="assets/brand.webp" alt="Hidromassagem aquecida rodeada por jardim na Pousada Casa Zanotto" loading="lazy">
-          <img class="story-photo story-photo-small" src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardim arborizado da Pousada Casa Zanotto" loading="lazy">
-        </div>
-        <div class="story-copy">
-          <p class="eyebrow">Nossa pousada</p>
-          <h2>Ideal para quem quer se conectar com a natureza sem abrir mão da localização.</h2>
-          <ul class="check-list">
-            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para casais:</strong> suítes aconchegantes, hidromassagens aquecidas e clima romântico.</li>
-            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para famílias:</strong> conforto, lazer e localização prática no Centro Histórico.</li>
-            <li><i data-lucide="check" aria-hidden="true"></i> <strong>Para ficar ainda mais especial:</strong> peça decoração romântica de aniversário, namoro, lua de mel, pedido de casamento ou celebração especial.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="ritual-section">
-        <div class="ritual-panel">
-          <img src="assets/gallery/61-Foto-20-scaled.webp" alt="Piscina e área de lazer da Pousada Casa Zanotto" loading="lazy">
-          <div>
-            <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
-            <h2>Piscina Aquecida, para relaxar em qualquer época.</h2>
+      <section class="section casa-intro" id="experiencia">
+        <div class="casa-container casa-intro-grid">
+          <div class="casa-intro-copy">
+            <p class="eyebrow">O jeito Casa Zanotto de receber</p>
+            <h2>Perto de tudo.<br><em>Longe da pressa.</em></h2>
+            <p class="casa-lead">Uma pousada para viver Pirenópolis a pé e encontrar seu próprio tempo entre jardins, água aquecida e cantinhos de descanso.</p>
+            <p>De um lado, cafés, restaurantes e os encantos do Centro Histórico. Do outro, redes, o deck à beira do Rio das Almas e uma casa pronta para receber você.</p>
+            <a class="casa-inline-link" href="#acomodacoes">Encontre o seu cantinho</a>
+            <div class="casa-signature"><img src="assets/logo.webp" alt="" width="42" height="54"><span>Hospitalidade com nome de casa.<small>Grupo Zanotto Hotelaria</small></span></div>
+          </div>
+          <div class="casa-collage" aria-label="Os espaços da Casa Zanotto">
+            <img class="casa-collage-main" src="assets/lounge.webp" alt="Varanda com redes e o charme colonial da Casa Zanotto" loading="lazy" width="2560" height="1920">
+            <img class="casa-collage-detail" src="assets/gallery/67-Foto-35-scaled.webp" alt="Jardim com fonte e caminhos arborizados da pousada" loading="lazy">
+            <span class="casa-collage-seal">Casa Zanotto<small>Pirenópolis · Goiás</small></span>
           </div>
         </div>
-        <div class="ritual-panel">
-          <img src="assets/brand.webp" alt="Hidromassagem aquecida da Pousada Casa Zanotto" loading="lazy">
-          <div>
-            <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
-            <h2>Hidromassagem Aquecida, um dos espaços mais desejados da pousada.</h2>
+      </section>
+
+      <section class="section casa-signature-section" id="estrutura">
+        <div class="casa-container casa-signature-grid">
+          <div class="casa-signature-photos">
+            <img class="casa-signature-main" src="assets/gallery/61-Foto-20-scaled.webp" alt="Piscina da Casa Zanotto cercada por jardins" loading="lazy">
+            <img class="casa-signature-detail" src="assets/brand.webp" alt="Hidromassagem aquecida em meio ao verde" loading="lazy">
+            <span class="casa-photo-note">Água aquecida.<br>Tempo para você.</span>
           </div>
-        </div>
-        <div class="ritual-panel">
-          <img src="assets/gallery/66-Foto-31-scaled.webp" alt="Jardins e varandas da Pousada Casa Zanotto" loading="lazy">
-          <div>
-            <p class="eyebrow eyebrow-light">Área de lazer e conexão com a natureza</p>
-            <h2>Redes e Paisagismo para desacelerar.</h2>
+          <div class="casa-signature-copy">
+            <p class="eyebrow eyebrow-light">Seu tempo na Casa</p>
+            <h2>O descanso mora<br><em>nos detalhes.</em></h2>
+            <p>Entre um passeio e outro, aproveite os espaços que tornam a estadia parte da viagem.</p>
+            <div class="casa-feature-list">
+              <article><i data-lucide="waves" aria-hidden="true"></i><div><h3>Piscina e hidromassagem</h3><p>Água aquecida para relaxar e aproveitar em qualquer época do ano.</p></div></article>
+              <article><i data-lucide="leaf" aria-hidden="true"></i><div><h3>Jardins, redes e beira rio</h3><p>Um deck junto ao Rio das Almas e cantinhos para desacelerar em meio ao verde.</p></div></article>
+              <article><i data-lucide="heart-handshake" aria-hidden="true"></i><div><h3>Conforto para ficar à vontade</h3><p>Estacionamento gratuito, Wi-Fi e uma equipe próxima para cuidar da sua estadia.</p></div></article>
+            </div>
           </div>
         </div>
       </section>
 
       <section class="section suites-section" id="acomodacoes">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="bed-double" aria-hidden="true"></i> Acomodações</p>
-          <h2>Escolha o seu cantinho na Casa Zanotto</h2>
-          <p class="section-lead">Quatro estilos de hospedagem, todos com café da manhã incluso. Deslize as fotos de cada acomodação.</p>
+        <div class="section-heading casa-section-heading">
+          <div><p class="eyebrow">Seu cantinho em Pirenópolis</p><h2>Quatro jeitos de<br><em>se sentir em casa.</em></h2></div>
+          <p class="section-lead">Suítes e bangalô com a personalidade da Casa Zanotto. Encontre a acomodação que combina com sua viagem, sempre com café da manhã incluso.</p>
         </div>
 
         <div class="rooms-grid" data-rooms></div>
       </section>
 
-      <section class="section amenities-section" id="estrutura" aria-label="Café da manhã e hidromassagem">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="coffee" aria-hidden="true"></i> Estrutura &amp; Lazer</p>
-          <h2>Café da manhã e hidromassagem</h2>
-          <p class="section-lead">Manhãs com sabor de casa e água aquecida para relaxar a qualquer hora. Deslize as fotos de cada experiência.</p>
+      <section class="section casa-breakfast">
+        <div class="casa-container casa-breakfast-grid">
+          <div class="casa-breakfast-copy"><p class="eyebrow">Bom dia, com sabor de casa</p><h2>A melhor parte<br>de <em>acordar aqui.</em></h2><p class="casa-lead">Café da manhã incluso em todas as diárias, para começar a viagem pelo sabor.</p><p>Pães, bolos, frutas e um buffet preparado com variedade e carinho. Sente-se à mesa e deixe o dia começar sem pressa.</p><span class="casa-small-note"><i data-lucide="coffee" aria-hidden="true"></i>Uma manhã para aproveitar.</span></div>
+          <div class="casa-breakfast-photo"><img src="assets/cafe/01.webp" alt="Buffet de café da manhã da Pousada Casa Zanotto" loading="lazy"><span>Café da manhã incluso</span></div>
         </div>
-        <div class="rooms-grid amenities-grid" data-amenities></div>
       </section>
 
-      <section class="feature-band">
-        <div>
-          <p class="eyebrow eyebrow-light">Café da manhã</p>
-          <h2>Café da manhã incluso para começar o dia do jeito certo</h2>
-          <p>
-            Buffet servido com variedade, ingredientes artesanais e sabores regionais, para transformar a manhã em parte da experiência.
-          </p>
-        </div>
-        <img src="assets/river.webp" alt="Buffet de café da manhã com frutas, bolos e itens artesanais" loading="lazy">
+      <section class="casa-immersion" aria-labelledby="casa-river-title">
+        <img src="assets/gallery/71-Foto-45-scaled.webp" alt="Deck com rede à beira do Rio das Almas" loading="lazy">
+        <div class="casa-container"><p class="eyebrow eyebrow-light">À beira do Rio das Almas</p><h2 id="casa-river-title">Uma pausa.<br><em>Um lugar só seu.</em></h2><p>O rio, o verde e o tempo passando mais devagar.</p></div>
       </section>
 
       <section class="section gallery-section" id="galeria">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="images" aria-hidden="true"></i> Galeria</p>
-          <h2>O que você vai encontrar aqui</h2>
+        <div class="section-heading casa-section-heading"><div><p class="eyebrow">Um passeio pela Casa</p><h2>Antes de chegar,<br><em>sinta-se aqui.</em></h2></div><p class="section-lead">Conheça os quartos, os jardins e os pequenos detalhes que fazem parte da experiência.</p></div>
+        <div class="casa-gallery-filters" role="group" aria-label="Filtrar fotos">
+          <button class="is-active" type="button" data-gallery-filter="all" aria-pressed="true">Toda a Casa</button><button type="button" data-gallery-filter="leisure" aria-pressed="false">Lazer e jardins</button><button type="button" data-gallery-filter="rooms" aria-pressed="false">Acomodações</button><button type="button" data-gallery-filter="food" aria-pressed="false">Café da manhã</button>
         </div>
-        <div class="dgc" data-dgc>
-          <div class="dgc-viewport">
-            <div class="dgc-track" data-dgc-track aria-live="polite"></div>
-          </div>
-        </div>
-
-        <div class="dgc-controls">
-          <button class="dgc-btn" type="button" data-dgc-prev aria-label="Foto anterior">
-            <i data-lucide="chevron-left" aria-hidden="true"></i>
-          </button>
-          <div class="dgc-nav" data-dgc-nav></div>
-          <button class="dgc-btn" type="button" data-dgc-next aria-label="Próxima foto">
-            <i data-lucide="chevron-right" aria-hidden="true"></i>
-          </button>
-        </div>
+        <div class="casa-journal-grid" data-casa-gallery data-dgc-track></div>
+        <div class="casa-gallery-bottom"><p data-casa-gallery-status role="status"></p><button class="button button-ghost" type="button" data-casa-gallery-more>Ver mais fotos</button></div>
       </section>
 
       <div class="lightbox" data-lightbox hidden>
@@ -353,7 +216,7 @@
       <section class="section reviews-section">
         <div class="section-heading centered">
           <p class="eyebrow">Avaliações de hóspedes</p>
-          <h2>Avaliações de hóspedes</h2>
+          <h2>Quem fica, leva<br><em>boas lembranças.</em></h2>
         </div>
         <div class="review-grid">
           <blockquote>
@@ -392,81 +255,13 @@
         </div>
       </section>
 
-      <section class="section faq-section" id="faq">
-        <div class="section-heading row-heading">
-          <div>
-            <p class="eyebrow">Dúvidas rápidas</p>
-            <h2>Informações importantes antes da reserva.</h2>
-          </div>
-        </div>
-        <div class="faq-list">
-          <details>
-            <summary>ACEITA PETS?</summary>
-            <p>Não. Para garantir conforto, higiene e tranquilidade para todos os hóspedes, a Pousada Casa Zanotto não aceita animais de estimação.</p>
-          </details>
-          <details>
-            <summary>Qual é o horário de check in e check out?</summary>
-            <p>O check in pode ser realizado a partir das 14h e o check out deve ser feito até às 12h. Nossa recepção fica aberta das 07h da manhã as 01h da madrugada.</p>
-          </details>
-          <details>
-            <summary>O café da manhã está incluso na diária?</summary>
-            <p>Sim. Todas as diárias incluem buffet de café da manhã completo, preparado com variedade de itens frescos para começar o dia com energia.</p>
-          </details>
-          <details>
-            <summary>A pousada possui estacionamento?</summary>
-            <p>Sim. A Pousada Casa Zanotto oferece estacionamento gratuito dentro da propriedade para maior comodidade e segurança dos hóspedes.</p>
-          </details>
-          <details>
-            <summary>Onde a pousada está localizada?</summary>
-            <p>A Pousada Casa Zanotto está localizada no Centro Histórico de Pirenópolis, a poucos passos das principais atrações da cidade, restaurantes, cafés e pontos turísticos.</p>
-          </details>
-        </div>
-      </section>
 
-      <section class="contact-section" id="contato">
-        <div class="contact-copy">
-          <p class="eyebrow eyebrow-light">Reservar agora</p>
-          <h2>Pronto para escolher suas datas em Pirenópolis?</h2>
-          <p>
-            Veja agora a disponibilidade no motor de reservas e encontre a melhor opção para sua estadia.
-          </p>
-          <div class="contact-actions">
-            <a class="button button-primary" href="#reservar">
-              <i data-lucide="calendar-check" aria-hidden="true"></i>
-              Reservar agora
-            </a>
-            <a class="button button-outline-light" href="mailto:reservas@grupozanottohotelaria.com.br">
-              <i data-lucide="mail" aria-hidden="true"></i>
-              Enviar e-mail
-            </a>
-          </div>
-        </div>
-        <div class="contact-panel">
-          <a href="tel:+5564984398408">
-            <i data-lucide="phone" aria-hidden="true"></i>
-            <span>(64) 98439-8408</span>
-          </a>
-          <a href="https://maps.app.goo.gl/98DxBYfStL1J8Xa16" target="_blank" rel="noreferrer">
-            <i data-lucide="map" aria-hidden="true"></i>
-            <span>Ver no mapa</span>
-          </a>
-          <a href="https://www.instagram.com/pousada_casazanotto/" target="_blank" rel="noreferrer">
-            <i data-lucide="camera" aria-hidden="true"></i>
-            <span>@pousada_casazanotto</span>
-          </a>
-        </div>
-      </section>
 
       <section class="section reserve-section reserve-studio" id="reservar" aria-label="Reservar online">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="calendar-check" aria-hidden="true"></i> Reserva online</p>
-          <h2>Reserve sua estadia agora</h2>
-          <p class="section-lead">Escolha as datas, a acomodação e finalize em poucos passos.</p>
-        </div>
+        <div class="casa-container casa-reserve-heading"><div><p class="eyebrow eyebrow-light">Sua próxima pausa começa aqui</p><h2>Escolha as datas.<br><em>A Casa espera por você.</em></h2></div><p>Consulte a disponibilidade e reserve direto pelo site oficial, em poucos passos.</p></div>
+        <div class="casa-container casa-reserve-benefits"><span><i data-lucide="shield-check" aria-hidden="true"></i>Reserva no site oficial</span><span><i data-lucide="credit-card" aria-hidden="true"></i>Cartão ou Pix</span><span><i data-lucide="message-circle" aria-hidden="true"></i>Atendimento da própria Casa</span></div>
         <div class="reserve-shell">
-          <div class="reserve-banner">
-            <img src="assets/logo.webp" alt="Pousada Casa Zanotto" width="72" height="90">
-          </div>
+          <div class="reserve-banner"><img src="assets/logo.webp" alt="" width="42" height="54"><span>Casa Zanotto<small>Seu próximo encontro com Pirenópolis.</small></span></div>
 
           <form class="booking-form premium-booking-form compact-booking" data-compact-booking>
             <div class="compact-steps" aria-label="Etapas da reserva">
@@ -774,7 +569,7 @@
                       Pagar restante e concluir
                     </button>
                     <a class="button button-ghost" data-home-partial-support target="_blank" rel="noreferrer"
-                       href="https://wa.me/556299890139">
+                       href="https://wa.me/5562999890139">
                       <i data-lucide="message-circle" aria-hidden="true"></i>
                       Falar com o suporte
                     </a>
@@ -808,7 +603,7 @@
                 <strong data-home-success-id>Reserva confirmada.</strong>
                 <div class="home-success-charges" data-home-success-charges hidden></div>
                 <p>Você receberá os detalhes da sua hospedagem no e-mail informado durante a reserva.<br>Em caso de dúvidas, fale com nossa equipe pelo WhatsApp: (62) 99989-0139.<br>Estamos ansiosos para receber você!</p>
-                <a class="button button-primary" href="https://wa.me/556299890139?text=Ol%C3%A1!%20Acabei%20de%20concluir%20uma%20reserva%20pelo%20site%20oficial%20e%20gostaria%20de%20confirmar%20se%20est%C3%A1%20tudo%20certo.%20%F0%9F%98%8A" target="_blank" rel="noreferrer">
+                <a class="button button-primary" href="https://wa.me/5562999890139?text=Ol%C3%A1!%20Acabei%20de%20concluir%20uma%20reserva%20pelo%20site%20oficial%20e%20gostaria%20de%20confirmar%20se%20est%C3%A1%20tudo%20certo.%20%F0%9F%98%8A" target="_blank" rel="noreferrer">
                   <i data-lucide="message-circle" aria-hidden="true"></i>
                   Nosso WhatsApp
                 </a>
@@ -818,28 +613,55 @@
         </div>
       </section>
 
-      <section class="section map-section" aria-label="Localização da pousada">
-        <div class="section-heading centered">
-          <p class="eyebrow"><i data-lucide="map-pin" aria-hidden="true"></i> Como chegar</p>
-          <h2>Onde a pousada está localizada?</h2>
-          <p class="section-lead">A Pousada Casa Zanotto está localizada no Centro Histórico de Pirenópolis, a poucos passos das principais atrações da cidade, restaurantes, cafés e pontos turísticos.</p>
+      <section class="section faq-section" id="faq">
+        <div class="section-heading row-heading">
+          <div>
+            <p class="eyebrow">Antes de fazer as malas</p>
+            <h2>Ainda tem<br><em>alguma dúvida?</em></h2>
+            <p class="section-lead">Nossa equipe também está por perto para ajudar você a planejar a estadia.</p>
+            <a class="casa-inline-link" href="https://wa.me/5562999890139" target="_blank" rel="noreferrer">Converse com a Casa</a>
+          </div>
         </div>
-        <div class="map-frame">
-          <iframe
+        <div class="faq-list">
+          <details>
+            <summary>ACEITA PETS?</summary>
+            <p>Não. Para garantir conforto, higiene e tranquilidade para todos os hóspedes, a Pousada Casa Zanotto não aceita animais de estimação.</p>
+          </details>
+          <details>
+            <summary>Qual é o horário de check in e check out?</summary>
+            <p>O check in pode ser realizado a partir das 14h e o check out deve ser feito até às 12h. Nossa recepção fica aberta das 07h da manhã as 01h da madrugada.</p>
+          </details>
+          <details>
+            <summary>O café da manhã está incluso na diária?</summary>
+            <p>Sim. Todas as diárias incluem buffet de café da manhã completo, preparado com variedade de itens frescos para começar o dia com energia.</p>
+          </details>
+          <details>
+            <summary>A pousada possui estacionamento?</summary>
+            <p>Sim. A Pousada Casa Zanotto oferece estacionamento gratuito dentro da propriedade para maior comodidade e segurança dos hóspedes.</p>
+          </details>
+          <details>
+            <summary>Onde a pousada está localizada?</summary>
+            <p>A Pousada Casa Zanotto está localizada no Centro Histórico de Pirenópolis, a poucos passos das principais atrações da cidade, restaurantes, cafés e pontos turísticos.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="casa-location-section" id="localizacao" aria-label="Localização da pousada"><div class="casa-location-map"><iframe
             title="Mapa da Pousada Casa Zanotto em Pirenópolis"
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8345.974769465103!2d-48.95921839999999!3d-15.848770799999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x935c6c07a04486e3%3A0x5ede33bbc432c80a!2sPousada%20Casa%20Zanotto%20-%20Piren%C3%B3polis%2FGO!5e1!3m2!1spt-BR!2sbr!4v1782396472875!5m2!1spt-BR!2sbr"
             loading="lazy"
             allowfullscreen
-            referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        </div>
-      </section>
+            referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="casa-location-copy"><p class="eyebrow">No coração de Pirenópolis</p><h2>A cidade a pé.<br><em>A Casa por perto.</em></h2><p>Rua do Carmo, 16 · Centro Histórico<br>Pirenópolis · Goiás</p><ul><li><i data-lucide="utensils" aria-hidden="true"></i>Cafés e restaurantes</li><li><i data-lucide="landmark" aria-hidden="true"></i>Casarões e atrações históricas</li><li><i data-lucide="trees" aria-hidden="true"></i>Rio das Almas e natureza</li></ul><a class="button button-ghost" href="https://maps.app.goo.gl/98DxBYfStL1J8Xa16" target="_blank" rel="noreferrer"><i data-lucide="map-pin" aria-hidden="true"></i>Como chegar</a></div></section>
     </main>
 
-    <footer class="site-footer">
-      <img src="assets/logo.webp" alt="Pousada Casa Zanotto" width="64" height="80">
-      <p>Grupo Zanotto Hotelaria © <span data-year></span> · Todos os direitos reservados</p>
-      <a href="/politica-de-privacidade">Política de Privacidade</a>
-      <a href="#topo">Voltar ao topo</a>
+    <footer class="site-footer" id="contato">
+      <div class="casa-container casa-footer-grid">
+        <div class="casa-footer-brand"><a class="brand" href="#topo"><img src="assets/logo.webp" alt="" width="58" height="74"><span class="brand-text"><strong>Casa Zanotto</strong><small>Pousada · Pirenópolis</small></span></a><p>O charme de Pirenópolis.<br>O acolhimento de se sentir em casa.</p></div>
+        <div><h2>Explore a Casa</h2><a href="#experiencia">Nossa pousada</a><a href="#acomodacoes">Acomodações</a><a href="#galeria">Galeria</a><a href="#reservar">Reservar</a></div>
+        <div><h2>Converse com a Casa</h2><a href="https://wa.me/5562999890139" target="_blank" rel="noreferrer">WhatsApp · (62) 99989-0139</a><a href="tel:+5564984398408">Telefone · (64) 98439-8408</a><a href="mailto:reservas@grupozanottohotelaria.com.br">reservas@grupozanottohotelaria.com.br</a><a href="#localizacao">Rua do Carmo, 16 · Centro Histórico</a></div>
+        <div><h2>Esteja por perto</h2><a href="https://www.instagram.com/pousada_casazanotto/" target="_blank" rel="noreferrer">Instagram</a><a href="#faq">Dúvidas frequentes</a><a href="/politica-de-privacidade">Política de Privacidade</a></div>
+      </div>
+      <div class="casa-container casa-footer-bottom"><p>Grupo Zanotto Hotelaria © <span data-year></span> · Casa Zanotto</p><a href="#topo">Voltar ao início</a></div>
     </footer>
 
     <div class="mobile-float-nav" aria-label="Ações rápidas">
@@ -849,7 +671,7 @@
         <a href="#galeria">Galeria</a>
         <a href="#faq">Dúvidas</a>
         <a href="#contato">Contato</a>
-        <a href="https://wa.me/556299890139" target="_blank" rel="noreferrer">WhatsApp</a>
+        <a href="https://wa.me/5562999890139" target="_blank" rel="noreferrer">WhatsApp</a>
       </nav>
 
       <form class="mobile-booking-popover" id="mobile-booking-popover" data-mobile-booking-form hidden>

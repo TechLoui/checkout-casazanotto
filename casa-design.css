@@ -1,0 +1,396 @@
+/* Casa Zanotto: editorial composition, in the orange and copper of the Casa. */
+body.casa-editorial {
+  --paper: #fffaf5;
+  --paper-soft: #f6ede3;
+  --ink: #2a211c;
+  --muted: #746b63;
+  --forest: #211912;
+  --orange: #ff6b00;
+  --orange-dark: #b9470b;
+  --line: rgba(73, 47, 30, .17);
+  --container: 1220px;
+  background: var(--paper);
+  font-size: 16px;
+  line-height: 1.75;
+  text-rendering: optimizeLegibility;
+}
+.casa-editorial [hidden] { display: none !important; }
+.casa-editorial .casa-container { width: min(100% - 64px, var(--container)); margin-inline: auto; }
+.casa-editorial h1, .casa-editorial h2, .casa-editorial h3 {
+  white-space: normal;
+  text-wrap: balance;
+  font-weight: 500;
+  letter-spacing: -.035em;
+}
+.casa-editorial h2 { font-size: clamp(2.8rem, 5.2vw, 5rem); line-height: 1.04; }
+.casa-editorial h2 em { color: var(--orange-dark); font-weight: 500; }
+.casa-editorial h3 { font-size: 1.65rem; line-height: 1.15; }
+.casa-editorial .section { padding-block: clamp(80px, 9vw, 130px); }
+.casa-editorial .casa-intro, .casa-editorial .casa-signature-section, .casa-editorial .casa-breakfast { width: 100%; max-width: none; }
+.casa-editorial .section-lead { font-family: "Manrope", sans-serif; }
+.casa-editorial .eyebrow {
+  display: flex; align-items: center; gap: 12px; padding: 0; margin: 0 0 22px;
+  color: var(--orange-dark); font: 700 .875rem/1.5 "Manrope", sans-serif;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.casa-editorial .eyebrow::before { content: ""; width: 28px; height: 1px; background: currentColor; flex: 0 0 auto; }
+.casa-editorial .eyebrow svg { width: 18px; height: 18px; }
+.casa-editorial .eyebrow:has(svg)::before { display: none; }
+.casa-editorial .eyebrow-light { color: #ffaf72; }
+.casa-editorial .button {
+  min-height: 50px; padding: 14px 24px; border-radius: 999px;
+  font: 750 .9rem/1.4 "Manrope", sans-serif; letter-spacing: 0;
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+.casa-editorial .button-primary { color: #fff; background: var(--orange-dark); border: 1px solid var(--orange-dark); box-shadow: none; }
+.casa-editorial .button-primary:hover { background: #933807; border-color: #933807; box-shadow: none; transform: translateY(-2px); }
+.casa-editorial .button-ghost { color: var(--ink); background: transparent; border: 1px solid var(--line); box-shadow: none; }
+.casa-editorial .button-ghost:hover { background: #f0e3d5; border-color: #a97851; }
+.casa-editorial .button svg { width: 19px; height: 19px; }
+.casa-editorial .casa-lead { font-size: 1.18rem; line-height: 1.8; color: var(--ink); }
+.casa-editorial .casa-inline-link { display: inline-block; padding-bottom: 5px; color: var(--orange-dark); border-bottom: 1px solid currentColor; font-size: .94rem; font-weight: 750; }
+.casa-editorial .section-heading { margin-bottom: 48px; border: 0; border-radius: 0; box-shadow: none; background: none; padding: 0; }
+.casa-editorial .casa-section-heading { display: grid; grid-template-columns: 1.25fr .75fr; align-items: end; gap: 72px; text-align: left; width: 100%; max-width: none; }
+.casa-editorial .casa-section-heading h2 { max-width: 720px; margin: 0; }
+.casa-editorial .casa-section-heading .section-lead { margin: 0 0 4px; color: var(--muted); font-size: 1rem; line-height: 1.85; }
+
+/* Quiet header, copper accent, and the Casa crest. */
+.casa-editorial .site-header, .casa-editorial .site-header.is-scrolled {
+  position: absolute; top: 0; left: 0; transform: none; width: 100%; min-height: 104px;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 28px; padding: 16px max(32px, calc((100vw - 1280px)/2));
+  opacity: 1; pointer-events: auto; border: 0; border-bottom: 1px solid rgba(255,255,255,.18);
+  border-radius: 0; box-shadow: none; background: transparent; backdrop-filter: none;
+}
+.casa-editorial .site-header.is-scrolled { position: fixed; min-height: 80px; padding-block: 10px; background: rgba(33,25,18,.97); box-shadow: 0 8px 30px rgba(20,14,8,.12); }
+.casa-editorial .brand { display: flex; align-items: center; gap: 13px; flex-shrink: 0; color: white; }
+.casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { width: auto; height: 66px; margin: 0; filter: none; }
+.casa-editorial .site-header.is-scrolled .brand img { height: 54px; }
+.casa-editorial .brand-text, .casa-editorial .site-header.is-scrolled .brand-text { display: grid; gap: 3px; color: #fff; opacity: 1; max-width: none; transform: none; }
+.casa-editorial .brand-text strong { font: 600 1.6rem/1 "Cormorant Garamond", Georgia, serif; letter-spacing: -.02em; text-transform: none; }
+.casa-editorial .brand-text small, .casa-editorial .site-header.is-scrolled .brand-text small { color: #e3cbbc; font: 500 .75rem/1.4 "Manrope", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.casa-editorial .main-nav, .casa-editorial .site-header.is-scrolled .main-nav { position: static; display: flex; justify-content: center; gap: 22px; width: auto; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: none; color: #fff; }
+.casa-editorial .main-nav a { color: #fff; font-size: .875rem; font-weight: 600; padding: 8px 0; }
+.casa-editorial .main-nav a:hover { color: #ffaf72; }
+.casa-editorial .header-actions { display: flex; }
+.casa-editorial .nav-toggle { display: none; }
+
+.casa-editorial .casa-hero {
+  position: relative; display: flex; flex-direction: column; justify-content: center;
+  min-height: min(900px, 100svh); height: auto; padding: 155px 0 132px;
+  overflow: hidden; isolation: isolate; background: #211912; color: white;
+}
+.casa-editorial .hero-slider, .casa-editorial .hero-overlay { position: absolute; inset: 0; }
+.casa-editorial .hero-slide { width: 100%; height: 100%; object-fit: cover; object-position: 50% 54%; transform: none; }
+.casa-editorial .hero-overlay { background: linear-gradient(90deg,rgba(25,18,13,.8) 0%,rgba(25,18,13,.4) 57%,rgba(25,18,13,.12) 100%),linear-gradient(0deg,rgba(25,18,13,.85),transparent 35%); }
+.casa-editorial .casa-hero .hero-content { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 245px; align-items: end; gap: 48px; padding: 45px 0 55px; z-index: 1; text-align: left; }
+.casa-editorial .casa-hero-copy { max-width: 830px; }
+.casa-editorial .casa-hero h1 { max-width: 850px; margin: 0; color: #fff; font-size: clamp(4.4rem, 8.6vw, 8rem); line-height: .98; text-shadow: none; letter-spacing: -.045em; }
+.casa-editorial .casa-hero h1 em { color: #ffad70; font-weight: 500; }
+.casa-editorial .casa-hero-lead { max-width: 520px; margin: 28px 0 0; color: #f1e6dc; font-size: 1.08rem; line-height: 1.85; }
+.casa-editorial .hero-actions { display: flex; justify-content: flex-start; align-items: center; gap: 28px; margin-top: 34px; }
+.casa-editorial .hero-actions .button-primary { background: #f77827; border-color: #f77827; color: #24170e; }
+.casa-editorial .hero-actions .button-primary:hover { background: #ff964c; }
+.casa-editorial .casa-text-link { display: inline-flex; gap: 9px; align-items: center; color: #fff; font-size: .9rem; font-weight: 650; }
+.casa-editorial .casa-text-link svg { width: 21px; height: 21px; }
+.casa-editorial .casa-hero-note { padding: 0 0 4px 24px; border-left: 1px solid rgba(255,255,255,.4); }
+.casa-editorial .casa-hero-note > span { color: #f8b685; font: 700 .75rem/1.5 "Manrope", sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+.casa-editorial .casa-hero-note p { margin: 15px 0 0; color: #f6e9de; font: 500 1.65rem/1.25 "Cormorant Garamond", Georgia, serif; }
+.casa-editorial .casa-hero-bottom { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-top: 1px solid rgba(255,255,255,.25); padding: 25px 0; }
+.casa-editorial .casa-hero-facts { display: flex; flex-wrap: wrap; gap: 24px; padding: 0; margin: 0; list-style: none; }
+.casa-editorial .casa-hero-facts li { display: flex; align-items: center; gap: 10px; font-size: .875rem; color: #fff3e9; }
+.casa-editorial .casa-hero-facts svg { width: 21px; height: 21px; color: #ffaf72; }
+.casa-editorial .hero-progress { display: flex; flex: 0 0 auto; width: auto; gap: 8px; margin: 0; }
+.casa-editorial .hero-progress button { width: 30px; min-height: 28px; padding: 0; border: 0; border-radius: 0; background: linear-gradient(transparent 12px,rgba(255,255,255,.4) 12px,rgba(255,255,255,.4) 14px,transparent 14px); }
+.casa-editorial .hero-progress button.is-active { background: linear-gradient(transparent 12px,#ff9a52 12px,#ff9a52 14px,transparent 14px); }
+
+/* Introduction and the signature leisure section. */
+.casa-editorial .casa-intro { padding-block: 130px 145px; }
+.casa-editorial .casa-intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: center; }
+.casa-editorial .casa-intro-copy > p:not(.eyebrow) { max-width: 515px; color: var(--muted); margin: 26px 0; }
+.casa-editorial .casa-intro-copy > p.casa-lead { color: var(--ink); }
+.casa-editorial .casa-signature { display: flex; align-items: center; gap: 14px; margin-top: 38px; padding-top: 24px; border-top: 1px solid var(--line); font-size: .9rem; font-weight: 700; }
+.casa-editorial .casa-signature img { width: auto; height: 52px; }
+.casa-editorial .casa-signature small { display: block; margin-top: 3px; font-size: .8rem; color: var(--muted); font-weight: 500; }
+.casa-editorial .casa-collage { position: relative; min-width: 0; padding: 0 0 70px 42px; }
+.casa-editorial .casa-collage-main { width: 100%; height: auto; aspect-ratio: 4/5; object-fit: cover; border-radius: 3px 72px 3px 3px; }
+.casa-editorial .casa-collage-detail { position: absolute; left: 0; bottom: 0; width: 52%; aspect-ratio: 1/1.05; object-fit: cover; border: 9px solid var(--paper); border-radius: 48px 2px 2px 2px; }
+.casa-editorial .casa-collage-seal { position: absolute; right: 14px; bottom: 0; font: italic 500 1.8rem/1.25 "Cormorant Garamond",serif; color: var(--orange-dark); text-align: center; }
+.casa-editorial .casa-collage-seal small { display: block; margin-top: 5px; font: 650 .75rem/1.5 "Manrope",sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.casa-editorial .casa-signature-section { background: #271d16; color: #f6e9dd; }
+.casa-editorial .casa-signature-grid { display: grid; grid-template-columns: 1.04fr .96fr; align-items: center; gap: 100px; }
+.casa-editorial .casa-signature-photos { position: relative; padding-bottom: 76px; }
+.casa-editorial .casa-signature-main { width: 90%; height: 510px; object-fit: cover; border-radius: 64px 3px 3px 3px; }
+.casa-editorial .casa-signature-detail { position: absolute; width: 51%; height: 265px; bottom: 0; right: 0; object-fit: cover; border: 9px solid #271d16; border-radius: 3px 3px 58px 3px; }
+.casa-editorial .casa-photo-note { position: absolute; bottom: 10px; left: 5px; font: italic 500 1.5rem/1.3 "Cormorant Garamond",Georgia,serif; color: #f4b07d; }
+.casa-editorial .casa-signature-copy h2 { color: #fff5ed; }
+.casa-editorial .casa-signature-copy h2 em { color: #f69b5b; }
+.casa-editorial .casa-signature-copy > p:not(.eyebrow) { margin: 24px 0; color: #d5c5b9; }
+.casa-editorial .casa-feature-list article { display: grid; grid-template-columns: 28px 1fr; gap: 19px; padding: 23px 0; border-top: 1px solid rgba(255,255,255,.17); }
+.casa-editorial .casa-feature-list article > svg { width: 27px; height: 27px; color: #f59c5b; margin-top: 3px; stroke-width: 1.3; }
+.casa-editorial .casa-feature-list h3 { color: #fff4e9; font-size: 1.55rem; }
+.casa-editorial .casa-feature-list p { margin: 10px 0 0; color: #c9b9ad; font-size: .94rem; line-height: 1.7; }
+
+/* Four accommodation portraits, each retaining its complete photo carousel. */
+.casa-editorial .suites-section, .casa-editorial .gallery-section, .casa-editorial .reviews-section, .casa-editorial .faq-section { width: min(100% - 64px, var(--container)); margin-inline: auto; }
+.casa-editorial .rooms-grid { display: grid; grid-template-columns: 1fr; gap: 42px; }
+.casa-editorial .room-card { display: grid; grid-template-columns: 1.1fr .9fr; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; background: #fffdf9; box-shadow: none; transform: none; corner-shape: initial; }
+.casa-editorial .room-card:hover { box-shadow: none; transform: none; border-color: rgba(73,47,30,.3); }
+.casa-editorial .room-card:nth-child(even) { grid-template-columns: .9fr 1.1fr; }
+.casa-editorial .room-card:nth-child(even) .room-card-media { order: 2; }
+.casa-editorial .room-card-media { position: relative; min-width: 0; height: 100%; min-height: 510px; aspect-ratio: auto; border-radius: 0; corner-shape: initial; }
+.casa-editorial .rc-track { display: flex; width: 100%; height: 100%; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.casa-editorial .rc-track > img { display: block; flex: 0 0 100%; width: 100%; min-width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
+.casa-editorial .room-card-gallery-count { position: absolute; left: 20px; top: 20px; display: flex; align-items: center; gap: 7px; padding: 7px 12px; background: rgba(24,18,13,.7); color: #fff; border-radius: 999px; font-size: .75rem; backdrop-filter: blur(8px); pointer-events: none; }
+.casa-editorial .room-card-gallery-count svg { width: 15px; height: 15px; }
+.casa-editorial .rc-arrow { opacity: 1; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.4); background: rgba(30,22,16,.5); color: #fff; box-shadow: none; }
+.casa-editorial .rc-dots { bottom: 22px; gap: 6px; max-width: calc(100% - 22px); }
+.casa-editorial .rc-dot { width: 6px; height: 6px; background: rgba(255,255,255,.5); border: 0; }
+.casa-editorial .rc-dot.is-active { width: 19px; border-radius: 20px; background: #fff; }
+.casa-editorial .room-card-body { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 0; padding: clamp(28px,4vw,56px); text-align: left; background: transparent; }
+.casa-editorial .room-card-kicker { margin: 0 0 13px !important; color: var(--orange-dark) !important; font-size: .8rem !important; font-weight: 750; text-transform: uppercase; letter-spacing: .1em; }
+.casa-editorial .room-card-body h3 { max-width: 100%; font-size: clamp(2.4rem,3.5vw,3.5rem); margin-bottom: 20px; }
+.casa-editorial .room-card-body > p:not(.room-card-kicker) { max-width: 390px; margin: 0; font-size: 1rem; line-height: 1.8; color: var(--muted); }
+.casa-editorial .room-card-features { padding: 0; margin: 26px 0; list-style: none; width: 100%; }
+.casa-editorial .room-card-features li { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .875rem; }
+.casa-editorial .room-card-features svg { width: 18px; height: 18px; color: var(--orange-dark); stroke-width: 1.5; }
+.casa-editorial .room-card-foot { width: 100%; margin-top: 4px; }
+.casa-editorial .room-card-foot .button { width: auto; min-width: 200px; }
+
+.casa-editorial .casa-breakfast { background: #f3e9dd; }
+.casa-editorial .casa-breakfast-grid { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: 100px; }
+.casa-editorial .casa-breakfast-copy p:not(.eyebrow) { margin-top: 26px; color: var(--muted); max-width: 460px; }
+.casa-editorial .casa-breakfast-copy p.casa-lead { color: var(--ink); }
+.casa-editorial .casa-small-note { display: flex; align-items: center; gap: 10px; padding-top: 22px; border-top: 1px solid #d6bfab; color: var(--orange-dark); font-size: .9rem; font-weight: 650; }
+.casa-editorial .casa-small-note svg { width: 21px; height: 21px; }
+.casa-editorial .casa-breakfast-photo { position: relative; }
+.casa-editorial .casa-breakfast-photo img { width: 100%; height: 490px; object-fit: cover; border-radius: 4px 60px 4px 4px; }
+.casa-editorial .casa-breakfast-photo > span { position: absolute; bottom: 24px; left: 24px; background: #fffaf5; color: #633f27; padding: 10px 18px; font-size: .8rem; font-weight: 750; border-radius: 999px; }
+.casa-editorial .casa-immersion { position: relative; isolation: isolate; min-height: 580px; display: flex; align-items: center; color: #fff; overflow: hidden; }
+.casa-editorial .casa-immersion > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.casa-editorial .casa-immersion::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,rgba(23,25,18,.8),rgba(23,25,18,.25)); z-index: -1; }
+.casa-editorial .casa-immersion h2 { color: #fff; font-size: clamp(3.5rem,7vw,6.5rem); }
+.casa-editorial .casa-immersion h2 em { color: #ffbe8c; }
+.casa-editorial .casa-immersion p:last-child { color: #f7e8dc; margin: 28px 0 0; font-size: 1.05rem; }
+
+/* An ordered, filterable gallery with a keyboard-accessible photo viewer. */
+.casa-editorial .casa-gallery-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 30px; }
+.casa-editorial .casa-gallery-filters button { border: 1px solid var(--line); border-radius: 999px; padding: 11px 19px; background: transparent; color: #62564b; font-size: .875rem; cursor: pointer; }
+.casa-editorial .casa-gallery-filters button.is-active { background: #312219; border-color: #312219; color: #fff5ea; }
+.casa-editorial .casa-journal-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; width: 100%; transform: none; }
+.casa-editorial .casa-gallery-tile { position: relative; display: block; padding: 0; border: 0; text-align: left; overflow: hidden; border-radius: 4px; min-width: 0; height: 310px; background: #e6d7c8; cursor: zoom-in; }
+.casa-editorial .casa-gallery-tile.is-wide { grid-column: span 1; }
+.casa-editorial .casa-gallery-tile:nth-child(6n+1) { grid-column: span 2; }
+.casa-editorial .casa-gallery-tile figure { margin: 0; width: 100%; height: 100%; }
+.casa-editorial .casa-gallery-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.casa-editorial .casa-gallery-tile:hover img { transform: scale(1.035); }
+.casa-editorial .casa-gallery-caption { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: end; gap: 5px; padding: 25px; color: #fff; background: linear-gradient(transparent 35%,rgba(22,17,13,.8)); }
+.casa-editorial .casa-gallery-caption small { font-size: .75rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #ffcb9e; }
+.casa-editorial .casa-gallery-caption strong { font: 500 1.85rem/1.1 "Cormorant Garamond",Georgia,serif; }
+.casa-editorial .casa-gallery-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; margin-top: 28px; }
+.casa-editorial .casa-gallery-bottom p { color: var(--muted); font-size: .875rem; margin: 0; }
+.casa-editorial .lightbox { z-index: 150; background: rgba(19,15,12,.96); }
+
+.casa-editorial .reviews-section { padding-top: 0; }
+.casa-editorial .reviews-section .section-heading { text-align: center; display: block; }
+.casa-editorial .reviews-section .eyebrow { justify-content: center; }
+.casa-editorial .reviews-section h2 { margin-inline: auto; }
+.casa-editorial .review-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; }
+.casa-editorial .review-grid blockquote { position: relative; padding: 28px 0; background: none; box-shadow: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; transform: none; }
+.casa-editorial .review-grid blockquote::after { display: none; }
+.casa-editorial .review-grid blockquote > p { font: 500 1.35rem/1.6 "Cormorant Garamond",Georgia,serif; color: #4b3d31; }
+.casa-editorial .stars { color: var(--orange-dark); font-size: .9rem; letter-spacing: .12em; }
+.casa-editorial .review-author { margin-top: 25px; }
+.casa-editorial .review-avatar { background: #ecd9c7; color: #7b411d; box-shadow: none; }
+.casa-editorial .review-author small { font-size: .75rem; }
+
+.casa-editorial .reserve-section { width: 100%; max-width: none; margin: 0; padding-block: 100px; background: #271d16; }
+.casa-editorial .casa-reserve-heading { display: grid; grid-template-columns: 1.35fr .65fr; align-items: end; gap: 80px; margin-bottom: 36px; }
+.casa-editorial .casa-reserve-heading h2 { color: #fff4e9; }
+.casa-editorial .casa-reserve-heading h2 em { color: #f69b5b; }
+.casa-editorial .casa-reserve-heading > p { color: #cdbcb0; font-size: 1rem; margin: 0 0 5px; }
+.casa-editorial .casa-reserve-benefits { display: flex; justify-content: flex-start; gap: 34px; padding: 24px 0 40px; border-top: 1px solid rgba(255,255,255,.17); }
+.casa-editorial .casa-reserve-benefits span { display: flex; align-items: center; gap: 10px; font-size: .875rem; color: #ecdbcf; }
+.casa-editorial .casa-reserve-benefits svg { width: 22px; height: 22px; color: #f4a16c; }
+.casa-editorial .reserve-shell { width: min(100% - 64px,900px); margin: 0 auto; border-radius: 16px; border: 1px solid #6a4c36; background: var(--paper); box-shadow: 0 20px 70px rgba(0,0,0,.15); }
+.casa-editorial .reserve-shell::after { display: none; }
+.casa-editorial .reserve-banner { display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding: 20px 30px; color: #352619; background: #f5eadf; border-bottom: 1px solid var(--line); }
+.casa-editorial .reserve-banner img { height: 50px; width: auto; filter: none; }
+.casa-editorial .reserve-banner > span { font: 600 1.65rem/1.1 "Cormorant Garamond",Georgia,serif; }
+.casa-editorial .reserve-banner small { display: block; margin-top: 5px; font: 500 .8rem/1.5 "Manrope",sans-serif; color: var(--muted); }
+.casa-editorial .booking-form.compact-booking { padding: 28px; }
+.casa-editorial .compact-panel-heading h3 { white-space: normal; font-weight: 600; }
+.casa-editorial .booking-form label { font-size: .875rem; }
+.casa-editorial .booking-form input, .casa-editorial .booking-form select { font-size: 1rem; }
+.casa-editorial .booking-form .button { font-size: .9rem; }
+.casa-editorial .compact-steps button { font-size: .875rem; }
+.casa-editorial .home-coupon-summary { color: #9f3c06; }
+
+.casa-editorial .faq-section { display: grid; grid-template-columns: .85fr 1.15fr; gap: 100px; align-items: start; }
+.casa-editorial .faq-section .section-heading { margin: 0; }
+.casa-editorial .faq-section .section-lead { margin: 26px 0; color: var(--muted); font-size: 1rem; }
+.casa-editorial .faq-list { max-width: none; width: 100%; display: block; }
+.casa-editorial .faq-list details { margin: 0; padding: 0; border: 0; border-radius: 0; border-bottom: 1px solid var(--line); background: transparent; box-shadow: none; }
+.casa-editorial .faq-list details:first-child { border-top: 1px solid var(--line); }
+.casa-editorial .faq-list summary { min-height: 72px; padding: 22px 32px 22px 0; color: var(--ink); font-size: .96rem; line-height: 1.7; font-weight: 650; }
+.casa-editorial .faq-list summary::after { right: 0; top: 23px; color: var(--orange-dark); }
+.casa-editorial .faq-list details p { margin: 0; padding: 0 24px 24px 0; font-size: .94rem; color: var(--muted); }
+.casa-editorial .casa-location-section { display: grid; grid-template-columns: 1.1fr .9fr; background: #efe1d2; }
+.casa-editorial .casa-location-map { min-height: 510px; }
+.casa-editorial .casa-location-map iframe { display: block; border: 0; width: 100%; height: 100%; min-height: 510px; filter: saturate(.7); }
+.casa-editorial .casa-location-copy { padding: 70px clamp(30px,6vw,100px); }
+.casa-editorial .casa-location-copy h2 { font-size: clamp(2.8rem,4.1vw,4rem); }
+.casa-editorial .casa-location-copy p:not(.eyebrow) { margin: 25px 0; color: #6f5b49; font-size: 1rem; }
+.casa-editorial .casa-location-copy ul { list-style: none; padding: 0; margin: 20px 0 28px; }
+.casa-editorial .casa-location-copy li { display: flex; align-items: center; gap: 12px; margin: 9px 0; font-size: .9rem; }
+.casa-editorial .casa-location-copy svg { width: 19px; height: 19px; color: #a44815; }
+.casa-editorial .site-footer { display: block; padding: 75px 0 25px; text-align: left; background: #211912; color: #ddcabc; }
+.casa-editorial .casa-footer-grid { display: grid; grid-template-columns: 1.15fr .65fr 1.3fr .7fr; gap: 45px; }
+.casa-editorial .site-footer .brand img { width: auto; height: 68px; margin: 0; }
+.casa-editorial .casa-footer-brand > p { max-width: 250px; margin-top: 24px; font-size: .875rem; color: #baa696; }
+.casa-editorial .site-footer h2 { margin: 5px 0 23px; font: 700 .8rem/1.5 "Manrope",sans-serif; letter-spacing: .1em; color: #f2a772; text-transform: uppercase; }
+.casa-editorial .casa-footer-grid > div > a:not(.brand) { display: block; width: fit-content; margin: 11px 0; color: #d1beaf; font-size: .875rem; line-height: 1.7; overflow-wrap: anywhere; }
+.casa-editorial .casa-footer-grid > div > a:hover { color: #ffbe8f; }
+.casa-editorial .casa-footer-bottom { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-top: 26px; margin-top: 48px; border-top: 1px solid rgba(255,255,255,.13); font-size: .75rem; color: #ad9785; }
+.casa-editorial .casa-footer-bottom p { margin: 0; }
+.casa-editorial .mobile-float-button { background: #38251a; border-color: #a16c41; color: #fff2e5; box-shadow: 0 4px 14px rgba(25,16,10,.15); }
+.casa-editorial .mobile-calendar-button { background: #c65410; color: white; }
+
+@media (max-width: 1150px) {
+  .casa-editorial .site-header, .casa-editorial .site-header.is-scrolled { gap: 20px; }
+  .casa-editorial .main-nav, .casa-editorial .site-header.is-scrolled .main-nav { gap: 15px; }
+  .casa-editorial .main-nav a { font-size: .875rem; }
+  .casa-editorial .site-header .brand-text strong { font-size: 1.45rem; }
+  .casa-editorial .site-header .brand-text small { font-size: .75rem; }
+  .casa-editorial .casa-intro-grid, .casa-editorial .casa-signature-grid, .casa-editorial .casa-breakfast-grid { gap: 55px; }
+  .casa-editorial .casa-hero .hero-content { grid-template-columns: minmax(0,1fr) 190px; gap: 25px; }
+  .casa-editorial .casa-hero h1 { font-size: 7rem; }
+  .casa-editorial .casa-footer-grid { gap: 25px; grid-template-columns: 1fr .65fr 1.3fr .7fr; }
+}
+@media (max-width: 1080px) {
+  .casa-editorial .site-header, .casa-editorial .site-header.is-scrolled { grid-template-columns: 1fr auto auto; min-height: 82px; padding: 12px 24px; }
+  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { height: 54px; }
+  .casa-editorial .nav-toggle, .casa-editorial .site-header.is-scrolled .nav-toggle { display: flex; align-items: center; gap: 7px; padding: 9px; color: #fff; border: 0; background: none; order: 3; }
+  .casa-editorial .nav-toggle span { display: none; }
+  .casa-editorial .main-nav, .casa-editorial .site-header.is-scrolled .main-nav { position: absolute; top: 100%; left: 0; right: 0; display: none; flex-direction: column; align-items: stretch; padding: 18px 28px 28px; background: #271d16; border-radius: 0; box-shadow: 0 20px 30px #0003; }
+  .casa-editorial .main-nav.is-open, .casa-editorial .site-header.is-scrolled .main-nav.is-open { display: flex; }
+  .casa-editorial .main-nav a { font-size: 1rem; padding: 7px 0; }
+  .casa-editorial .header-actions { order: 2; }
+  .casa-editorial .casa-hero .hero-content { grid-template-columns: 1fr; }
+  .casa-editorial .casa-hero-note { display: none; }
+  .casa-editorial .casa-hero h1 { font-size: clamp(4.5rem,10vw,7rem); }
+  .casa-editorial .casa-hero { min-height: 830px; padding-top: 120px; }
+  .casa-editorial .casa-hero-facts { gap: 14px; }
+  .casa-editorial .casa-hero-facts li { font-size: .75rem; gap: 7px; }
+  .casa-editorial .casa-intro-grid, .casa-editorial .casa-signature-grid, .casa-editorial .casa-breakfast-grid { gap: 35px; }
+  .casa-editorial .casa-signature-main { height: 490px; }
+  .casa-editorial .casa-signature-detail { height: 220px; width: 60%; }
+  .casa-editorial .casa-section-heading { gap: 30px; grid-template-columns: 1.1fr .9fr; }
+  .casa-editorial .room-card-body { padding: 28px; }
+  .casa-editorial .room-card-media { min-height: 480px; }
+  .casa-editorial .room-card-body h3 { font-size: 2.6rem; }
+  .casa-editorial .casa-breakfast-photo img { height: 480px; }
+  .casa-editorial .casa-reserve-heading { gap: 35px; }
+  .casa-editorial .casa-reserve-benefits { gap: 24px; }
+  .casa-editorial .casa-reserve-benefits span { font-size: .75rem; }
+  .casa-editorial .faq-section { grid-template-columns: .85fr 1.15fr; gap: 45px; }
+  .casa-editorial .casa-footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+}
+@media (max-width: 700px) {
+  .casa-editorial .casa-container, .casa-editorial .suites-section, .casa-editorial .gallery-section, .casa-editorial .reviews-section, .casa-editorial .faq-section { width: calc(100% - 40px); }
+  .casa-editorial .section { padding-block: 76px; }
+  .casa-editorial h2 { font-size: clamp(2.75rem,9vw,3.7rem); }
+  .casa-editorial .eyebrow { font-size: .75rem; letter-spacing: .09em; margin-bottom: 19px; }
+  .casa-editorial .site-header, .casa-editorial .site-header.is-scrolled { padding: 10px 18px; gap: 13px; min-height: 76px; }
+  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { height: 50px; }
+  .casa-editorial .site-header .brand-text strong { font-size: 1.4rem; }
+  .casa-editorial .site-header .brand-text small, .casa-editorial .site-header.is-scrolled .brand-text small { display: none; }
+  .casa-editorial .header-actions .button { min-height: 40px; padding: 10px 15px; font-size: .875rem; }
+  .casa-editorial .header-actions .button svg { display: none; }
+  .casa-editorial .nav-toggle { padding: 8px 0; }
+  .casa-editorial .casa-hero { min-height: 780px; min-height: max(740px,100svh); padding: 128px 0 150px; }
+  .casa-editorial .casa-hero .hero-content { padding: 16px 0 35px; }
+  .casa-editorial .casa-hero h1 { font-size: clamp(4.2rem,13.5vw,6rem); letter-spacing: -.045em; line-height: 1; }
+  .casa-editorial .casa-hero .eyebrow { font-size: .75rem; letter-spacing: .06em; }
+  .casa-editorial .casa-hero-lead { font-size: 1rem; max-width: 380px; margin-top: 25px; }
+  .casa-editorial .hero-overlay { background: linear-gradient(90deg,rgba(25,18,13,.76),rgba(25,18,13,.37)),linear-gradient(0deg,rgba(25,18,13,.85),transparent 50%); }
+  .casa-editorial .hero-slide { object-position: 57% center; }
+  .casa-editorial .hero-actions { gap: 24px; margin-top: 27px; }
+  .casa-editorial .hero-actions .button { width: auto; min-height: 52px; padding-inline: 21px; }
+  .casa-editorial .casa-text-link { font-size: .875rem; }
+  .casa-editorial .casa-hero-bottom { padding: 22px 0; gap: 15px; align-items: end; }
+  .casa-editorial .casa-hero-facts { display: grid; gap: 10px; }
+  .casa-editorial .casa-hero-facts li { font-size: .75rem; }
+  .casa-editorial .casa-hero-facts svg { width: 18px; height: 18px; }
+  .casa-editorial .hero-progress { gap: 6px; }
+  .casa-editorial .hero-progress button { width: 20px; }
+  .casa-editorial .casa-intro-grid, .casa-editorial .casa-signature-grid, .casa-editorial .casa-breakfast-grid, .casa-editorial .casa-section-heading { grid-template-columns: 1fr; gap: 42px; }
+  .casa-editorial .casa-intro-copy > p:not(.eyebrow) { margin-block: 24px; }
+  .casa-editorial .casa-lead { font-size: 1.1rem; }
+  .casa-editorial .casa-collage { padding: 0 0 65px 28px; margin-top: 8px; }
+  .casa-editorial .casa-collage-main { aspect-ratio: 1/1.1; border-top-right-radius: 58px; }
+  .casa-editorial .casa-collage-detail { width: 50%; border-width: 7px; }
+  .casa-editorial .casa-collage-seal { right: 8px; font-size: 1.65rem; }
+  .casa-editorial .casa-collage-seal small { font-size: .75rem; }
+  .casa-editorial .casa-signature-photos { order: 2; margin-top: 0; padding-bottom: 70px; }
+  .casa-editorial .casa-signature-main { height: 390px; width: 90%; border-top-left-radius: 50px; }
+  .casa-editorial .casa-signature-detail { height: 210px; width: 52%; }
+  .casa-editorial .casa-photo-note { font-size: 1.35rem; }
+  .casa-editorial .casa-feature-list article { padding-block: 22px; }
+  .casa-editorial .casa-feature-list h3 { font-size: 1.65rem; }
+  .casa-editorial .section-heading { margin-bottom: 34px; }
+  .casa-editorial .casa-section-heading { gap: 25px; }
+  .casa-editorial .rooms-grid { gap: 30px; }
+  .casa-editorial .room-card, .casa-editorial .room-card:nth-child(even) { grid-template-columns: 1fr; }
+  .casa-editorial .room-card:nth-child(even) .room-card-media { order: 0; }
+  .casa-editorial .room-card-media { min-height: 0; height: auto; aspect-ratio: 4/3; }
+  .casa-editorial .room-card-body { padding: 28px 25px 32px; }
+  .casa-editorial .room-card-body h3 { font-size: 2.8rem; }
+  .casa-editorial .room-card-foot .button { width: 100%; }
+  .casa-editorial .casa-breakfast-grid { gap: 35px; }
+  .casa-editorial .casa-breakfast-photo img { height: 340px; border-top-right-radius: 50px; }
+  .casa-editorial .casa-immersion { min-height: 530px; }
+  .casa-editorial .casa-immersion h2 { font-size: 4rem; }
+  .casa-editorial .casa-immersion p:last-child { max-width: 280px; }
+  .casa-editorial .casa-gallery-filters { gap: 8px; }
+  .casa-editorial .casa-gallery-filters button { font-size: .875rem; padding: 10px 13px; }
+  .casa-editorial .casa-journal-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .casa-editorial .casa-gallery-tile { height: 235px; }
+  .casa-editorial .casa-gallery-tile:nth-child(6n+1) { grid-column: span 2; height: 280px; }
+  .casa-editorial .casa-gallery-caption { padding: 17px; }
+  .casa-editorial .casa-gallery-caption strong { font-size: 1.5rem; }
+  .casa-editorial .casa-gallery-caption small { font-size: .75rem; }
+  .casa-editorial .casa-gallery-bottom { justify-content: center; text-align: center; }
+  .casa-editorial .review-grid { grid-template-columns: 1fr; gap: 8px; }
+  .casa-editorial .review-grid blockquote { padding: 25px 0; }
+  .casa-editorial .reviews-section { padding-top: 0; }
+  .casa-editorial .casa-reserve-heading { grid-template-columns: 1fr; gap: 24px; }
+  .casa-editorial .casa-reserve-benefits { flex-wrap: wrap; column-gap: 22px; row-gap: 15px; padding: 24px 0 30px; }
+  .casa-editorial .casa-reserve-benefits span { font-size: .8rem; }
+  .casa-editorial .casa-reserve-benefits svg { width: 19px; height: 19px; }
+  .casa-editorial .reserve-shell { width: calc(100% - 24px); border-radius: 12px; }
+  .casa-editorial .reserve-banner { padding: 18px 20px; }
+  .casa-editorial .booking-form.compact-booking { padding: 22px 14px 16px; }
+  .casa-editorial .compact-steps button { font-size: .75rem; }
+  .casa-editorial .faq-section { display: grid; grid-template-columns: 1fr; gap: 35px; }
+  .casa-editorial .faq-list summary { font-size: .94rem; }
+  .casa-editorial .casa-location-section { grid-template-columns: 1fr; }
+  .casa-editorial .casa-location-copy { order: -1; padding: 65px 25px; }
+  .casa-editorial .casa-location-map, .casa-editorial .casa-location-map iframe { min-height: 340px; height: 340px; }
+  .casa-editorial .site-footer { padding-block: 60px 100px; }
+  .casa-editorial .casa-footer-grid { grid-template-columns: 1fr 1fr; gap: 35px 25px; }
+  .casa-editorial .casa-footer-grid > div:nth-child(1), .casa-editorial .casa-footer-grid > div:nth-child(3) { grid-column: span 2; }
+  .casa-editorial .casa-footer-grid > div:nth-child(2) { order: 3; }
+  .casa-editorial .casa-footer-grid > div:nth-child(4) { order: 4; }
+  .casa-editorial .casa-footer-brand > p { max-width: none; }
+  .casa-editorial .casa-footer-bottom { flex-direction: column; align-items: start; gap: 14px; margin-top: 35px; font-size: .75rem; }
+  .casa-editorial .site-footer .brand-text strong { font-size: 1.8rem; }
+}
+@media (max-width: 370px) {
+  .casa-editorial .site-header .brand-text strong { font-size: 1.2rem; }
+  .casa-editorial .site-header .brand { gap: 8px; }
+  .casa-editorial .casa-hero h1 { font-size: 3.9rem; }
+  .casa-editorial .header-actions .button { padding-inline: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .casa-editorial *, .casa-editorial *::before, .casa-editorial *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}

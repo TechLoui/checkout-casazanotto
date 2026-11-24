@@ -2307,7 +2307,7 @@ const initGalleryCarousel = () => {
   const prevL = document.querySelector("[data-lightbox-prev]");
   const nextL = document.querySelector("[data-lightbox-next]");
 
-  if (!track || !nav || !prevBtn || !nextBtn) return;
+  if (track?.hasAttribute("data-casa-gallery") || !track || !nav || !prevBtn || !nextBtn) return;
 
   const STEP = 28; // graus por card
   const OFFSET = 48; // % de deslocamento vertical por card
@@ -2454,6 +2454,10 @@ const initYear = () => {
 
 const fitOneLineTitle = (title) => {
   if (!(title instanceof HTMLElement)) return;
+  if (document.body.classList.contains("casa-editorial") && !title.closest("[data-compact-booking]")) {
+    title.style.fontSize = "";
+    return;
+  }
 
   title.style.fontSize = "";
   const computed = window.getComputedStyle(title);
@@ -2613,6 +2617,7 @@ const accommodations = [
   },
   {
     slug: "bangalo", name: "Bangalô Colonial", count: 14, tag: "Charme colonial",
+    photos: [8, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14],
     desc: "Privacidade e charme colonial em meio ao jardim, perfeito para casais."
   }
 ];
@@ -2659,29 +2664,37 @@ const initRooms = () => {
 
   container.innerHTML = accommodations
     .map((room) => {
-      const slides = Array.from({ length: room.count }, (_, i) => {
-        const src = `assets/rooms/${room.slug}/${String(i + 1).padStart(2, "0")}.webp`;
+      const photos = room.photos || Array.from({ length: room.count }, (_, i) => i + 1);
+      const slides = photos.map((number, i) => {
+        const src = `assets/rooms/${room.slug}/${String(number).padStart(2, "0")}.webp`;
         return `<img src="${src}" alt="${room.name}, foto ${i + 1}" loading="lazy" draggable="false">`;
       }).join("");
       const dots = Array.from({ length: room.count }, (_, i) =>
         `<button type="button" class="rc-dot${i === 0 ? " is-active" : ""}" data-dot="${i}" aria-label="Foto ${i + 1}"></button>`
       ).join("");
       return `
-      <article class="room-card" data-room-card>
+      <article class="room-card room-card--${room.slug}" data-room-card>
         <div class="room-card-media">
           <div class="rc-track" data-rc-track>${slides}</div>
-          <span class="room-card-tag">${room.tag}</span>
+          <span class="room-card-gallery-count"><i data-lucide="images" aria-hidden="true"></i> ${room.count} fotos</span>
           <button class="rc-arrow rc-prev" type="button" data-rc-prev aria-label="Foto anterior"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
           <button class="rc-arrow rc-next" type="button" data-rc-next aria-label="Próxima foto"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
           <div class="rc-dots">${dots}</div>
         </div>
         <div class="room-card-body">
+          <p class="room-card-kicker">${room.tag}</p>
           <h3>${room.name}</h3>
           <p>${room.desc}</p>
+          <ul class="room-card-features">
+            <li><i data-lucide="wind" aria-hidden="true"></i><span>Ar-condicionado</span></li>
+            <li><i data-lucide="tv" aria-hidden="true"></i><span>TV Smart e frigobar</span></li>
+            <li><i data-lucide="bed-double" aria-hidden="true"></i><span>Enxoval premium</span></li>
+            <li><i data-lucide="coffee" aria-hidden="true"></i><span>Café da manhã incluso</span></li>
+            ${room.slug === "gold" ? '<li><i data-lucide="sun" aria-hidden="true"></i><span>Varanda privativa</span></li>' : ""}
+          </ul>
           <div class="room-card-foot">
-            <span class="room-card-count"><i data-lucide="images" aria-hidden="true"></i> ${room.count} fotos</span>
             <a class="button button-primary" href="#reservar">
-              <i data-lucide="calendar-check" aria-hidden="true"></i> Reservar
+              <i data-lucide="calendar-check" aria-hidden="true"></i> Ver disponibilidade
             </a>
           </div>
         </div>
