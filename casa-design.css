@@ -63,8 +63,8 @@ body.casa-editorial {
 }
 .casa-editorial .site-header.is-scrolled { position: fixed; min-height: 80px; padding-block: 10px; background: rgba(33,25,18,.97); box-shadow: 0 8px 30px rgba(20,14,8,.12); }
 .casa-editorial .brand { display: flex; align-items: center; gap: 13px; flex-shrink: 0; color: white; }
-.casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { width: auto; height: 66px; margin: 0; filter: none; }
-.casa-editorial .site-header.is-scrolled .brand img { height: 54px; }
+.casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { display: block; width: 252px; height: auto; max-width: none; margin: 0; filter: none; }
+.casa-editorial .site-header.is-scrolled .brand img { width: 218px; }
 .casa-editorial .brand-text, .casa-editorial .site-header.is-scrolled .brand-text { display: grid; gap: 3px; color: #fff; opacity: 1; max-width: none; transform: none; }
 .casa-editorial .brand-text strong { font: 600 1.6rem/1 "Cormorant Garamond", Georgia, serif; letter-spacing: -.02em; text-transform: none; }
 .casa-editorial .brand-text small, .casa-editorial .site-header.is-scrolled .brand-text small { color: #e3cbbc; font: 500 .75rem/1.4 "Manrope", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
@@ -268,7 +268,7 @@ body.casa-editorial {
 }
 @media (max-width: 1080px) {
   .casa-editorial .site-header, .casa-editorial .site-header.is-scrolled { grid-template-columns: 1fr auto auto; min-height: 82px; padding: 12px 24px; }
-  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { height: 54px; }
+  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { width: 218px; height: auto; }
   .casa-editorial .nav-toggle, .casa-editorial .site-header.is-scrolled .nav-toggle { display: flex; align-items: center; gap: 7px; padding: 9px; color: #fff; border: 0; background: none; order: 3; }
   .casa-editorial .nav-toggle span { display: none; }
   .casa-editorial .main-nav, .casa-editorial .site-header.is-scrolled .main-nav { position: absolute; top: 100%; left: 0; right: 0; display: none; flex-direction: column; align-items: stretch; padding: 18px 28px 28px; background: #271d16; border-radius: 0; box-shadow: 0 20px 30px #0003; }
@@ -301,7 +301,7 @@ body.casa-editorial {
   .casa-editorial h2 { font-size: clamp(2.75rem,9vw,3.7rem); }
   .casa-editorial .eyebrow { font-size: .75rem; letter-spacing: .09em; margin-bottom: 19px; }
   .casa-editorial .site-header, .casa-editorial .site-header.is-scrolled { padding: 10px 18px; gap: 13px; min-height: 76px; }
-  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { height: 50px; }
+  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { width: 180px; height: auto; }
   .casa-editorial .site-header .brand-text strong { font-size: 1.4rem; }
   .casa-editorial .site-header .brand-text small, .casa-editorial .site-header.is-scrolled .brand-text small { display: none; }
   .casa-editorial .header-actions .button { min-height: 40px; padding: 10px 15px; font-size: .875rem; }
@@ -386,6 +386,7 @@ body.casa-editorial {
   .casa-editorial .site-footer .brand-text strong { font-size: 1.8rem; }
 }
 @media (max-width: 370px) {
+  .casa-editorial .site-header .brand img, .casa-editorial .site-header.is-scrolled .brand img { width: 142px; }
   .casa-editorial .site-header .brand-text strong { font-size: 1.2rem; }
   .casa-editorial .site-header .brand { gap: 8px; }
   .casa-editorial .casa-hero h1 { font-size: 3.9rem; }
