@@ -1,5 +1,6 @@
 import qs from "qs";
 import { config } from "./config.js";
+import { findAvailableCoupon, applyCouponToRooms } from "./coupons.js";
 
 const baseHeaders = () => ({
   ClientId: config.artax.clientId,
@@ -79,7 +80,7 @@ const preparePublicAvailability = (data) => {
  * Verifica disponibilidade de quartos.
  * GET /rooms/availability — parâmetros enviados na query string.
  */
-export const checkAvailability = async ({ arrival_date, departure_date, adults, kids, ages = [] }) => {
+export const checkAvailability = async ({ arrival_date, departure_date, adults, kids, ages = [], coupon }) => {
   const query = qs.stringify(
     { arrival_date, departure_date, adults, kids, ages },
     { arrayFormat: "indices", encodeValuesOnly: true }
@@ -92,7 +93,23 @@ export const checkAvailability = async ({ arrival_date, departure_date, adults, 
   if (!response.ok) {
     throw new ArtaxError(data.error || "Falha ao consultar disponibilidade.", response.status, data);
   }
-  return preparePublicAvailability(data);
+  const publicData = preparePublicAvailability(data);
+  if (!coupon) return publicData;
+  const couponQuery = qs.stringify({ available: 1, arrival_date, departure_date });
+  const couponResponse = await fetch(`${config.artax.baseUrl}/coupons?${couponQuery}`, {
+    method: "GET",
+    headers: baseHeaders()
+  });
+  const couponData = await parseJsonSafe(couponResponse);
+  if (!couponResponse.ok) {
+    throw new ArtaxError("Não foi possível validar o cupom. Tente novamente.", couponResponse.status, {});
+  }
+  const availableCoupon = findAvailableCoupon(couponData, coupon);
+  return applyCouponToRooms(publicData, availableCoupon, {
+    priceMode: config.artax.priceMode,
+    arrival_date,
+    departure_date
+  });
 };
 
 /**

@@ -3180,6 +3180,7 @@ h3 {
 .premium-booking-form .home-guest-grid select,
 .premium-booking-form .home-card-grid input,
 .premium-booking-form .home-card-grid select,
+.premium-booking-form .home-coupon-field input,
 .premium-booking-form .home-pix-result textarea {
   width: 100%;
   min-height: 52px;
@@ -3197,9 +3198,24 @@ h3 {
 .premium-booking-form .home-guest-grid input:focus,
 .premium-booking-form .home-guest-grid select:focus,
 .premium-booking-form .home-card-grid input:focus,
-.premium-booking-form .home-card-grid select:focus {
+.premium-booking-form .home-card-grid select:focus,
+.premium-booking-form .home-coupon-field input:focus {
   border-color: var(--orange);
   box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.14);
+}
+
+.home-coupon-field small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.home-coupon-summary,
+.home-room-body .home-coupon-summary {
+  margin: 0;
+  color: var(--orange-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .home-card-grid .wide {

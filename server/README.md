@@ -53,6 +53,29 @@ O servidor sobe em `http://localhost:8080` (ou na `PORT` do `.env`).
 | `GET` | `/api/cost-centers` | Lista centros de custo do Artax |
 | `POST` | `/api/webhooks/artax` | Recebe webhooks do Artax (valida assinatura) |
 
+### Cupom na cotação e no pagamento
+
+`GET /api/availability` aceita o parâmetro opcional `coupon`. O servidor
+consulta `GET /coupons?available=1&arrival_date=...&departure_date=...` no
+Artax da própria pousada e procura o código informado, preservando maiúsculas
+e minúsculas. A lista completa de cupons fica apenas no servidor.
+
+Cupons do tipo `percentage` aplicam o desconto às categorias e aos planos
+tarifários permitidos. O desconto é arredondado ao centavo por acomodação.
+O retorno inclui os preços finais, `coupon` com o código validado e
+`coupon_applied` nas tarifas elegíveis. Ao pagar, o site envia o código e
+`quoted_amount_cents`; o backend repete a consulta e exige o mesmo total
+antes de autorizar o cartão ou gerar o Pix. Os valores líquidos seguem no
+pagamento, no financeiro, nas confirmações e em `room_units[...][price]` da
+reserva. O comentário no PMS identifica o cupom aplicado pelo site.
+
+Esta integração usa a configuração disponível pela consulta de cupons. O
+contrato fornecido não expõe uma operação de consumo do cupom nem os dados
+do beneficiário na listagem. Assim, a baixa de quantidade de usos e a
+validação de cupons pessoais por documento no Artax ainda dependem de
+confirmação desse contrato. Cupons de 100% exigem atendimento pela Central
+de Reservas, pois o checkout trabalha com valores positivos.
+
 ### Exemplo `POST /api/checkout`
 ```json
 {

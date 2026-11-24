@@ -114,6 +114,7 @@ const resolveAuthoritativeOption = (availability, roomId, rateplanId) => {
     rateplanId: Number(option.rateplan_id) || Number(rateplanId),
     price,
     capacity: option.capacity || null,
+    couponApplied: option.coupon_applied === true,
     allots: option.allots
   };
 };
@@ -130,7 +131,8 @@ const resolveStay = async (input) => {
     departure_date: input.departure_date,
     adults: input.adults,
     kids: input.kids,
-    ages: input.ages
+    ages: input.ages,
+    coupon: input.coupon
   });
   const nights = nightsBetween(input.arrival_date, input.departure_date);
 
@@ -141,13 +143,20 @@ const resolveStay = async (input) => {
       throw new ValidationError("Uma das acomodações selecionadas não está mais disponível para estas datas. Refaça a busca.");
     }
     const totalPrice =
-      config.artax.priceMode === "per_night" ? Number((option.price * nights).toFixed(2)) : option.price;
+      !input.coupon && config.artax.priceMode === "per_night" ? Number((option.price * nights).toFixed(2)) : option.price;
     grandTotal += totalPrice;
     return { roomId, option, totalPrice };
   });
 
   grandTotal = Number(grandTotal.toFixed(2));
-  return { rooms, totalPrice: grandTotal, amountCents: Math.round(grandTotal * 100) };
+  const amountCents = Math.round(grandTotal * 100);
+  if (input.coupon && !rooms.some((room) => room.option.couponApplied)) {
+    throw new ValidationError("O cupom não se aplica às acomodações selecionadas. Escolha outra opção ou remova o cupom.");
+  }
+  if (input.coupon && amountCents !== input.quotedAmountCents) {
+    throw new ValidationError("O valor com o cupom mudou. Refaça a busca e confirme o novo total antes de pagar.");
+  }
+  return { rooms, totalPrice: grandTotal, amountCents };
 };
 
 const appendOrigemToComment = (comment, origem) => {
@@ -208,6 +217,7 @@ const bookStay = async ({ input, rooms, reference, tid, amountCents, method = "c
   // Com pagamento dividido, os dois TIDs vão no comentário — é por eles que a
   // recepção concilia a reserva com as transações no painel da Rede.
   const comment = [
+    input.coupon ? `Cupom aplicado no site: ${input.coupon}` : "",
     input.comment,
     `Acomodações: ${roomNames}`,
     `Pagamento Rede TID ${(tids && tids.length ? tids.join(" + ") : tid)} ref ${reference}`

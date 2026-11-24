@@ -28,7 +28,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261110-1">
+    <link rel="stylesheet" href="styles.css?v=20261124-1">
     <style>
       .booking-form .home-privacy-pref p { margin: 0 0 0.5rem; }
       .booking-form .home-privacy-pref label { grid-template-columns: auto 1fr; align-items: start; gap: 0.5rem; cursor: pointer; }
@@ -39,7 +39,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-    <script src="script.js?v=20261116-1" defer></script>
+    <script src="script.js?v=20261124-1" defer></script>
     <script src="hero.js?v=20260722-1" defer></script>
     <!-- Start Asksuite Pixel -->
     <script src="https://pixel.asksuite.com/asktag.js"></script>
@@ -547,6 +547,10 @@
                   <div class="home-ages-grid" data-home-ages></div>
                 </div>
               </div>
+              <label class="home-coupon-field">
+                <span>Cupom de desconto <small>(opcional)</small></span>
+                <input name="coupon" type="text" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Digite seu cupom" data-home-coupon>
+              </label>
               <div class="compact-actions two-actions">
                 <button class="button button-ghost" type="button" data-home-prev="dates">
                   <i data-lucide="arrow-left" aria-hidden="true"></i>
@@ -570,6 +574,7 @@
                 <span data-home-review-out>-</span>
                 <span data-home-review-guests>-</span>
               </div>
+              <p class="home-coupon-summary" data-home-coupon-applied hidden aria-live="polite"></p>
               <div class="home-room-list" data-home-room-list aria-live="polite"></div>
               <p class="home-form-notice" data-home-notice hidden></p>
               <p class="home-hint" data-home-rooms-hint hidden>Pode escolher mais de uma acomodação para a mesma reserva.</p>
@@ -659,6 +664,7 @@
                 <div><span>Check-in</span><strong data-home-review-in>-</strong></div>
                 <div><span>Check-out</span><strong data-home-review-out>-</strong></div>
               </div>
+              <p class="home-coupon-summary" data-home-coupon-applied hidden></p>
               <div class="home-pay-choice">
                 <button class="is-active" type="button" data-home-pay-method="pix" aria-pressed="true">
                   <i data-lucide="qr-code" aria-hidden="true"></i>

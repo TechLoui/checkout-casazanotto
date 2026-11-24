@@ -665,7 +665,8 @@ const homeFlattenRooms = (rooms) => {
       .filter(({ opt }) => !/b2b/i.test(opt?.rateplan_name || ""));
     if (!publicPlans.length) continue;
     publicPlans.sort((a, b) => Number(a.opt.price) - Number(b.opt.price));
-    const { rateId, opt } = publicPlans[0];
+    const { rateId, opt } = publicPlans.find(({ opt }) => opt.coupon_applied === true)
+      || publicPlans[0];
     const fullName = opt.room_name || `Quarto ${roomId}`;
     const roomName = fullName.split("|")[0].trim();
     const artaxImages = homeExtractArtaxImages(opt);
@@ -679,6 +680,7 @@ const homeFlattenRooms = (rooms) => {
       variant: (fullName.split("|")[1] || "").trim(),
       price: Number(opt.price || 0),
       pricePerNight: Number(opt.price_per_nights) || null,
+      couponApplied: opt.coupon_applied === true,
       images: safeImages,
       image: safeImages[0]
     });
@@ -694,6 +696,7 @@ const homeBuildAvailabilityParams = (search) => {
     kids: String(search.kids)
   });
   (search.ages || []).forEach((age) => params.append("ages", String(age)));
+  if (search.coupon) params.set("coupon", search.coupon);
   return params;
 };
 
@@ -731,6 +734,7 @@ const initCompactBookingFlow = () => {
   const grid = form.querySelector("[data-home-cal-grid]");
   const adultsInput = form.querySelector("[data-home-adults]");
   const kidsInput = form.querySelector("[data-home-kids]");
+  const couponInput = form.querySelector("[data-home-coupon]");
   const agesWrap = form.querySelector("[data-home-ages-wrap]");
   const agesBox = form.querySelector("[data-home-ages]");
   const roomList = form.querySelector("[data-home-room-list]");
@@ -753,6 +757,7 @@ const initCompactBookingFlow = () => {
     rooms: [],
     selectedRooms: [],
     search: null,
+    coupon: null,
     payMethod: "pix",
     pixPoll: null,
     pix: null,
@@ -763,6 +768,7 @@ const initCompactBookingFlow = () => {
   let selecting = "in";
   let activeStep = "dates";
   let view = new Date(today.getFullYear(), today.getMonth(), 1);
+  let availabilityRequestId = 0;
 
   const setText = (selector, text) => {
     form.querySelectorAll(selector).forEach((element) => {
@@ -783,16 +789,20 @@ const initCompactBookingFlow = () => {
   };
 
   const resetAvailability = () => {
+    availabilityRequestId += 1;
     state.rooms = [];
     state.selectedRooms = [];
     state.search = null;
+    state.coupon = null;
     if (roomList) roomList.innerHTML = "";
     if (roomsHint) roomsHint.hidden = true;
     if (selectedRoom) selectedRoom.textContent = "";
     clearNotice(notice);
     clearNotice(guestNotice);
     clearNotice(payNotice);
-    updateCartSummary();
+    form.querySelectorAll("[data-home-split-amount]").forEach((input) => { input.value = ""; });
+    if (cardCount === 2) goToCardStep("amounts");
+    updateReview();
   };
 
   const cartTotal = () => state.selectedRooms.reduce((sum, r) => sum + r.price, 0);
@@ -815,6 +825,7 @@ const initCompactBookingFlow = () => {
 
   const setPayBusy = (busy, label) => {
     state.paymentBusy = busy;
+    if (couponInput) couponInput.disabled = busy || Boolean(state.pix) || Boolean(partialSession);
     if (paySubmit) paySubmit.disabled = busy;
     if (paySubmitLabel && label) paySubmitLabel.textContent = label;
   };
@@ -826,7 +837,8 @@ const initCompactBookingFlow = () => {
       departure_date: departureInput.value,
       adults: Number(adultsInput.value || 1),
       kids,
-      ages: Array.from(form.querySelectorAll("[data-home-age]")).slice(0, kids).map((input) => Number(input.value || 6))
+      ages: Array.from(form.querySelectorAll("[data-home-age]")).slice(0, kids).map((input) => Number(input.value || 6)),
+      coupon: couponInput?.value.trim() || undefined
     };
   };
 
@@ -839,6 +851,10 @@ const initCompactBookingFlow = () => {
     setText("[data-home-review-out]", fullDateLabel(departureInput.value));
     setText("[data-home-review-guests]", guestText);
     setText("[data-home-review-nights]", nights ? `${nights} noite(s)` : "-");
+    form.querySelectorAll("[data-home-coupon-applied]").forEach((element) => {
+      element.hidden = !state.coupon;
+      element.textContent = state.coupon ? `Cupom ${state.coupon} · válido nas opções indicadas.` : "";
+    });
 
     if (state.selectedRooms.length) {
       const roomLabel = (r) => (r.variant ? `${r.room_name} · ${r.variant}` : r.room_name);
@@ -907,6 +923,10 @@ const initCompactBookingFlow = () => {
       activeStep = "dates";
     } else if ((step === "guest" || step === "payment") && !state.selectedRooms.length) {
       activeStep = "rooms";
+    } else if ((step === "guest" || step === "payment") && state.search?.coupon
+      && !state.selectedRooms.some((room) => room.couponApplied)) {
+      activeStep = "rooms";
+      showNotice(notice, "Selecione uma acomodação com o cupom ou retire o código e refaça a busca.");
     } else {
       activeStep = step;
     }
@@ -1154,6 +1174,7 @@ const initCompactBookingFlow = () => {
           <div class="home-room-body">
             <h4>${homeEscapeHTML(room.room_name)}</h4>
             ${room.variant ? `<p>${homeEscapeHTML(room.variant)}</p>` : ""}
+            ${room.couponApplied ? '<p class="home-coupon-summary">Cupom aplicado</p>' : ""}
             <div class="home-room-price">
               <span>
                 ${room.pricePerNight ? `<small>${homeBrl(room.pricePerNight)} / noite</small>` : ""}
@@ -1171,8 +1192,10 @@ const initCompactBookingFlow = () => {
   };
 
   const fetchAvailability = async () => {
+    if (state.paymentBusy || state.pix || partialSession) return false;
     clearNotice(notice);
     resetAvailability();
+    const requestId = availabilityRequestId;
     const search = buildSearch();
     if (compactNightsBetween(search.arrival_date, search.departure_date) < 1) {
       goToStep("dates");
@@ -1185,10 +1208,18 @@ const initCompactBookingFlow = () => {
     try {
       const res = await fetch(`${HOME_API_BASE}/availability?${homeBuildAvailabilityParams(search).toString()}`);
       const data = await homeReadApiJson(res, "Não foi possível consultar disponibilidade.");
+      if (requestId !== availabilityRequestId) return false;
+      if (search.coupon && typeof data.coupon?.code !== "string") {
+        throw new Error("Não foi possível validar o cupom. Tente novamente ou remova o código.");
+      }
       const rooms = homeFlattenRooms(data.rooms);
+      state.coupon = search.coupon ? data.coupon.code : null;
       renderRooms(rooms);
+      updateReview();
       return rooms.length > 0;
     } catch (error) {
+      if (requestId !== availabilityRequestId) return false;
+      state.search = null;
       if (roomList) roomList.innerHTML = "";
       showNotice(notice, error.message || "Não foi possível consultar disponibilidade.");
       return false;
@@ -1261,6 +1292,7 @@ const initCompactBookingFlow = () => {
     return {
       ...state.search,
       rooms,
+      quoted_amount_cents: state.search?.coupon ? Math.round(cartTotal() * 100) : undefined,
       // Compatibilidade temporária com versões anteriores do backend no Railway.
       // O backend atual usa `rooms`; o legado espera estes campos na raiz.
       room_id: primaryRoom?.room_id,
@@ -1537,6 +1569,7 @@ const initCompactBookingFlow = () => {
 
   const hidePartial = () => {
     partialSession = null;
+    if (couponInput) couponInput.disabled = state.paymentBusy || Boolean(state.pix);
     const box = form.querySelector("[data-home-partial]");
     if (box) box.hidden = true;
     const choice = form.querySelector(".home-split-choice");
@@ -1768,6 +1801,8 @@ const initCompactBookingFlow = () => {
     stepper.querySelector("[data-home-inc]")?.addEventListener("click", () => set(Number(input.value) + 1));
   });
 
+  couponInput?.addEventListener("input", resetAvailability);
+
   roomList?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-home-room-select]");
     if (!button) return;
@@ -1992,8 +2027,9 @@ const initCompactBookingFlow = () => {
     // Usado tanto por widgets internos quanto pelo deep-link de parceiros
     // (ex.: Asksuite) — ver initDeepLinkBooking(). Quando check-in e check-out
     // já vêm preenchidos, pula direto pra disponibilidade (etapa "rooms").
-    prefill({ arrival: inValue, departure: outValue, adults, kids, ages } = {}) {
-      if (state.pix) return;
+    prefill({ arrival: inValue, departure: outValue, adults, kids, ages, coupon } = {}) {
+      if (state.paymentBusy || state.pix || partialSession) return;
+      if (couponInput && coupon !== undefined) couponInput.value = String(coupon).trim();
       const parsedIn = parseLocalDate(inValue);
       const parsedOut = parseLocalDate(outValue);
       if (parsedIn) arrival = parsedIn;
@@ -2828,7 +2864,8 @@ const initDeepLinkBooking = () => {
   captureOppref(p);
   const arrival = p.get("arrival_date") || p.get("entrada");
   const departure = p.get("departure_date") || p.get("saida");
-  if (!arrival || !departure) return;
+  const coupon = p.has("coupon") ? p.get("coupon") : undefined;
+  if ((!arrival || !departure) && coupon === undefined) return;
   const adults = p.get("adults") || p.get("hospedes");
   const kids = p.get("kids") || p.get("children");
   const ages = [...p.entries()]
@@ -2839,7 +2876,7 @@ const initDeepLinkBooking = () => {
     }))
     .sort((a, b) => a.index - b.index)
     .map((item) => item.value);
-  window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages });
+  window.CZHomeBooking?.prefill({ arrival, departure, adults, kids, ages, coupon });
 };
 
 /* Links "Reservar" do cabeçalho/CTAs (href="#reservar") usam salto nativo do

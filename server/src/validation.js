@@ -14,6 +14,14 @@ const toDateOnly = (value) => new Date(`${value}T00:00:00Z`);
 
 const onlyDigits = (value) => String(value || "").replace(/\D/g, "");
 
+export const normalizeCoupon = (value) => {
+  if (value == null || value === "") return undefined;
+  if (typeof value !== "string" || value.length > 100 || /\p{C}/u.test(value)) {
+    throw new ValidationError("Cupom inválido. Confira o código informado.");
+  }
+  return value.trim() || undefined;
+};
+
 const origemFields = ["canal", "utm_source", "utm_medium", "utm_campaign", "utm_content", "gclid", "fbclid", "data"];
 
 const readOrigem = (raw) => {
@@ -35,6 +43,7 @@ export const validateAvailability = (q) => {
   const adults = Number(q.adults);
   const kids = Number(q.kids ?? 0);
   const ages = Array.isArray(q.ages) ? q.ages.map(Number) : [];
+  const coupon = normalizeCoupon(q.coupon);
 
   if (!isValidDate(arrival_date) || !isValidDate(departure_date)) {
     throw new ValidationError("Datas inválidas. Use o formato YYYY-MM-DD.");
@@ -55,7 +64,7 @@ export const validateAvailability = (q) => {
     throw new ValidationError("Idades de crianças inválidas.");
   }
 
-  return { arrival_date, departure_date, adults, kids, ages };
+  return { arrival_date, departure_date, adults, kids, ages, ...(coupon ? { coupon } : {}) };
 };
 
 /** Valida a reserva + hóspede (comum a cartão e PIX, sem dados de pagamento). */
@@ -103,10 +112,15 @@ export const validateStayGuest = (body) => {
   const chatgptAdsOptOut = body.chatgpt_ads_opt_out === true;
   const oppref = chatgptAdsNotice && !chatgptAdsOptOut && typeof body.oppref === "string"
     && body.oppref.length <= 2048 && !/[\s\p{C}@]/u.test(body.oppref) ? body.oppref : undefined;
+  const quotedAmountCents = body.quoted_amount_cents;
+  if (base.coupon && (!Number.isSafeInteger(quotedAmountCents) || quotedAmountCents <= 0)) {
+    throw new ValidationError("Refaça a busca para confirmar o valor com o cupom.");
+  }
 
   return {
     ...base,
     rooms,
+    ...(base.coupon ? { quotedAmountCents } : {}),
     askSi,
     origem: readOrigem(body.origem),
     chatgptAdsNotice,

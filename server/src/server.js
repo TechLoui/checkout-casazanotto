@@ -95,11 +95,12 @@ app.get("/api/availability", requirePartnerKeyForServerCalls, async (req, res, n
       departure_date: req.query.departure_date,
       adults: req.query.adults,
       kids: req.query.kids,
+      coupon: req.query.coupon,
       ages: [].concat(req.query.ages || []).filter((v) => v !== "")
     });
     const data = await checkAvailability(params);
     const nights = Math.max(1, Math.round((new Date(params.departure_date) - new Date(params.arrival_date)) / 86_400_000));
-    res.json(normalizeTotals(data, nights));
+    res.json(params.coupon ? data : normalizeTotals(data, nights));
   } catch (error) {
     next(error);
   }
